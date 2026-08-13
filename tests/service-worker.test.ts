@@ -11,22 +11,26 @@ type PeticionFalsa = {
   mode: string;
 };
 
-type RespuestaFalsa = {
-  nombre: string;
+type RespuestaServiceWorker = {
+  nombre?: string;
   ok: boolean;
-  clone: () => RespuestaFalsa;
+  status: number;
+  headers: { get: (nombre: string) => string | null };
+  clone: () => RespuestaServiceWorker;
   text: () => Promise<string>;
 };
 
+type RespuestaFalsa = RespuestaServiceWorker & { nombre: string };
+
 type EventoServiceWorkerFalso = {
   request?: PeticionFalsa;
-  respondWith?: (respuesta: Promise<RespuestaFalsa>) => void;
+  respondWith?: (respuesta: Promise<RespuestaServiceWorker>) => void;
   waitUntil?: (trabajo: Promise<unknown>) => void;
 };
 
 type FetchFalso = (
   peticion: string | PeticionFalsa,
-) => Promise<RespuestaFalsa>;
+) => Promise<RespuestaServiceWorker>;
 
 function respuesta(
   nombre: string,
@@ -35,6 +39,8 @@ function respuesta(
   return {
     nombre,
     ok,
+    status: ok ? 200 : 404,
+    headers: { get: () => null },
     clone: () => respuesta(nombre, { ok, cuerpo }),
     async text() {
       return cuerpo;
@@ -112,6 +118,7 @@ async function crearEntornoServiceWorker() {
 
   const fuente = await readFile("public/sw.js", "utf8");
   runInNewContext(fuente, {
+    Response,
     URL,
     caches,
     fetch: (entrada: string | PeticionFalsa) => fetchActual(entrada),
@@ -119,11 +126,11 @@ async function crearEntornoServiceWorker() {
   });
 
   async function despacharFetch(request: PeticionFalsa) {
-    let promesaRespuesta: Promise<RespuestaFalsa> | undefined;
+    let promesaRespuesta: Promise<RespuestaServiceWorker> | undefined;
     const trabajosEnSegundoPlano: Promise<unknown>[] = [];
     manejadores.get("fetch")?.({
       request,
-      respondWith(respuestaPendiente: Promise<RespuestaFalsa>) {
+      respondWith(respuestaPendiente: Promise<RespuestaServiceWorker>) {
         promesaRespuesta = Promise.resolve(respuestaPendiente);
       },
       waitUntil(trabajo: Promise<unknown>) {
@@ -159,6 +166,48 @@ async function crearEntornoServiceWorker() {
     },
   };
 }
+
+test("una navegación sin red y caché vacía sirve el telón de respaldo", async () => {
+  const entorno = await crearEntornoServiceWorker();
+  const documento = peticion("/CWZ2AM", { mode: "navigate" });
+  entorno.usarFetch(async () => {
+    throw new Error("sin red");
+  });
+
+  const resultado = await entorno.despacharFetch(documento);
+
+  assert.equal(resultado.respuesta?.status, 200);
+  assert.equal(
+    resultado.respuesta?.headers.get("Content-Type"),
+    "text/html; charset=utf-8",
+  );
+  assert.equal(
+    resultado.respuesta?.headers.get("Cache-Control"),
+    "no-store",
+  );
+  const html = await resultado.respuesta?.text();
+  assert.ok(html?.includes('<html lang="es-MX">'));
+  assert.ok(html?.includes('name="viewport"'));
+  assert.ok(html?.includes('name="theme-color" content="#12080C"'));
+  assert.ok(html?.includes('class="telon-de-entrada__cenefa" aria-hidden="true"'));
+  assert.ok(
+    html?.includes('class="telon-de-entrada__cartel" role="status"'),
+  );
+  assert.ok(html?.includes("La sala está a oscuras"));
+  assert.ok(
+    html?.includes("No hay red. El telón se abrirá solo cuando vuelva."),
+  );
+  assert.ok(html?.includes('addEventListener("online"'));
+  assert.ok(html?.includes("location.reload()"));
+  assert.equal(html?.includes("/_next/static/"), false);
+  assert.equal(html?.includes("https://"), false);
+  assert.equal(html?.includes("http://"), false);
+
+  const [nombreCache] = await entorno.caches.keys();
+  const cache = await entorno.caches.open(nombreCache);
+  assert.equal(await cache.match(documento), undefined);
+  assert.equal(await cache.match("/"), undefined);
+});
 
 test("las navegaciones usan red primero y conservan cada documento", async () => {
   const entorno = await crearEntornoServiceWorker();
@@ -375,7 +424,10 @@ test("el precache degrada sin romper la instalación ni descartar lo disponible"
 test("una navegación sin copia propia cae al cascarón de la raíz", async () => {
   const entorno = await crearEntornoServiceWorker();
   entorno.usarFetch(async () => respuesta("cascarón raíz"));
-  await entorno.despacharFetch(peticion("/", { mode: "navigate" }));
+  const raiz = await entorno.despacharFetch(
+    peticion("/", { mode: "navigate" }),
+  );
+  await raiz.trabajoEnSegundoPlano;
 
   entorno.usarFetch(async () => {
     throw new Error("sin red");
@@ -384,6 +436,58 @@ test("una navegación sin copia propia cae al cascarón de la raíz", async () =
     peticion("/OTRA1", { mode: "navigate" }),
   );
   assert.equal(resultado.respuesta?.nombre, "cascarón raíz");
+});
+
+test("una navegación sin red prefiere su copia antes que la raíz", async () => {
+  const entorno = await crearEntornoServiceWorker();
+  entorno.usarFetch(async (entrada) => {
+    const url = new URL(
+      typeof entrada === "string" ? entrada : entrada.url,
+      ORIGEN,
+    );
+    return respuesta(url.pathname === "/" ? "cascarón raíz" : "copia propia");
+  });
+
+  const raiz = await entorno.despacharFetch(
+    peticion("/", { mode: "navigate" }),
+  );
+  await raiz.trabajoEnSegundoPlano;
+  const propia = await entorno.despacharFetch(
+    peticion("/CWZ2AM", { mode: "navigate" }),
+  );
+  await propia.trabajoEnSegundoPlano;
+
+  entorno.usarFetch(async () => {
+    throw new Error("sin red");
+  });
+  const resultado = await entorno.despacharFetch(
+    peticion("/CWZ2AM", { mode: "navigate" }),
+  );
+
+  assert.equal(resultado.respuesta?.nombre, "copia propia");
+});
+
+test("un estático caído no rechaza la navegación ni su actualización", async () => {
+  const entorno = await crearEntornoServiceWorker();
+  entorno.usarFetch(async (entrada) => {
+    const url = new URL(
+      typeof entrada === "string" ? entrada : entrada.url,
+      ORIGEN,
+    );
+    if (url.pathname.startsWith("/_next/static/")) {
+      throw new Error("estático sin red");
+    }
+    return respuesta("documento de red", {
+      cuerpo: '<script src="/_next/static/chunks/sala.js"></script>',
+    });
+  });
+
+  const resultado = await entorno.despacharFetch(
+    peticion("/CWZ2AM", { mode: "navigate" }),
+  );
+
+  assert.equal(resultado.respuesta?.nombre, "documento de red");
+  await assert.doesNotReject(resultado.trabajoEnSegundoPlano);
 });
 
 test("los estáticos inmutables usan caché primero y guardan el fallo de caché", async () => {

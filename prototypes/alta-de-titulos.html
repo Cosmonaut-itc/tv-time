@@ -1,0 +1,1346 @@
+<title>El Alta de Títulos</title>
+
+<style>
+  /* ───────────────────────────────────────────────
+     PROTOTIPO DESECHABLE — El alta de títulos
+     Ticket: .wayfinder/tickets/008-el-alta-de-titulos.md
+     TMDB es falso y vive abajo en TMDB_FALSO. Sin backend.
+     Pósters dibujados a mano: el CSP del artifact no deja
+     traer imágenes de image.tmdb.org.
+     ─────────────────────────────────────────────── */
+
+  :root {
+    /* Sala siempre a oscuras: un solo tema, deliberado. */
+    --terciopelo:   #12080C;
+    --foso:         #0B0507;
+    --vino:         #4E1122;
+    --vino-claro:   #8E2438;
+    --laton:        #C9A227;
+    --laton-tenue:  #8A6F1C;
+    --crema:        #F2E5C6;
+    --crema-tenue:  #9A8E75;
+    --sombra:       rgba(0,0,0,.55);
+
+    --display: 'Copperplate', 'Copperplate Gothic Light', 'Futura', 'Century Gothic', 'Trebuchet MS', sans-serif;
+    --cuerpo:  'Optima', 'Avenir Next', 'Futura', 'Segoe UI', system-ui, sans-serif;
+    --datos:   'DIN Alternate', 'Avenir Next Condensed', ui-monospace, monospace;
+
+    --curva-telon: cubic-bezier(.66,0,.2,1);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--foso);
+    color: var(--crema);
+    font-family: var(--cuerpo);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--laton); outline-offset: 2px; }
+
+  .sala {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    padding-bottom: 92px;
+    background:
+      radial-gradient(120% 55% at 50% 0%, #1E1014 0%, var(--terciopelo) 55%, var(--foso) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Marquesina ─────────────────────────────── */
+
+  .marquesina { padding: 14px 16px 10px; text-align: center; }
+
+  .focos { display: flex; justify-content: center; gap: 9px; padding: 6px 0; }
+
+  .foco {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--laton-tenue);
+    transition: background .18s ease, box-shadow .18s ease;
+  }
+  .foco.on {
+    background: #FFE9A8;
+    box-shadow: 0 0 7px 2px rgba(255,214,120,.75), 0 0 18px 6px rgba(201,162,39,.28);
+  }
+
+  .rotulo {
+    border: 1px solid var(--laton-tenue);
+    border-left-width: 3px; border-right-width: 3px;
+    padding: 11px 10px 9px;
+    background: linear-gradient(180deg, rgba(78,17,34,.55), rgba(18,8,12,.2));
+  }
+  .rotulo h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 23px; font-weight: 400;
+    letter-spacing: .34em; text-indent: .34em;
+    color: var(--laton);
+    text-shadow: 0 1px 0 #3A2A08, 0 0 22px rgba(201,162,39,.35);
+  }
+  .rotulo .abanico {
+    display: block; margin: 7px auto 0; width: 96px; height: 8px;
+    background:
+      linear-gradient(90deg, transparent 0 6%, var(--laton-tenue) 6% 8%, transparent 8% 22%,
+                             var(--laton-tenue) 22% 24%, transparent 24% 42%,
+                             var(--laton) 42% 58%, transparent 58% 76%,
+                             var(--laton-tenue) 76% 78%, transparent 78% 92%,
+                             var(--laton-tenue) 92% 94%, transparent 94%);
+  }
+  .cuenta {
+    margin: 9px 0 0;
+    font-family: var(--datos);
+    font-size: 10.5px; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--crema-tenue);
+  }
+
+  /* ── Catálogo ───────────────────────────────── */
+
+  .catalogo { padding: 4px 12px 0; }
+
+  .vacio {
+    border: 1px dashed rgba(201,162,39,.3);
+    padding: 30px 22px;
+    text-align: center;
+    color: var(--crema-tenue);
+    line-height: 1.55;
+  }
+  .vacio strong {
+    display: block;
+    font-family: var(--display);
+    letter-spacing: .16em;
+    color: var(--laton);
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .ficha {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 11px;
+    align-items: center;
+    padding: 9px 10px;
+    border: 1px solid rgba(201,162,39,.16);
+    border-left: 3px solid var(--laton-tenue);
+    background: linear-gradient(90deg, rgba(78,17,34,.32), rgba(11,5,7,.2));
+    margin-bottom: 7px;
+    /* Sólo animan las recién llegadas: repintar la lista entera en cada
+       toque hacía parpadear el catálogo completo. */
+    transition: opacity .25s ease, border-color .25s ease;
+  }
+  .ficha.nueva { animation: entra .34s var(--curva-telon) both; }
+  .ficha.esta-vista { opacity: .5; border-left-color: var(--crema-tenue); }
+  .ficha.bloqueada  { border-left-color: var(--vino-claro); }
+  .ficha.saliendo {
+    opacity: 0;
+    transform: translateX(-14px);
+    transition: opacity .22s ease, transform .22s ease;
+  }
+
+  @keyframes entra {
+    from { opacity: 0; transform: translateY(9px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .ficha svg { display: block; width: 44px; height: 66px; }
+
+  .ficha .nom { font-size: 15px; line-height: 1.25; }
+  .ficha .sub {
+    font-family: var(--datos);
+    font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--crema-tenue);
+    margin-top: 4px;
+    display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center;
+  }
+  .sello {
+    border: 1px solid currentColor;
+    padding: 1px 5px;
+    font-size: 9px; letter-spacing: .14em;
+  }
+  .sello.oro   { color: var(--laton); }
+  .sello.vino  { color: var(--vino-claro); }
+  .sello.papel { color: var(--crema-tenue); }
+
+  .mas {
+    background: none; border: 1px solid rgba(201,162,39,.3);
+    color: var(--laton); width: 30px; height: 30px;
+    font-family: var(--datos); font-size: 15px; line-height: 1;
+  }
+
+  .acciones {
+    grid-column: 1 / -1;
+    display: flex; gap: 7px; flex-wrap: wrap;
+    padding-top: 3px;
+  }
+  .acciones button {
+    flex: 1 1 auto;
+    background: rgba(11,5,7,.55);
+    border: 1px solid rgba(201,162,39,.28);
+    color: var(--crema);
+    font-family: var(--datos);
+    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase;
+    padding: 8px 6px;
+  }
+  .acciones button.peligro { border-color: rgba(142,36,56,.75); color: #E0899B; }
+  .acciones button.confirma { background: var(--vino); border-color: var(--vino-claro); color: #FFDDE4; }
+
+  .autoria {
+    font-family: var(--datos);
+    font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(154,142,117,.75);
+  }
+
+  /* ── Botón de alta (flota sobre la sala) ────── */
+
+  .llamada {
+    position: fixed; left: 0; right: 0; bottom: 52px;
+    max-width: 460px; margin: 0 auto;
+    padding: 0 12px;
+    z-index: 30;
+    pointer-events: none;
+  }
+  .llamada button {
+    pointer-events: auto;
+    width: 100%;
+    background: linear-gradient(180deg, var(--vino), #340B17);
+    border: 1px solid var(--laton-tenue);
+    color: var(--laton);
+    font-family: var(--display);
+    font-size: 14px; letter-spacing: .26em; text-indent: .26em;
+    padding: 15px 10px;
+    box-shadow: 0 -8px 26px rgba(0,0,0,.6);
+  }
+  /* La llamada cuelga del body, no de .sala: se apaga desde el body. */
+  body.modo-inline .llamada { display: none; }
+
+  /* ── El alta ────────────────────────────────── */
+
+  .velo {
+    position: fixed; inset: 0;
+    background: rgba(3,1,2,.72);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s ease;
+    z-index: 40;
+  }
+  .velo.on { opacity: 1; pointer-events: auto; }
+
+  .alta {
+    background:
+      linear-gradient(180deg, #1A0D12 0%, var(--terciopelo) 40%, var(--foso) 100%);
+    border: 1px solid var(--laton-tenue);
+    z-index: 50;
+    display: flex; flex-direction: column;
+  }
+
+  /* variante: cajón que sube del foso */
+  .alta.cajon {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-width: 460px; margin: 0 auto;
+    max-height: 90dvh;
+    border-bottom: none;
+    border-top-width: 3px;
+    transform: translateY(102%);
+    transition: transform .42s var(--curva-telon);
+    box-shadow: 0 -14px 40px rgba(0,0,0,.7);
+  }
+  .alta.cajon.abierto { transform: none; }
+  .alta.cajon .asa {
+    width: 54px; height: 3px; background: var(--laton-tenue);
+    margin: 9px auto 0; flex: none;
+  }
+
+  /* variante: pantalla propia */
+  .alta.pantalla {
+    position: fixed; inset: 0;
+    max-width: 460px; margin: 0 auto;
+    transform: translateX(102%);
+    transition: transform .38s var(--curva-telon);
+  }
+  .alta.pantalla.abierto { transform: none; }
+
+  /* variante: dentro de la propia sala */
+  .alta.inline {
+    position: static;
+    margin: 0 12px 14px;
+    max-height: none;
+  }
+
+  .alta .cabecera {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 14px 11px;
+    border-bottom: 1px solid rgba(201,162,39,.2);
+    flex: none;
+  }
+  .alta .cabecera h2 {
+    margin: 0; flex: 1;
+    font-family: var(--display);
+    font-weight: 400; font-size: 13px;
+    letter-spacing: .24em; color: var(--laton);
+  }
+  .butaca {
+    background: none; border: 1px solid rgba(201,162,39,.35);
+    color: var(--crema);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase;
+    padding: 6px 9px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .butaca b { color: var(--laton); font-weight: 400; }
+  .cerrar {
+    background: none; border: none; color: var(--crema-tenue);
+    font-size: 20px; line-height: 1; padding: 2px 4px;
+  }
+
+  /* El colchón de abajo es del prototipo: la barra de variantes flota
+     encima y se comería el último botón. La sala real no la lleva. */
+  .cuerpo { padding: 13px 14px 76px; overflow-y: auto; }
+
+  /* buscador */
+  .campo {
+    display: flex; align-items: center; gap: 9px;
+    border: 1px solid rgba(201,162,39,.35);
+    background: rgba(3,1,2,.5);
+    padding: 0 11px;
+  }
+  .campo input {
+    flex: 1; background: none; border: none; outline: none;
+    padding: 13px 0; font-size: 16px;
+  }
+  .campo input::placeholder { color: rgba(154,142,117,.7); }
+  .lupa { color: var(--laton-tenue); font-size: 14px; }
+
+  .nota {
+    font-family: var(--datos);
+    font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--crema-tenue);
+    margin: 10px 0 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nota .corriendo { display: flex; gap: 5px; }
+  .nota .corriendo i {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--laton-tenue); display: block;
+    animation: titila 1s infinite;
+  }
+  .nota .corriendo i:nth-child(2) { animation-delay: .18s; }
+  .nota .corriendo i:nth-child(3) { animation-delay: .36s; }
+  @keyframes titila {
+    0%,100% { background: var(--laton-tenue); box-shadow: none; }
+    40% { background: #FFE9A8; box-shadow: 0 0 6px 2px rgba(255,214,120,.6); }
+  }
+
+  /* Los resultados viejos se quedan puestos, atenuados, mientras
+     llega la siguiente búsqueda: escribir no debe vaciar la pantalla. */
+  #resultados { transition: opacity .18s ease; }
+  #resultados.buscando { opacity: .4; }
+
+  .cintas .cinta {
+    height: 66px; margin-bottom: 7px;
+    border: 1px solid rgba(201,162,39,.1);
+    background: linear-gradient(90deg, rgba(78,17,34,.18) 0%, rgba(201,162,39,.11) 50%, rgba(78,17,34,.18) 100%);
+    background-size: 220% 100%;
+    animation: barre 1.15s linear infinite;
+  }
+  @keyframes barre { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+  .resultado {
+    display: grid; grid-template-columns: 42px 1fr auto;
+    gap: 11px; align-items: center;
+    width: 100%; text-align: left;
+    background: none; border: none;
+    border-bottom: 1px solid rgba(201,162,39,.12);
+    padding: 9px 2px;
+  }
+  .resultado svg { width: 42px; height: 63px; display: block; }
+  .resultado .nom { font-size: 15px; line-height: 1.25; }
+  .resultado .met {
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase;
+    color: var(--crema-tenue); margin-top: 4px;
+  }
+  .resultado .sumar {
+    font-family: var(--datos); font-size: 19px; color: var(--laton);
+    border: 1px solid rgba(201,162,39,.3);
+    width: 30px; height: 30px; line-height: 27px; text-align: center;
+  }
+  .resultado[disabled] { opacity: .4; }
+  .resultado[disabled] .sumar { border-style: dashed; color: var(--crema-tenue); font-size: 12px; }
+  .resultado.puesto { animation: sellar .5s ease both; }
+  @keyframes sellar {
+    0% { background: rgba(201,162,39,.28); }
+    100% { background: transparent; }
+  }
+
+  .liston {
+    grid-column: 2 / -1;
+    margin-top: 6px;
+    background: none;
+    border: 1px solid rgba(201,162,39,.4);
+    border-left: 3px solid var(--laton);
+    color: var(--laton);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase;
+    padding: 7px 9px; text-align: left; width: 100%;
+  }
+
+  .sin-resultados {
+    border: 1px dashed rgba(201,162,39,.3);
+    padding: 20px 16px; text-align: center;
+    color: var(--crema-tenue); line-height: 1.5; font-size: 14px;
+  }
+
+  /* saga */
+  .titulo-seccion {
+    font-family: var(--display);
+    font-size: 12px; letter-spacing: .22em;
+    color: var(--laton); margin: 0 0 4px;
+  }
+  .explica {
+    font-size: 13px; line-height: 1.5;
+    color: var(--crema-tenue); margin: 0 0 13px;
+  }
+  .nombre-saga {
+    width: 100%; background: rgba(3,1,2,.5);
+    border: 1px solid rgba(201,162,39,.3);
+    padding: 11px; font-size: 16px; outline: none;
+    margin-bottom: 12px;
+  }
+
+  .parte {
+    display: grid; grid-template-columns: 26px 34px 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(201,162,39,.1);
+  }
+  .parte svg { width: 34px; height: 51px; display: block; }
+  .parte .idx {
+    font-family: var(--datos); font-size: 12px;
+    color: var(--laton-tenue); text-align: center;
+  }
+  .parte .nom { font-size: 14px; line-height: 1.2; }
+  .parte .anio {
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .18em; color: var(--crema-tenue); margin-top: 3px;
+  }
+  .parte.antes { opacity: .45; }
+  .parte .quitar {
+    background: none; border: none; color: var(--crema-tenue);
+    font-size: 15px; padding: 4px 6px;
+  }
+
+  .corte {
+    display: flex; align-items: center; gap: 9px;
+    width: 100%; text-align: left;
+    background: none; border: none;
+    padding: 7px 0;
+    color: var(--crema-tenue);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase;
+  }
+  .corte .linea { flex: 1; height: 1px; background: rgba(201,162,39,.2); }
+  .corte.activo { color: var(--laton); }
+  .corte.activo .linea {
+    height: 3px;
+    background: linear-gradient(90deg, var(--laton-tenue), var(--laton), var(--laton-tenue));
+  }
+
+  .interruptor {
+    display: flex; align-items: center; gap: 11px;
+    border: 1px solid rgba(201,162,39,.22);
+    padding: 11px; margin: 14px 0 0;
+    width: 100%; text-align: left; background: none;
+  }
+  .interruptor .caja {
+    width: 18px; height: 18px; flex: none;
+    border: 1px solid var(--laton-tenue);
+    display: grid; place-items: center;
+    color: var(--terciopelo); font-size: 12px;
+  }
+  .interruptor.on .caja { background: var(--laton); }
+  .interruptor .txt { font-size: 13px; line-height: 1.4; }
+  .interruptor .txt small {
+    display: block; color: var(--crema-tenue);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .12em; text-transform: uppercase; margin-top: 3px;
+  }
+
+  .fila-botones { display: flex; gap: 8px; margin-top: 14px; }
+  .fila-botones button {
+    flex: 1; padding: 13px 8px;
+    font-family: var(--datos); font-size: 11px;
+    letter-spacing: .18em; text-transform: uppercase;
+    background: rgba(3,1,2,.5);
+    border: 1px solid rgba(201,162,39,.3);
+    color: var(--crema);
+  }
+  .fila-botones button.principal {
+    background: linear-gradient(180deg, var(--vino), #340B17);
+    border-color: var(--laton-tenue); color: var(--laton);
+  }
+
+  /* manual */
+  .campos { display: grid; gap: 10px; }
+  .campos label {
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--crema-tenue);
+    display: grid; gap: 5px;
+  }
+  .campos input, .campos select {
+    background: rgba(3,1,2,.5);
+    border: 1px solid rgba(201,162,39,.3);
+    padding: 11px; font-size: 16px; outline: none;
+  }
+  .dosdos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .previa {
+    display: grid; grid-template-columns: 96px 1fr;
+    gap: 13px; align-items: center;
+    margin: 14px 0 0; padding: 12px;
+    border: 1px solid rgba(201,162,39,.18);
+    background: rgba(3,1,2,.35);
+  }
+  .previa svg { width: 96px; height: 144px; display: block; }
+  .previa p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--crema-tenue); }
+
+  /* ── El foso: el estado crudo ───────────────── */
+
+  .foso-panel { margin: 16px 12px 0; }
+  .foso-panel > button {
+    width: 100%; background: none;
+    border: 1px solid rgba(201,162,39,.2);
+    color: var(--crema-tenue);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .2em; text-transform: uppercase;
+    padding: 10px;
+  }
+  .tabla {
+    overflow-x: auto;
+    border: 1px solid rgba(201,162,39,.2);
+    border-top: none;
+    padding: 10px;
+  }
+  .tabla table { border-collapse: collapse; width: 100%; min-width: 430px; }
+  .tabla th, .tabla td {
+    font-family: var(--datos); font-size: 10.5px;
+    letter-spacing: .06em; text-align: left;
+    padding: 5px 8px 5px 0;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .tabla th { color: var(--laton-tenue); text-transform: uppercase; letter-spacing: .16em; }
+  .tabla td { color: var(--crema-tenue); border-top: 1px solid rgba(201,162,39,.1); }
+  .tabla td.si { color: var(--laton); }
+
+  /* ── Barra de variantes ─────────────────────── */
+
+  .barra {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    z-index: 60;
+    display: flex; justify-content: center; gap: 0;
+    background: rgba(3,1,2,.92);
+    border-top: 1px solid rgba(201,162,39,.25);
+    backdrop-filter: blur(4px);
+  }
+  .barra span {
+    font-family: var(--datos); font-size: 9px;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(154,142,117,.6);
+    align-self: center; padding-right: 10px;
+  }
+  .barra button {
+    background: none; border: none;
+    color: var(--crema-tenue);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase;
+    padding: 15px 12px;
+    border-bottom: 2px solid transparent;
+  }
+  .barra button.sel { color: var(--laton); border-bottom-color: var(--laton); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+
+<div class="sala" id="sala">
+  <header class="marquesina">
+    <div class="focos" id="focos"></div>
+    <div class="rotulo">
+      <h1>EL CINE</h1>
+      <span class="abanico"></span>
+    </div>
+    <p class="cuenta" id="cuenta">Catálogo vacío</p>
+  </header>
+
+  <div id="ranura-inline"></div>
+
+  <main class="catalogo" id="catalogo"></main>
+
+  <div class="foso-panel">
+    <button id="btn-foso">▾ Ver el foso · lo que se escribiría en «titulos»</button>
+    <div class="tabla" id="tabla" hidden></div>
+  </div>
+</div>
+
+<div class="llamada">
+  <button id="btn-abrir">＋ AGREGAR AL CATÁLOGO</button>
+</div>
+
+<div class="velo" id="velo"></div>
+
+<section class="alta cajon" id="alta" aria-label="Alta de títulos">
+  <div class="asa"></div>
+  <div class="cabecera">
+    <h2 id="titulo-alta">AGREGAR</h2>
+    <button class="butaca" id="btn-butaca">Agrega <b id="quien">FÉLIX</b> ⇄</button>
+    <button class="cerrar" id="btn-cerrar" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="cuerpo" id="cuerpo"></div>
+</section>
+
+<nav class="barra">
+  <span>El alta es</span>
+  <button data-modo="cajon" class="sel">Un cajón</button>
+  <button data-modo="pantalla">Una pantalla</button>
+  <button data-modo="inline">La sala misma</button>
+</nav>
+
+<script>
+/* ═══════════════ TMDB falso ═══════════════
+   Sólo lo necesario para probar las tres formas del alta.
+   `col` imita una collection de TMDB. `estreno` manda en el
+   orden, porque la sala ordena todo por fecha de estreno. */
+
+const TMDB_FALSO = [
+  { id: 438631, t: 'Duna',                          anio: 2021, tipo: 'pelicula', col: 'Duna', estreno: '2021-09-15', motivo: 'duna' },
+  { id: 693134, t: 'Duna: Parte Dos',               anio: 2024, tipo: 'pelicula', col: 'Duna', estreno: '2024-02-27', motivo: 'duna' },
+  { id: 1156593,t: 'Duna: Parte Tres',              anio: 2026, tipo: 'pelicula', col: 'Duna', estreno: '2026-12-18', motivo: 'duna' },
+
+  { id: 120,    t: 'El Señor de los Anillos: La Comunidad del Anillo', anio: 2001, tipo: 'pelicula', col: 'El Señor de los Anillos', estreno: '2001-12-18', motivo: 'anillo' },
+  { id: 121,    t: 'El Señor de los Anillos: Las Dos Torres',          anio: 2002, tipo: 'pelicula', col: 'El Señor de los Anillos', estreno: '2002-12-18', motivo: 'anillo' },
+  { id: 122,    t: 'El Señor de los Anillos: El Retorno del Rey',      anio: 2003, tipo: 'pelicula', col: 'El Señor de los Anillos', estreno: '2003-12-17', motivo: 'anillo' },
+  { id: 49051,  t: 'El Hobbit: Un Viaje Inesperado',   anio: 2012, tipo: 'pelicula', col: 'El Hobbit', estreno: '2012-12-12', motivo: 'anillo' },
+  { id: 57158,  t: 'El Hobbit: La Desolación de Smaug',anio: 2013, tipo: 'pelicula', col: 'El Hobbit', estreno: '2013-12-11', motivo: 'anillo' },
+  { id: 122917, t: 'El Hobbit: La Batalla de los Cinco Ejércitos', anio: 2014, tipo: 'pelicula', col: 'El Hobbit', estreno: '2014-12-10', motivo: 'anillo' },
+
+  { id: 11,   t: 'Star Wars: Una Nueva Esperanza',   anio: 1977, tipo: 'pelicula', col: 'Star Wars: trilogía original', estreno: '1977-05-25', motivo: 'estrella' },
+  { id: 1891, t: 'Star Wars: El Imperio Contraataca',anio: 1980, tipo: 'pelicula', col: 'Star Wars: trilogía original', estreno: '1980-05-17', motivo: 'estrella' },
+  { id: 1892, t: 'Star Wars: El Retorno del Jedi',   anio: 1983, tipo: 'pelicula', col: 'Star Wars: trilogía original', estreno: '1983-05-25', motivo: 'estrella' },
+  { id: 1893, t: 'Star Wars: La Amenaza Fantasma',   anio: 1999, tipo: 'pelicula', col: 'Star Wars: precuelas', estreno: '1999-05-19', motivo: 'estrella' },
+  { id: 1894, t: 'Star Wars: El Ataque de los Clones',anio: 2002,tipo: 'pelicula', col: 'Star Wars: precuelas', estreno: '2002-05-16', motivo: 'estrella' },
+  { id: 1895, t: 'Star Wars: La Venganza de los Sith',anio: 2005,tipo: 'pelicula', col: 'Star Wars: precuelas', estreno: '2005-05-19', motivo: 'estrella' },
+  { id: 330459,t: 'Rogue One: Una Historia de Star Wars', anio: 2016, tipo: 'pelicula', col: null, estreno: '2016-12-16', motivo: 'estrella' },
+
+  { id: 10191, t: 'Cómo Entrenar a tu Dragón',       anio: 2010, tipo: 'pelicula', col: 'Cómo Entrenar a tu Dragón', estreno: '2010-03-26', motivo: 'dragon' },
+  { id: 82702, t: 'Cómo Entrenar a tu Dragón 2',     anio: 2014, tipo: 'pelicula', col: 'Cómo Entrenar a tu Dragón', estreno: '2014-06-13', motivo: 'dragon' },
+  { id: 166428,t: 'Cómo Entrenar a tu Dragón 3',     anio: 2019, tipo: 'pelicula', col: 'Cómo Entrenar a tu Dragón', estreno: '2019-02-22', motivo: 'dragon' },
+  { id: 1087192,t:'Cómo Entrenar a tu Dragón (2025)',anio: 2025, tipo: 'pelicula', col: null, estreno: '2025-06-13', motivo: 'dragon' },
+
+  { id: 324857,t: 'Spider-Man: Un Nuevo Universo',   anio: 2018, tipo: 'pelicula', col: 'Spider-Verse', estreno: '2018-12-14', motivo: 'telaraña' },
+  { id: 569094,t: 'Spider-Man: Cruzando el Multiverso', anio: 2023, tipo: 'pelicula', col: 'Spider-Verse', estreno: '2023-06-02', motivo: 'telaraña' },
+
+  { id: 95396, t: 'Severance',  anio: 2022, tipo: 'serie', col: null, estreno: '2022-02-18', motivo: 'pasillo' },
+  { id: 83867, t: 'Andor',      anio: 2022, tipo: 'serie', col: null, estreno: '2022-09-21', motivo: 'estrella' },
+  { id: 94605, t: 'Arcane',     anio: 2021, tipo: 'serie', col: null, estreno: '2021-11-06', motivo: 'faro' }
+];
+
+const HOY = '2026-08-12';       // el prototipo se planta en una fecha fija
+const estrenada = p => p.estreno <= HOY;
+
+/* ═══════════════ Pósters dibujados ═══════════════ */
+
+const PALETAS = {
+  duna:     ['#3A2A10', '#8A5A18', '#E8C877'],
+  anillo:   ['#0E1A12', '#1E3A24', '#B99A48'],
+  estrella: ['#0A0A16', '#1A1A38', '#D8D8F0'],
+  dragon:   ['#101E28', '#1E3E52', '#6ECBD6'],
+  telaraña: ['#2A0A18', '#5A123A', '#FF6FA8'],
+  pasillo:  ['#0E1214', '#1E2A2E', '#8FE0D8'],
+  faro:     ['#160A20', '#38124E', '#C08CFF'],
+  mano:     ['#1A1014', '#3A1C24', '#C9A227']
+};
+
+let semilla = 0;
+
+function poster(p, alto) {
+  const pal = PALETAS[p.motivo] || PALETAS.mano;
+  const [f1, f2, ac] = pal;
+  const id = 'g' + (semilla++);
+  const m = p.motivo;
+  let motivo = '';
+
+  if (m === 'duna')
+    motivo = `<path d="M0 300 Q75 262 150 300 T300 300 V450 H0Z" fill="${ac}" opacity=".28"/>
+      <path d="M0 344 Q90 300 150 344 T300 336 V450 H0Z" fill="${ac}" opacity=".4"/>
+      <circle cx="150" cy="152" r="52" fill="${ac}" opacity=".9"/>`;
+  else if (m === 'anillo')
+    motivo = `<circle cx="150" cy="200" r="76" fill="none" stroke="${ac}" stroke-width="9" opacity=".9"/>
+      <circle cx="150" cy="200" r="98" fill="none" stroke="${ac}" stroke-width="2" opacity=".4"/>
+      <path d="M0 380 L90 250 L150 320 L210 230 L300 380Z" fill="${ac}" opacity=".2"/>`;
+  else if (m === 'estrella')
+    motivo = `<path d="M150 96 L166 176 L246 192 L166 208 L150 288 L134 208 L54 192 L134 176Z" fill="${ac}" opacity=".92"/>
+      <circle cx="150" cy="192" r="120" fill="none" stroke="${ac}" stroke-width="1.5" opacity=".3"/>`;
+  else if (m === 'dragon')
+    motivo = `<path d="M36 250 Q150 130 264 250 Q210 214 150 240 Q90 214 36 250Z" fill="${ac}" opacity=".85"/>
+      <path d="M150 240 L150 320 M110 290 L150 320 L190 290" stroke="${ac}" stroke-width="4" fill="none" opacity=".7"/>`;
+  else if (m === 'telaraña')
+    motivo = `${[40,74,108,142].map(r => `<circle cx="150" cy="200" r="${r}" fill="none" stroke="${ac}" stroke-width="1.6" opacity=".55"/>`).join('')}
+      ${[0,45,90,135].map(a => {
+        const rad = a * Math.PI / 180, x = Math.cos(rad) * 150, y = Math.sin(rad) * 150;
+        return `<line x1="${150-x}" y1="${200-y}" x2="${150+x}" y2="${200+y}" stroke="${ac}" stroke-width="1.4" opacity=".45"/>`;
+      }).join('')}`;
+  else if (m === 'pasillo')
+    motivo = `<path d="M0 60 L104 176 V300 L0 400Z" fill="${ac}" opacity=".16"/>
+      <path d="M300 60 L196 176 V300 L300 400Z" fill="${ac}" opacity=".16"/>
+      <path d="M104 176 H196 V300 H104Z" fill="${ac}" opacity=".9"/>`;
+  else if (m === 'faro')
+    motivo = `<path d="M132 132 H168 L180 322 H120Z" fill="${ac}" opacity=".9"/>
+      <rect x="126" y="112" width="48" height="24" fill="${f2}"/>
+      <path d="M126 124 L18 78 V170Z" fill="${ac}" opacity=".28"/>
+      <path d="M174 124 L282 78 V170Z" fill="${ac}" opacity=".28"/>`;
+  else
+    motivo = `<path d="M150 96 L214 200 L150 304 L86 200Z" fill="none" stroke="${ac}" stroke-width="3" opacity=".8"/>
+      <path d="M150 140 L188 200 L150 260 L112 200Z" fill="${ac}" opacity=".7"/>`;
+
+  // TMDB los llama `t`; el catálogo ya los guarda como `nombre`.
+  const titulo = p.t || p.nombre || 'Sin título';
+  const nom = titulo.length > 22 ? titulo.slice(0, 20) + '…' : titulo;
+  const sinPoster = p.dibujado
+    ? `<text x="150" y="66" text-anchor="middle" fill="${ac}" opacity=".6"
+             font-family="DIN Alternate, monospace" font-size="11" letter-spacing="4">SIN PÓSTER OFICIAL</text>` : '';
+
+  return `<svg viewBox="0 0 300 450" ${alto ? `height="${alto}"` : ''} role="img" aria-label="Póster de ${esc(titulo)}">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${f2}"/><stop offset="100%" stop-color="${f1}"/>
+    </linearGradient></defs>
+    <rect width="300" height="450" fill="url(#${id})"/>
+    ${motivo}
+    <rect x="10" y="10" width="280" height="430" fill="none" stroke="${ac}" stroke-width="1" opacity=".35"
+          ${p.dibujado ? 'stroke-dasharray="10 7"' : ''}/>
+    ${sinPoster}
+    <rect x="0" y="368" width="300" height="82" fill="#000" opacity=".62"/>
+    <text x="150" y="404" text-anchor="middle" fill="#F2E5C6"
+          font-family="Copperplate, Futura, sans-serif" font-size="18" letter-spacing="1.2">${esc(nom.toUpperCase())}</text>
+    <text x="150" y="426" text-anchor="middle" fill="#9A8E75"
+          font-family="DIN Alternate, monospace" font-size="12" letter-spacing="3">${p.anio || '—'}</text>
+  </svg>`;
+}
+
+/* ═══════════════ Estado ═══════════════ */
+
+const app = {
+  modo: 'cajon',
+  abierto: false,
+  vista: 'buscar',          // buscar · saga · manual
+  butaca: 'Félix',
+  q: '',
+  buscando: false,
+  resultados: null,         // null = todavía no se buscó nada
+  saga: null,               // { nombre, partes:[], corte, unaEntrada, uniendo }
+  manual: { nombre: '', tipo: 'pelicula', anio: '' },
+  catalogo: [],
+  abierta: null,            // ficha desplegada
+  confirmando: null,        // ficha esperando confirmación de borrado
+  foso: false
+};
+
+let seq = 1;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+const sinAcentos = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const $ = s => document.querySelector(s);
+const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ═══════════════ Marquesina ═══════════════ */
+
+const focos = $('#focos');
+focos.innerHTML = Array.from({ length: 11 }, () => '<i class="foco"></i>').join('');
+const bombillas = [...focos.children];
+let f = 0;
+setInterval(() => {
+  bombillas.forEach((b, i) => b.classList.toggle('on', (i + f) % 3 === 0));
+  f++;
+}, 620);
+
+/* ═══════════════ Catálogo ═══════════════ */
+
+/* El candado: una película de saga sólo compite si todas las
+   anteriores están vistas. Aquí sólo sirve para pintar el sello. */
+function bloqueadaPor(t) {
+  if (!t.saga) return null;
+  return app.catalogo.find(o => o.saga === t.saga && o.orden < t.orden && !o.visto) || null;
+}
+
+/* El candado tiene que nombrar la que falta, no la saga: «🔒 falta Star Wars»
+   no le dice nada a nadie. Se le quita el prefijo de la saga y se acorta. */
+function sinPrefijo(nombre, saga) {
+  let n = nombre;
+  if (saga && sinAcentos(n).startsWith(sinAcentos(saga))) n = n.slice(saga.length).replace(/^[\s:–-]+/, '');
+  if (n.length < 4) n = nombre;            // «Dragón 3» quitando la saga deja «3»: no sirve
+  return n.length > 20 ? n.slice(0, 18) + '…' : n;
+}
+
+function fichaHTML(t, nueva) {
+  const bloq = bloqueadaPor(t);
+  const sellos = [
+    t.tipo === 'serie' ? '<span class="sello papel">SERIE</span>' : '',
+    t.saga ? `<span class="sello oro">${esc(t.saga)} · ${t.orden}</span>` : '',
+    t.visto ? '<span class="sello papel">VISTA</span>' : '',
+    bloq ? `<span class="sello vino">🔒 falta ${esc(sinPrefijo(bloq.nombre, t.saga))}</span>` : '',
+    !t.tmdbId ? '<span class="sello papel">A MANO</span>' : ''
+  ].filter(Boolean).join('');
+
+  const abierta = app.abierta === t.uid;
+  const confirma = app.confirmando === t.uid;
+
+  return `<article class="ficha ${nueva ? 'nueva' : ''} ${t.visto ? 'esta-vista' : ''} ${bloq ? 'bloqueada' : ''}"
+                   data-uid="${t.uid}">
+    ${poster(t)}
+    <div>
+      <div class="nom">${esc(t.nombre)}</div>
+      <div class="sub">${t.anio || 's/f'} ${sellos}<span class="autoria">Agregó ${esc(t.agregadoPor)}</span></div>
+    </div>
+    <button class="mas" data-mas="${t.uid}" aria-label="Acciones">${abierta ? '×' : '⋯'}</button>
+    ${abierta ? `<div class="acciones">
+      <button data-visto="${t.uid}">${t.visto ? '↩ Devolver a la cartelera' : '✓ Ya la vimos'}</button>
+      <button class="peligro ${confirma ? 'confirma' : ''}" data-quitar="${t.uid}">
+        ${confirma ? '¿Seguro? Quitar' : '✕ Quitar del catálogo'}</button>
+    </div>` : ''}
+  </article>`;
+}
+
+function actualizarCuenta() {
+  const n = app.catalogo.length;
+  $('#cuenta').textContent = n === 0
+    ? 'Catálogo vacío'
+    : `${n} ${n === 1 ? 'título' : 'títulos'} · ${app.catalogo.filter(t => !t.visto).length} en cartelera`;
+}
+
+/* Repinta la lista entera. Sólo al arrancar y después de un alta —
+   nunca al tocar una ficha. `nuevas` marca cuáles animan la entrada. */
+function pintarCatalogo(nuevas) {
+  actualizarCuenta();
+  const cat = $('#catalogo');
+
+  if (!app.catalogo.length) {
+    cat.innerHTML = `<div class="vacio">
+      <strong>LA MARQUESINA ESTÁ EN BLANCO</strong>
+      Cada sala nace vacía. Agrega una película, una serie,<br>o una saga completa de un jalón.
+    </div>`;
+    return;
+  }
+
+  const orden = [...app.catalogo].sort((a, b) =>
+    (a.saga || 'zzz').localeCompare(b.saga || 'zzz') || (a.orden || 0) - (b.orden || 0) || b.alta - a.alta);
+
+  cat.innerHTML = orden.map(t => fichaHTML(t, nuevas && nuevas.has(t.uid))).join('');
+}
+
+/* Cambia una ficha en su sitio, sin tocar el resto de la lista. */
+function refrescarFicha(uid) {
+  const nodo = $(`.ficha[data-uid="${uid}"]`);
+  const t = app.catalogo.find(x => x.uid === uid);
+  if (nodo && t) nodo.outerHTML = fichaHTML(t);
+}
+
+/* Marcar visto mueve el candado de la saga entera: se refrescan las
+   hermanas, y sólo ellas. */
+function refrescarParientes(t) {
+  (t.saga ? app.catalogo.filter(o => o.saga === t.saga) : [t]).forEach(o => refrescarFicha(o.uid));
+}
+
+/* ═══════════════ El alta ═══════════════ */
+
+function abrir(vista) {
+  app.vista = vista || 'buscar';
+  app.abierto = true;
+  pintarAlta();
+  requestAnimationFrame(() => {
+    $('#alta').classList.add('abierto');
+    $('#velo').classList.toggle('on', app.modo === 'cajon');
+    const i = $('#buscador');
+    if (i) i.focus({ preventScroll: true });
+  });
+}
+
+function cerrar() {
+  app.abierto = false;
+  app.saga = null;
+  $('#alta').classList.remove('abierto');
+  $('#velo').classList.remove('on');
+}
+
+function pintarAlta() {
+  $('#titulo-alta').textContent =
+    app.vista === 'saga' ? 'UNA SAGA' : app.vista === 'manual' ? 'A MANO' : 'AGREGAR';
+  $('#quien').textContent = app.butaca.toUpperCase();
+  const c = $('#cuerpo');
+
+  if (app.vista === 'buscar') {
+    // La cáscara —campo incluido— se monta una sola vez. Repintarla en
+    // cada tecla sacaba el foco del input a media palabra.
+    if (c.dataset.vista !== 'buscar') {
+      c.dataset.vista = 'buscar';
+      c.innerHTML = cascaraBuscar();
+    }
+    pintarResultados();
+  } else {
+    c.dataset.vista = app.vista;
+    c.innerHTML = app.vista === 'saga' ? vistaSaga() : vistaManual();
+  }
+}
+
+/* ── buscar ─────────────────────────────────── */
+
+function cascaraBuscar() {
+  return `<div class="campo">
+      <span class="lupa">⌕</span>
+      <input id="buscador" value="${esc(app.q)}" placeholder="Duna, Star Wars, Severance…"
+             autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    </div>
+    <div id="resultados"></div>
+    <div class="fila-botones">
+      <button id="ir-manual-2">✎ No está en TMDB</button>
+      <button id="ir-saga-mano">⛓ Armar una saga a mano</button>
+    </div>`;
+}
+
+function pintarResultados() {
+  const caja = $('#resultados');
+  if (!caja) return;
+  caja.className = app.buscando && app.resultados && app.resultados.length ? 'buscando' : '';
+  caja.innerHTML = vistaBuscar();
+}
+
+function vistaBuscar() {
+  let cuerpo;
+  const hayViejos = app.resultados && app.resultados.length;
+
+  // Buscando y con algo en pantalla: se conserva lo viejo, atenuado.
+  // Buscando en frío: cintas del tamaño de lo que va a llegar.
+  if (app.buscando && !hayViejos) {
+    cuerpo = `<p class="nota"><span class="corriendo"><i></i><i></i><i></i></span> Preguntándole a TMDB…</p>
+      <div class="cintas">${'<div class="cinta"></div>'.repeat(4)}</div>`;
+  } else if (app.resultados === null) {
+    cuerpo = `<p class="nota">Películas y series · en español · México</p>`;
+  } else if (!app.resultados.length) {
+    cuerpo = `<div class="sin-resultados">
+      <p style="margin:0 0 12px">TMDB no encuentra <b>«${esc(app.q)}»</b>.</p>
+      <button class="liston" style="grid-column:auto" id="ir-manual">✎ Darla de alta a mano</button>
+    </div>`;
+  } else {
+    // El listón de saga se muestra una sola vez por colección: repetirlo bajo
+    // cada parte convertía la búsqueda de «star wars» en un muro de listones.
+    const listonPuesto = new Set();
+    cuerpo = app.resultados.map(p => {
+      const ya = app.catalogo.find(t => t.tmdbId === p.id);
+      const sinEstrenar = !estrenada(p);
+      const hermanas = p.col && !listonPuesto.has(p.col)
+        ? TMDB_FALSO.filter(o => o.col === p.col && estrenada(o)) : [];
+      if (hermanas.length > 1) listonPuesto.add(p.col);
+      return `<button class="resultado" data-add="${p.id}"
+                ${ya || sinEstrenar ? 'disabled' : ''}>
+        ${poster(p)}
+        <div>
+          <div class="nom">${esc(p.t)}</div>
+          <div class="met">${p.anio} · ${p.tipo === 'serie' ? 'Serie' : 'Película'}${
+            sinEstrenar ? ' · aún no se estrena' : ya ? ' · ya está en el catálogo' : ''}</div>
+        </div>
+        <span class="sumar">${ya ? '✓' : sinEstrenar ? '⏳' : '＋'}</span>
+      </button>
+      ${hermanas.length > 1 && !sinEstrenar
+        ? `<button class="liston" data-saga="${esc(p.col)}">
+             ⛓ Parte de «${esc(p.col)}» — agregar las ${hermanas.length} con candado</button>` : ''}`;
+    }).join('');
+  }
+
+  return cuerpo;
+}
+
+let temporizador;
+function buscar(q) {
+  app.q = q;
+  clearTimeout(temporizador);
+  if (!q.trim()) { app.resultados = null; app.buscando = false; return pintarResultados(); }
+  app.buscando = true;
+  pintarResultados();
+  // Se espera a que pare de teclear (220 ms) y TMDB finge tardar otros 450.
+  temporizador = setTimeout(() => {
+    const n = sinAcentos(q);
+    app.resultados = TMDB_FALSO.filter(p => sinAcentos(p.t).includes(n) || (p.col && sinAcentos(p.col).includes(n)));
+    app.buscando = false;
+    pintarResultados();
+  }, 670);
+}
+
+/* ── saga ───────────────────────────────────── */
+
+function armarSaga(col) {
+  const partes = TMDB_FALSO.filter(p => p.col === col && estrenada(p))
+    .sort((a, b) => a.estreno.localeCompare(b.estreno));
+  app.saga = { nombre: col, partes, corte: 0, unaEntrada: false, uniendo: false };
+  app.vista = 'saga';
+  pintarAlta();
+}
+
+function sagaVacia() {
+  app.saga = { nombre: '', partes: [], corte: 0, unaEntrada: false, uniendo: true };
+  app.vista = 'saga';
+  pintarAlta();
+}
+
+function vistaSaga() {
+  const s = app.saga;
+  if (s.uniendo) return vistaUnir();
+
+  if (!s.partes.length) return vistaUnir();
+
+  const lista = s.unaEntrada
+    ? `<div class="parte">
+         <span class="idx">⛓</span>
+         ${poster(s.partes[0])}
+         <div>
+           <div class="nom">${esc(s.nombre || s.partes[0].col || 'Sin nombre')}</div>
+           <div class="anio">${s.partes.length} películas · una sola entrada</div>
+         </div>
+       </div>`
+    : `<button class="corte ${s.corte === 0 ? 'activo' : ''}" data-corte="0">
+         <span class="linea"></span> Desde el principio <span class="linea"></span>
+       </button>` +
+      s.partes.map((p, i) => `
+        <div class="parte ${i < s.corte ? 'antes' : ''}">
+          <span class="idx">${i + 1}</span>
+          ${poster(p)}
+          <div>
+            <div class="nom">${esc(p.t)}</div>
+            <div class="anio">${p.anio}${i < s.corte ? ' · ya la habíamos visto' : ''}</div>
+          </div>
+          <button class="quitar" data-sacar="${p.id}" aria-label="Sacar de la saga">✕</button>
+        </div>
+        <button class="corte ${s.corte === i + 1 ? 'activo' : ''}" data-corte="${i + 1}">
+          <span class="linea"></span> ${s.corte === i + 1 ? 'Empezamos aquí' : 'Vimos hasta aquí'} <span class="linea"></span>
+        </button>`).join('');
+
+  const enCartelera = s.unaEntrada ? 1 : s.partes.length - s.corte;
+
+  return `<h3 class="titulo-seccion">CÓMO SE LLAMA LA SAGA</h3>
+    <input class="nombre-saga" id="nombre-saga" value="${esc(s.nombre)}"
+           placeholder="Star Wars, La Tierra Media…">
+
+    <p class="explica">Todo en orden de estreno. Arrastra el corte de latón hasta la última que ya habían visto:
+      las de arriba entran al historial como «ya la habíamos visto», sin fecha.</p>
+
+    ${lista}
+
+    <button class="interruptor ${s.unaEntrada ? 'on' : ''}" id="una-entrada">
+      <span class="caja">${s.unaEntrada ? '✓' : ''}</span>
+      <span class="txt">Agregar la saga como una sola entrada
+        <small>Compite una vez, sin candado ni orden</small></span>
+    </button>
+
+    <div class="fila-botones">
+      <button id="unir">⛓ Añadir a esta saga</button>
+    </div>
+    <div class="fila-botones">
+      <button id="volver">← Volver</button>
+      <button class="principal" id="alta-saga">
+        Agregar ${s.unaEntrada ? '1 entrada' : `${s.partes.length} títulos`} · ${enCartelera} en cartelera
+      </button>
+    </div>`;
+}
+
+function vistaUnir() {
+  const cols = [...new Set(TMDB_FALSO.filter(p => p.col && estrenada(p)).map(p => p.col))];
+  const yaEstan = new Set(app.saga.partes.map(p => p.id));
+  const sueltas = TMDB_FALSO.filter(p => !p.col && estrenada(p) && p.tipo === 'pelicula' && !yaEstan.has(p.id));
+
+  return `<h3 class="titulo-seccion">AÑADIR A «${esc(app.saga.nombre || 'LA SAGA')}»</h3>
+    <p class="explica">Una saga puede abarcar varias colecciones de TMDB —Star Wars son tres, la Tierra Media dos—
+      o mezclar una colección con una película suelta. Se ordena sola por estreno.</p>
+
+    <h3 class="titulo-seccion">COLECCIONES</h3>
+    ${cols.map(c => {
+      const n = TMDB_FALSO.filter(p => p.col === c && estrenada(p)).length;
+      const dentro = app.saga.partes.some(p => p.col === c);
+      return `<button class="resultado" data-unir-col="${esc(c)}" ${dentro ? 'disabled' : ''}>
+        <span class="idx" style="width:42px;text-align:center;font-family:var(--datos);color:var(--laton-tenue)">⛓</span>
+        <div><div class="nom">${esc(c)}</div><div class="met">${n} películas${dentro ? ' · ya está' : ''}</div></div>
+        <span class="sumar">${dentro ? '✓' : '＋'}</span>
+      </button>`;
+    }).join('')}
+
+    <h3 class="titulo-seccion" style="margin-top:16px">PELÍCULAS SUELTAS</h3>
+    ${sueltas.map(p => `<button class="resultado" data-unir-una="${p.id}">
+        ${poster(p)}
+        <div><div class="nom">${esc(p.t)}</div><div class="met">${p.anio}</div></div>
+        <span class="sumar">＋</span>
+      </button>`).join('')}
+
+    <div class="fila-botones">
+      <button class="principal" id="listo-unir">Listo</button>
+    </div>`;
+}
+
+function reordenar() {
+  app.saga.partes.sort((a, b) => a.estreno.localeCompare(b.estreno));
+  app.saga.corte = Math.min(app.saga.corte, app.saga.partes.length);
+}
+
+/* ── manual ─────────────────────────────────── */
+
+function vistaManual() {
+  const m = app.manual;
+  const sagas = [...new Set(app.catalogo.map(t => t.saga).filter(Boolean))];
+  const previa = { t: m.nombre || 'Sin título', anio: m.anio, motivo: 'mano', dibujado: true };
+
+  return `<p class="explica">Para lo que TMDB no conoce. Entra al catálogo igual, con póster dibujado por la casa
+      y sin insignia de dónde verla — la sala no lo sabe.</p>
+    <div class="campos">
+      <label>Nombre
+        <input id="m-nombre" value="${esc(m.nombre)}" placeholder="Sheep Detectives" autocomplete="off"></label>
+      <div class="dosdos">
+        <label>Qué es
+          <select id="m-tipo">
+            <option value="pelicula" ${m.tipo === 'pelicula' ? 'selected' : ''}>Película</option>
+            <option value="serie" ${m.tipo === 'serie' ? 'selected' : ''}>Serie</option>
+          </select></label>
+        <label>Año
+          <input id="m-anio" value="${esc(m.anio)}" inputmode="numeric" placeholder="2019"></label>
+      </div>
+      ${sagas.length ? `<label>¿Es parte de una saga?
+        <select id="m-saga">
+          <option value="">No</option>
+          ${sagas.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('')}
+        </select></label>` : ''}
+    </div>
+
+    <div class="previa">
+      ${poster(previa)}
+      <p>Así se ve dentro del marco: mismo tamaño, marco punteado y la nota <i>sin póster oficial</i>.
+      Nadie la confunde con una ficha de TMDB.</p>
+    </div>
+
+    <div class="fila-botones">
+      <button id="volver-2">← Volver</button>
+      <button class="principal" id="alta-manual">Agregar al catálogo</button>
+    </div>`;
+}
+
+/* ═══════════════ Altas ═══════════════ */
+
+let recienLlegadas = new Set();          // las únicas fichas que animan la entrada
+
+function meter(t) {
+  const uid = seq++;
+  recienLlegadas.add(uid);
+  app.catalogo.push({ uid, alta: Date.now(), agregadoPor: app.butaca, visto: false, ...t });
+}
+
+function altaSuelta(p) {
+  recienLlegadas = new Set();
+  meter({ nombre: p.t, tipo: p.tipo, anio: p.anio, tmdbId: p.id, motivo: p.motivo });
+  pintarCatalogo(recienLlegadas); pintarFoso();
+}
+
+function altaSaga() {
+  const s = app.saga;
+  recienLlegadas = new Set();
+  const nombre = s.nombre.trim() || s.partes[0].col || 'Saga';
+  if (s.unaEntrada) {
+    meter({ nombre, tipo: 'pelicula', anio: s.partes[0].anio, tmdbId: s.partes[0].id, motivo: s.partes[0].motivo });
+  } else {
+    s.partes.forEach((p, i) => meter({
+      nombre: p.t, tipo: p.tipo, anio: p.anio, tmdbId: p.id, motivo: p.motivo,
+      saga: nombre, orden: i + 1, visto: i < s.corte
+    }));
+  }
+  cerrar(); pintarCatalogo(recienLlegadas); pintarFoso();
+}
+
+function altaManual() {
+  const m = app.manual;
+  if (!m.nombre.trim()) return;
+  recienLlegadas = new Set();
+  const saga = m.saga || undefined;
+  const orden = saga ? app.catalogo.filter(t => t.saga === saga).length + 1 : undefined;
+  meter({ nombre: m.nombre.trim(), tipo: m.tipo, anio: m.anio ? Number(m.anio) : undefined, motivo: 'mano', dibujado: true, saga, orden });
+  app.manual = { nombre: '', tipo: 'pelicula', anio: '' };
+  cerrar(); pintarCatalogo(recienLlegadas); pintarFoso();
+}
+
+/* ═══════════════ El foso ═══════════════ */
+
+function pintarFoso() {
+  const caja = $('#tabla');
+  caja.hidden = !app.foso;
+  $('#btn-foso').textContent = (app.foso ? '▴' : '▾') + ' Ver el foso · lo que se escribiría en «titulos»';
+  if (!app.foso) return;
+  if (!app.catalogo.length) { caja.innerHTML = '<p class="explica" style="margin:0">Nada todavía.</p>'; return; }
+  caja.innerHTML = `<table>
+    <thead><tr><th>nombre</th><th>tipo</th><th>saga</th><th>orden</th><th>visto</th><th>agregadoPor</th><th>tmdbId</th></tr></thead>
+    <tbody>${app.catalogo.map(t => `<tr>
+      <td>${esc(t.nombre.length > 28 ? t.nombre.slice(0, 26) + '…' : t.nombre)}</td>
+      <td>${t.tipo}</td>
+      <td>${esc(t.saga || '—')}</td>
+      <td>${t.orden ?? '—'}</td>
+      <td class="${t.visto ? 'si' : ''}">${t.visto}</td>
+      <td>${esc(t.agregadoPor)}</td>
+      <td>${t.tmdbId ?? '—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+/* ═══════════════ Cableado ═══════════════ */
+
+$('#btn-abrir').onclick = () => abrir('buscar');
+$('#btn-cerrar').onclick = cerrar;
+$('#velo').onclick = cerrar;
+/* Cambiar de butaca sólo cambia el chip: no hay por qué tirar la búsqueda. */
+$('#btn-butaca').onclick = () => {
+  app.butaca = app.butaca === 'Félix' ? 'Sofía' : 'Félix';
+  $('#quien').textContent = app.butaca.toUpperCase();
+};
+$('#btn-foso').onclick = () => { app.foso = !app.foso; pintarFoso(); };
+
+$('#cuerpo').addEventListener('input', e => {
+  const id = e.target.id;
+  if (id === 'buscador') buscar(e.target.value);
+  else if (id === 'nombre-saga') app.saga.nombre = e.target.value;
+  else if (id === 'm-nombre') { app.manual.nombre = e.target.value; pintarPrevia(); }
+  else if (id === 'm-anio')  { app.manual.anio = e.target.value.replace(/\D/g, '').slice(0, 4); e.target.value = app.manual.anio; pintarPrevia(); }
+  else if (id === 'm-tipo')  app.manual.tipo = e.target.value;
+  else if (id === 'm-saga')  app.manual.saga = e.target.value;
+});
+
+/* La previa del póster se repinta sola sin tirar el foco del campo. */
+function pintarPrevia() {
+  const caja = document.querySelector('.previa');
+  if (!caja) return;
+  caja.querySelector('svg').outerHTML =
+    poster({ t: app.manual.nombre || 'Sin título', anio: app.manual.anio, motivo: 'mano', dibujado: true });
+}
+
+$('#cuerpo').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+
+  if (b.dataset.add) {
+    const p = TMDB_FALSO.find(x => x.id === +b.dataset.add);
+    altaSuelta(p);
+    // La fila se sella en su sitio; la lista de resultados no se repinta,
+    // así el cajón no salta bajo el dedo.
+    b.classList.add('puesto');
+    b.disabled = true;
+    b.querySelector('.sumar').textContent = '✓';
+    b.querySelector('.met').textContent =
+      `${p.anio} · ${p.tipo === 'serie' ? 'Serie' : 'Película'} · ya está en el catálogo`;
+  }
+  else if (b.dataset.saga) armarSaga(b.dataset.saga);
+  else if (b.id === 'ir-manual' || b.id === 'ir-manual-2') {
+    app.manual.nombre = app.manual.nombre || (app.resultados && !app.resultados.length ? app.q : '');
+    app.vista = 'manual'; pintarAlta();
+  }
+  else if (b.id === 'ir-saga-mano') sagaVacia();
+  else if (b.dataset.corte !== undefined) { app.saga.corte = +b.dataset.corte; pintarAlta(); }
+  else if (b.dataset.sacar) {
+    app.saga.partes = app.saga.partes.filter(p => p.id !== +b.dataset.sacar);
+    reordenar(); pintarAlta();
+  }
+  else if (b.id === 'una-entrada') { app.saga.unaEntrada = !app.saga.unaEntrada; pintarAlta(); }
+  else if (b.id === 'unir') { app.saga.uniendo = true; pintarAlta(); }
+  else if (b.dataset.unirCol) {
+    const nuevas = TMDB_FALSO.filter(p => p.col === b.dataset.unirCol && estrenada(p));
+    const dentro = new Set(app.saga.partes.map(p => p.id));
+    app.saga.partes.push(...nuevas.filter(p => !dentro.has(p.id)));
+    reordenar(); pintarAlta();
+  }
+  else if (b.dataset.unirUna) {
+    app.saga.partes.push(TMDB_FALSO.find(p => p.id === +b.dataset.unirUna));
+    reordenar(); pintarAlta();
+  }
+  else if (b.id === 'listo-unir') {
+    app.saga.uniendo = false;
+    if (!app.saga.partes.length) { app.vista = 'buscar'; app.saga = null; }
+    pintarAlta();
+  }
+  else if (b.id === 'alta-saga') altaSaga();
+  else if (b.id === 'alta-manual') altaManual();
+  else if (b.id === 'volver' || b.id === 'volver-2') { app.saga = null; app.vista = 'buscar'; pintarAlta(); }
+});
+
+/* Cada toque cambia sólo lo que cambió: la ficha tocada y, si el candado
+   se movió, sus hermanas de saga. La lista nunca se repinta entera. */
+$('#catalogo').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+
+  if (b.dataset.mas) {
+    const uid = +b.dataset.mas;
+    const antes = app.abierta;
+    app.abierta = antes === uid ? null : uid;
+    app.confirmando = null;
+    if (antes && antes !== uid) refrescarFicha(antes);
+    refrescarFicha(uid);
+  }
+  else if (b.dataset.visto) {
+    const t = app.catalogo.find(x => x.uid === +b.dataset.visto);
+    t.visto = !t.visto;                 // barato y reversible: es el interruptor del candado
+    refrescarParientes(t);
+    actualizarCuenta(); pintarFoso();
+  }
+  else if (b.dataset.quitar) {
+    const uid = +b.dataset.quitar;
+    if (app.confirmando !== uid) {      // quitar borra: siempre confirma (La taquilla)
+      app.confirmando = uid;
+      return refrescarFicha(uid);
+    }
+    const t = app.catalogo.find(x => x.uid === uid);
+    const nodo = $(`.ficha[data-uid="${uid}"]`);
+    app.catalogo = app.catalogo.filter(x => x.uid !== uid);
+    app.confirmando = null; app.abierta = null;
+    actualizarCuenta(); pintarFoso();
+    nodo.classList.add('saliendo');
+    setTimeout(() => {
+      nodo.remove();
+      if (t.saga) app.catalogo.filter(o => o.saga === t.saga).forEach(o => refrescarFicha(o.uid));
+      if (!app.catalogo.length) pintarCatalogo();
+    }, reducido ? 0 : 230);
+  }
+});
+
+/* variantes */
+document.querySelectorAll('.barra button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.barra button').forEach(o => o.classList.toggle('sel', o === b));
+    app.modo = b.dataset.modo;
+    const alta = $('#alta');
+    alta.className = 'alta ' + app.modo;
+    document.body.classList.toggle('modo-inline', app.modo === 'inline');
+    $('#velo').classList.remove('on');
+
+    if (app.modo === 'inline') {
+      $('#ranura-inline').appendChild(alta);
+      alta.classList.add('abierto');
+      app.abierto = true;
+      pintarAlta();
+    } else {
+      document.body.appendChild(alta);
+      app.abierto = false;
+    }
+  };
+});
+
+/* ═══════════════ Arranque ═══════════════ */
+
+pintarCatalogo();
+pintarAlta();
+pintarFoso();
+</script>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="El arco de la marquesina, en latón sobre terciopelo">
+  <title>Cine</title>
+  <defs>
+    <linearGradient id="laton" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8CE86"/>
+      <stop offset="55%" stop-color="#C9A227"/>
+      <stop offset="100%" stop-color="#8A6E18"/>
+    </linearGradient>
+    <radialGradient id="terciopelo" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0%" stop-color="#2A1119"/>
+      <stop offset="100%" stop-color="#12080C"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#terciopelo)"/>
+
+  <!-- el arco y su base: las dos formas gruesas que sobreviven a 60 px -->
+  <path d="M 96 352 A 160 160 0 0 1 416 352" fill="none" stroke="url(#laton)" stroke-width="40"/>
+  <rect x="74" y="336" width="364" height="34" rx="6" fill="url(#laton)"/>
+
+  <!-- los tres focos, sobre el borde exterior del arco -->
+  <circle cx="95" cy="259" r="25" fill="#F6E7B0"/>
+  <circle cx="256" cy="166" r="25" fill="#F6E7B0"/>
+  <circle cx="417" cy="259" r="25" fill="#F6E7B0"/>
+</svg>

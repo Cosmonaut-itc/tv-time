@@ -1,7 +1,12 @@
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation } from "./_generated/server";
-import { entrarConFreno, type FrenoTaquilla } from "./taquilla_logica";
+import { generarCodigo, normalizarCodigo } from "./codigo";
+import {
+  elegirCodigoNuevo,
+  entrarConFreno,
+  type FrenoTaquilla,
+} from "./taquilla_logica";
 
 const respuestaDeTaquilla = v.union(
   v.object({
@@ -58,5 +63,36 @@ export const entrar = mutation({
       },
       args,
     );
+  },
+});
+
+const ERROR_PERTENENCIA = "No fue posible verificar la sala.";
+
+export const rotarCodigo = mutation({
+  args: { salaId: v.id("salas"), codigoActual: v.string() },
+  returns: v.object({ codigo: v.string() }),
+  handler: async (ctx, { salaId, codigoActual }) => {
+    const sala = await ctx.db.get(salaId);
+    if (!sala || sala.codigo !== normalizarCodigo(codigoActual)) {
+      throw new Error(ERROR_PERTENENCIA);
+    }
+
+    const nuevo = await elegirCodigoNuevo(
+      {
+        generarCodigo,
+        codigoEstaTomado: async (codigo) => {
+          const existente = await ctx.db
+            .query("salas")
+            .withIndex("por_codigo", (q) => q.eq("codigo", codigo))
+            .unique();
+          return existente !== null;
+        },
+      },
+      { codigoActual: sala.codigo },
+    );
+    if (!nuevo) throw new Error("No fue posible generar un código de sala único.");
+
+    await ctx.db.patch(salaId, { codigo: nuevo });
+    return { codigo: nuevo };
   },
 });

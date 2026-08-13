@@ -1,5 +1,12 @@
 export const ALFABETO_CODIGO = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
+export function generarCodigo(): string {
+  return Array.from(
+    { length: 6 },
+    () => ALFABETO_CODIGO[Math.floor(Math.random() * ALFABETO_CODIGO.length)],
+  ).join("");
+}
+
 export function normalizarCodigo(codigo: string): string {
   return codigo
     .toUpperCase()

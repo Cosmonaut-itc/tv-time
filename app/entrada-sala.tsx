@@ -24,11 +24,13 @@ function leerGuardado(clave: string): string | null {
   }
 }
 
-function guardar(clave: string, valor: string): void {
+function guardar(clave: string, valor: string): boolean {
   try {
     window.localStorage.setItem(clave, valor);
+    return true;
   } catch {
     // Safari puede negar almacenamiento; la entrada actual sigue funcionando.
+    return false;
   }
 }
 
@@ -137,6 +139,23 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
     setFase("sala");
   }
 
+  function cambiarCodigo(nuevoCodigo: string): boolean {
+    const guardado = guardar(CLAVE_CODIGO, nuevoCodigo);
+    setSala((actual) => actual ? { ...actual, codigo: nuevoCodigo } : actual);
+    return guardado;
+  }
+
+  function salirDeLaSala() {
+    olvidar(CLAVE_CODIGO);
+    olvidar(CLAVE_BUTACA);
+    setSala(null);
+    setButaca(null);
+    setCuentaDeSala(null);
+    setCodigo("");
+    setMensaje("");
+    setFase("taquilla");
+  }
+
   return (
     <main className="sala">
       <header className="marquesina">
@@ -169,6 +188,8 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
           butacas={sala.butacas}
           onCambiarButaca={elegirButaca}
           onCambiarCuenta={setCuentaDeSala}
+          onCambiarCodigo={cambiarCodigo}
+          onSalir={salirDeLaSala}
         />
       ) : <section className="entrada" aria-live="polite">
         {fase === "cargando" && <p className="estado-entrada">Abriendo la taquilla…</p>}

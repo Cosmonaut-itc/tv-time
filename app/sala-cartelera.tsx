@@ -18,6 +18,8 @@ import {
   RITMOS,
 } from "./giro";
 import AltaTitulos from "./alta-titulos";
+import Cabina from "./cabina";
+import Historial from "./historial";
 import { nocheDe, nocheLocalEsMasReciente, proximoCorte } from "./noche";
 import HojaInferior from "./hoja-inferior";
 import ChipsDisponibilidad from "./chips-disponibilidad";
@@ -99,6 +101,8 @@ export default function SalaCartelera({
   butacas,
   onCambiarButaca,
   onCambiarCuenta,
+  onCambiarCodigo,
+  onSalir,
 }: {
   salaId: Id<"salas">;
   codigo: string;
@@ -106,6 +110,8 @@ export default function SalaCartelera({
   butacas: readonly string[];
   onCambiarButaca: (butaca: string) => void;
   onCambiarCuenta: (cuenta: CuentaDeSala | null) => void;
+  onCambiarCodigo: (codigo: string) => boolean;
+  onSalir: () => void;
 }) {
   const titulos = useQuery(api.titulos.deSala, { salaId });
   const [momentoConsulta, setMomentoConsulta] = useState(() => Date.now());
@@ -138,8 +144,12 @@ export default function SalaCartelera({
   const [cajonAbierto, setCajonAbierto] = useState(false);
   const [catalogoAbierto, setCatalogoAbierto] = useState(false);
   const [altaAbierta, setAltaAbierta] = useState(false);
+  const [cabinaAbierta, setCabinaAbierta] = useState(false);
+  const [historialAbierto, setHistorialAbierto] = useState(false);
   const botonAbrir = useRef<HTMLButtonElement>(null);
   const botonCatalogo = useRef<HTMLButtonElement>(null);
+  const botonCabina = useRef<HTMLButtonElement>(null);
+  const botonHistorial = useRef<HTMLButtonElement>(null);
   const disparadorAlta = useRef<HTMLElement>(null);
   const botonCerrar = useRef<HTMLButtonElement>(null);
   const escenario = useRef<HTMLElement>(null);
@@ -822,6 +832,28 @@ export default function SalaCartelera({
       </button>
 
       <button
+        ref={botonCabina}
+        className="cabina-abrir cabina-ajustes-abrir"
+        type="button"
+        aria-label="Abrir la cabina"
+        aria-expanded={cabinaAbierta}
+        onClick={() => setCabinaAbierta(true)}
+      >
+        ⚙
+      </button>
+
+      <button
+        ref={botonHistorial}
+        className="cabina-abrir historial-abrir"
+        type="button"
+        aria-label="Ver el historial"
+        aria-expanded={historialAbierto}
+        onClick={() => setHistorialAbierto(true)}
+      >
+        ◷
+      </button>
+
+      <button
         ref={botonCatalogo}
         className="cabina-abrir catalogo-abrir"
         type="button"
@@ -911,6 +943,26 @@ export default function SalaCartelera({
         butacas={butacas}
         onCambiarButaca={onCambiarButaca}
         titulos={titulos ?? []}
+      />
+
+      <Cabina
+        abierta={cabinaAbierta}
+        salaId={salaId}
+        codigo={codigo}
+        butaca={butaca}
+        butacas={butacas}
+        devolverFocoA={botonCabina}
+        onCerrar={() => setCabinaAbierta(false)}
+        onCambiarButaca={onCambiarButaca}
+        onCambiarCodigo={onCambiarCodigo}
+        onSalir={onSalir}
+      />
+
+      <Historial
+        abierta={historialAbierto}
+        salaId={salaId}
+        devolverFocoA={botonHistorial}
+        onCerrar={() => setHistorialAbierto(false)}
       />
     </>
   );

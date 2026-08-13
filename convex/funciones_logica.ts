@@ -57,3 +57,14 @@ export function siguienteDeSaga(
 
   return siguiente && !siguiente.visto ? siguiente.nombre : null;
 }
+
+/** La mitad sin fecha son los vistos que no sostienen ninguna función. */
+export function idsYaVistosSinFuncion<TituloId extends string>(
+  titulos: readonly { _id: TituloId; visto: boolean }[],
+  funciones: readonly { tituloId: TituloId }[],
+): TituloId[] {
+  const conFuncion = new Set(funciones.map(({ tituloId }) => tituloId));
+  return titulos
+    .filter((titulo) => titulo.visto && !conFuncion.has(titulo._id))
+    .map(({ _id }) => _id);
+}

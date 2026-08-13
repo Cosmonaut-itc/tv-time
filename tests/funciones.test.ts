@@ -3,6 +3,7 @@ import test from "node:test";
 import { derivarCartelera } from "../convex/cartelera.ts";
 import {
   esPrimeraFuncion,
+  idsYaVistosSinFuncion,
   siguienteDeSaga,
   validarEnCartelera,
   validarTituloParaFuncion,
@@ -112,5 +113,19 @@ test("sin el orden inmediatamente superior no anuncia otro salto de saga", () =>
       [{ nombre: "Duna: Parte Tres", saga: "Duna", orden: 3, visto: false }],
     ),
     null,
+  );
+});
+
+test("el historial separa las funciones de los vistos sin fecha", () => {
+  assert.deepEqual(
+    idsYaVistosSinFuncion(
+      [
+        { _id: "con-funcion", visto: true },
+        { _id: "ya-vista", visto: true },
+        { _id: "cartelera", visto: false },
+      ],
+      [{ tituloId: "con-funcion" }],
+    ),
+    ["ya-vista"],
   );
 });

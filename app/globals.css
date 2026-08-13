@@ -1311,6 +1311,297 @@ button:disabled {
 .hoja.abierta { transform: none; }
 .hoja .asa { width: 54px; height: 3px; background: var(--laton-tenue); margin: 0 auto 12px; }
 
+/* ── El alta: CSS trasladado de prototypes/alta-de-titulos.html ── */
+
+.catalogo .llamada {
+  /* El prototipo usa bottom: 52px para librar su .barra fija. La app no tiene
+     esa barra: 12px la pega al foso, z-index: 35 la deja bajo las hojas, y el
+     padding siguiente reserva aquí el espacio que ocupa la llamada. */
+  position: fixed; left: 0; right: 0; bottom: 12px;
+  max-width: 460px; margin: 0 auto;
+  padding: 0 12px;
+  z-index: 35;
+  pointer-events: none;
+}
+.catalogo:has(> .llamada) { padding-bottom: 92px; }
+.catalogo .llamada button {
+  pointer-events: auto;
+  width: 100%;
+  background: linear-gradient(180deg, var(--vino), #340B17);
+  border: 1px solid var(--laton-tenue);
+  color: var(--laton);
+  font-family: var(--display);
+  font-size: 14px; letter-spacing: .26em; text-indent: .26em;
+  padding: 15px 10px;
+  box-shadow: 0 -8px 26px rgba(0,0,0,.6);
+}
+
+.hoja.alta {
+  background:
+    linear-gradient(180deg, #1A0D12 0%, var(--terciopelo) 40%, var(--foso) 100%);
+  border: 1px solid var(--laton-tenue);
+  z-index: 50;
+  display: flex; flex-direction: column;
+  padding: 0;
+}
+
+.hoja.alta.cajon {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  max-width: 460px; margin: 0 auto;
+  max-height: 90dvh;
+  border-bottom: none;
+  border-top-width: 3px;
+  transition: transform .42s var(--curva-telon);
+  box-shadow: 0 -14px 40px rgba(0,0,0,.7);
+}
+.hoja.alta.cajon .asa {
+  width: 54px; height: 3px; background: var(--laton-tenue);
+  margin: 9px auto 0; flex: none;
+}
+
+.alta .cabecera {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 14px 11px;
+  border-bottom: 1px solid rgba(201,162,39,.2);
+  flex: none;
+}
+.alta .cabecera h2 {
+  margin: 0; flex: 1;
+  font-family: var(--display);
+  font-weight: 400; font-size: 13px;
+  letter-spacing: .24em; color: var(--laton);
+}
+.alta .butaca-alta {
+  width: auto; min-height: 0;
+  background: none; border: 1px solid rgba(201,162,39,.35);
+  color: var(--crema);
+  font-family: var(--datos); font-size: 10px;
+  letter-spacing: .16em; text-transform: uppercase;
+  padding: 6px 9px;
+  display: flex; align-items: center; gap: 6px;
+}
+.alta .butaca-alta b { color: var(--laton); font-weight: 400; }
+.alta .cerrar {
+  background: none; border: none; color: var(--crema-tenue);
+  font-size: 20px; line-height: 1; padding: 2px 4px;
+}
+
+.alta .cuerpo { padding: 13px 14px 22px; overflow-y: auto; }
+.alta .panel-alta[hidden] { display: none; }
+
+.alta .campo {
+  display: flex; align-items: center; gap: 9px;
+  border: 1px solid rgba(201,162,39,.35);
+  background: rgba(3,1,2,.5);
+  padding: 0 11px;
+}
+.alta .campo input {
+  flex: 1; min-width: 0; background: none; border: none; outline: none;
+  padding: 13px 0; font-size: 16px;
+}
+.alta .campo input::placeholder { color: rgba(154,142,117,.7); }
+.alta .lupa { color: var(--laton-tenue); font-size: 14px; }
+
+.alta .nota {
+  font-family: var(--datos);
+  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--crema-tenue);
+  margin: 10px 0 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.alta .nota .corriendo { display: flex; gap: 5px; }
+.alta .nota .corriendo i {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--laton-tenue); display: block;
+  animation: titila 1s infinite;
+}
+.alta .nota .corriendo i:nth-child(2) { animation-delay: .18s; }
+.alta .nota .corriendo i:nth-child(3) { animation-delay: .36s; }
+@keyframes titila {
+  0%,100% { background: var(--laton-tenue); box-shadow: none; }
+  40% { background: #FFE9A8; box-shadow: 0 0 6px 2px rgba(255,214,120,.6); }
+}
+
+.alta .resultados { transition: opacity .18s ease; }
+.alta .resultados.buscando { opacity: .4; }
+
+.alta .cintas .cinta {
+  height: 66px; margin-bottom: 7px;
+  border: 1px solid rgba(201,162,39,.1);
+  background: linear-gradient(90deg, rgba(78,17,34,.18) 0%, rgba(201,162,39,.11) 50%, rgba(78,17,34,.18) 100%);
+  background-size: 220% 100%;
+  animation: barre 1.15s linear infinite;
+}
+@keyframes barre { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+.alta .resultado {
+  display: grid; grid-template-columns: 42px 1fr auto;
+  gap: 11px; align-items: center;
+  width: 100%; text-align: left;
+  background: none; border: none;
+  border-bottom: 1px solid rgba(201,162,39,.12);
+  padding: 9px 2px;
+  letter-spacing: 0; text-transform: none;
+}
+.alta .resultado svg, .alta .resultado img { width: 42px; height: 63px; display: block; object-fit: cover; }
+.alta .resultado .nom { display: block; font-size: 15px; line-height: 1.25; }
+.alta .resultado .met {
+  display: block;
+  font-family: var(--datos); font-size: 10px;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--crema-tenue); margin-top: 4px;
+}
+.alta .resultado .sumar {
+  font-family: var(--datos); font-size: 19px; color: var(--laton);
+  border: 1px solid rgba(201,162,39,.3);
+  width: 30px; height: 30px; line-height: 27px; text-align: center;
+}
+.alta .resultado[disabled] { opacity: .4; }
+.alta .resultado[disabled] .sumar { border-style: dashed; color: var(--crema-tenue); font-size: 12px; }
+.alta .resultado.puesto { animation: sellar-alta .5s ease both; }
+@keyframes sellar-alta {
+  0% { background: rgba(201,162,39,.28); }
+  100% { background: transparent; }
+}
+
+.alta .liston {
+  margin-top: 6px;
+  background: none;
+  border: 1px solid rgba(201,162,39,.4);
+  border-left: 3px solid var(--laton);
+  color: var(--laton);
+  font-family: var(--datos); font-size: 10px;
+  letter-spacing: .16em; text-transform: uppercase;
+  padding: 7px 9px; text-align: left; width: 100%;
+}
+
+.alta .sin-resultados {
+  border: 1px dashed rgba(201,162,39,.3);
+  margin-top: 10px; padding: 20px 16px; text-align: center;
+  color: var(--crema-tenue); line-height: 1.5; font-size: 14px;
+}
+.alta .error-alta {
+  margin: 10px 0 0;
+  color: #c9566c;
+  font-family: var(--datos); font-size: 10px;
+  letter-spacing: .08em; line-height: 1.5;
+}
+
+.alta .titulo-seccion {
+  font-family: var(--display);
+  font-size: 12px; letter-spacing: .22em;
+  color: var(--laton); margin: 0 0 4px;
+}
+.alta .explica {
+  font-size: 13px; line-height: 1.5;
+  color: var(--crema-tenue); margin: 0 0 13px;
+}
+.alta .nombre-saga {
+  width: 100%; background: rgba(3,1,2,.5);
+  border: 1px solid rgba(201,162,39,.3);
+  padding: 11px; font-size: 16px; outline: none;
+  margin-bottom: 12px;
+}
+
+.alta .parte {
+  display: grid; grid-template-columns: 26px 34px 1fr auto;
+  gap: 10px; align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(201,162,39,.1);
+}
+.alta .parte svg, .alta .parte img { width: 34px; height: 51px; display: block; object-fit: cover; }
+.alta .parte .idx {
+  font-family: var(--datos); font-size: 12px;
+  color: var(--laton-tenue); text-align: center;
+}
+.alta .parte .nom { display: block; font-size: 14px; line-height: 1.2; }
+.alta .parte .anio {
+  display: block;
+  font-family: var(--datos); font-size: 10px;
+  letter-spacing: .18em; color: var(--crema-tenue); margin-top: 3px;
+}
+.alta .parte.antes, .alta .parte.sin-estrenar { opacity: .45; }
+.alta .parte .quitar {
+  background: none; border: none; color: var(--crema-tenue);
+  font-size: 15px; padding: 4px 6px;
+}
+
+.alta .corte {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; text-align: left;
+  background: none; border: none;
+  padding: 7px 0;
+  color: var(--crema-tenue);
+  font-family: var(--datos); font-size: 10px;
+  letter-spacing: .16em; text-transform: uppercase;
+}
+.alta .corte .linea { flex: 1; height: 1px; background: rgba(201,162,39,.2); }
+.alta .corte.activo { color: var(--laton); }
+.alta .corte.activo .linea {
+  height: 3px;
+  background: linear-gradient(90deg, var(--laton-tenue), var(--laton), var(--laton-tenue));
+}
+
+.alta .interruptor {
+  display: flex; align-items: center; gap: 11px;
+  border: 1px solid rgba(201,162,39,.22);
+  padding: 11px; margin: 14px 0 0;
+  width: 100%; text-align: left; background: none;
+  letter-spacing: 0; text-transform: none;
+}
+.alta .interruptor .caja {
+  width: 18px; height: 18px; flex: none;
+  border: 1px solid var(--laton-tenue);
+  display: grid; place-items: center;
+  color: var(--terciopelo); font-size: 12px;
+}
+.alta .interruptor.on .caja { background: var(--laton); }
+.alta .interruptor .txt { font-size: 13px; line-height: 1.4; }
+.alta .interruptor .txt small {
+  display: block; color: var(--crema-tenue);
+  font-family: var(--datos); font-size: 10px;
+  letter-spacing: .12em; text-transform: uppercase; margin-top: 3px;
+}
+
+.alta .fila-botones { display: flex; gap: 8px; margin-top: 14px; }
+.alta .fila-botones button {
+  flex: 1; padding: 13px 8px;
+  font-family: var(--datos); font-size: 11px;
+  letter-spacing: .18em; text-transform: uppercase;
+  background: rgba(3,1,2,.5);
+  border: 1px solid rgba(201,162,39,.3);
+  color: var(--crema);
+}
+.alta .fila-botones button.principal {
+  background: linear-gradient(180deg, var(--vino), #340B17);
+  border-color: var(--laton-tenue); color: var(--laton);
+}
+
+.alta .unir-saga { margin-top: 6px; }
+.alta .unir-saga .campo { margin: 10px 0 0; }
+.alta .campos { display: grid; gap: 10px; }
+.alta .campos label {
+  font-family: var(--datos); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--crema-tenue);
+  display: grid; gap: 5px;
+}
+.alta .campos input, .alta .campos select {
+  background: rgba(3,1,2,.5);
+  border: 1px solid rgba(201,162,39,.3);
+  padding: 11px; font-size: 16px; outline: none;
+}
+.alta .dosdos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.alta .previa {
+  display: grid; grid-template-columns: 96px 1fr;
+  gap: 13px; align-items: center;
+  margin: 14px 0 0; padding: 12px;
+  border: 1px solid rgba(201,162,39,.18);
+  background: rgba(3,1,2,.35);
+}
+.alta .previa svg { width: 96px; height: 144px; display: block; border: 1px dashed var(--laton-tenue); }
+.alta .previa p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--crema-tenue); }
+
 .cartel-instalacion {
   text-align: center;
 }
@@ -1361,6 +1652,12 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .alta *, .alta *::before, .alta *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
   .telon {
     transition-duration: 0.01ms;
   }

@@ -165,6 +165,9 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
         <SalaCartelera
           salaId={sala.salaId}
           codigo={sala.codigo}
+          butaca={butaca}
+          butacas={sala.butacas}
+          onCambiarButaca={elegirButaca}
           onCambiarCuenta={setCuentaDeSala}
         />
       ) : <section className="entrada" aria-live="polite">

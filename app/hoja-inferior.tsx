@@ -13,12 +13,16 @@ export default function HojaInferior({
   abierta,
   etiqueta,
   devolverFocoA,
+  enfocarAlAbrir,
+  className,
   onCerrar,
   children,
 }: {
   abierta: boolean;
   etiqueta: string;
   devolverFocoA: RefObject<HTMLElement | null>;
+  enfocarAlAbrir?: RefObject<HTMLElement | null>;
+  className?: string;
   onCerrar: () => void;
   children: ReactNode;
 }) {
@@ -26,10 +30,12 @@ export default function HojaInferior({
   const estabaAbierta = useRef(false);
 
   useEffect(() => {
-    if (abierta && !estabaAbierta.current) hoja.current?.focus();
+    if (abierta && !estabaAbierta.current) {
+      (enfocarAlAbrir?.current ?? hoja.current)?.focus();
+    }
     else if (!abierta && estabaAbierta.current) devolverFocoA.current?.focus();
     estabaAbierta.current = abierta;
-  }, [abierta, devolverFocoA]);
+  }, [abierta, devolverFocoA, enfocarAlAbrir]);
 
   useEffect(() => {
     if (!abierta) return;
@@ -44,7 +50,7 @@ export default function HojaInferior({
         hoja.current.querySelectorAll<HTMLElement>(
           "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
         ),
-      );
+      ).filter((elemento) => !elemento.closest("[hidden]"));
       if (enfocables.length === 0) {
         evento.preventDefault();
         hoja.current.focus();
@@ -77,7 +83,7 @@ export default function HojaInferior({
       />
       <section
         ref={hoja}
-        className={`hoja${abierta ? " abierta" : ""}`}
+        className={`hoja${className ? ` ${className}` : ""}${abierta ? " abierta" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={etiqueta}

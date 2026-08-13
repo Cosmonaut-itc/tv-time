@@ -96,11 +96,13 @@ const CeldaDePila = memo(function CeldaDePila({
 export default function MuroCatalogo({
   abierta,
   onCerrar,
+  onAgregar,
   salaId,
   titulos,
 }: {
   abierta: boolean;
   onCerrar: () => void;
+  onAgregar: (disparador: HTMLButtonElement) => void;
   salaId: Id<"salas">;
   titulos: readonly TituloDeSala[];
 }) {
@@ -234,6 +236,12 @@ export default function MuroCatalogo({
           <p className="nada">No hay títulos para el filtro <b>«{FILTROS.find(({ valor }) => valor === filtro)?.etiqueta}»</b>.</p>
         )
       )}
+
+      <div className="llamada">
+        <button type="button" onClick={(evento) => onAgregar(evento.currentTarget)}>
+          ＋ Agregar al catálogo
+        </button>
+      </div>
 
       <HojaInferior
         abierta={tituloAbierto !== null}

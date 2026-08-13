@@ -5,7 +5,7 @@ export default function MarquesinaApagada({
 }: {
   rotulo: string;
   linea: string;
-  onAgregar?: () => void;
+  onAgregar?: (disparador: HTMLButtonElement) => void;
 }) {
   return (
     <section className="marquesina-apagada" aria-label="Sala sin títulos">
@@ -15,7 +15,12 @@ export default function MarquesinaApagada({
         <p className="etiqueta-entrada">{rotulo}</p>
         <p>{linea}</p>
         {/* 018 conecta este botón con el cajón del alta. */}
-        <button className="btn-palanca" type="button" disabled={!onAgregar} onClick={onAgregar}>
+        <button
+          className="btn-palanca"
+          type="button"
+          disabled={!onAgregar}
+          onClick={(evento) => onAgregar?.(evento.currentTarget)}
+        >
           Agregar títulos
         </button>
       </div>

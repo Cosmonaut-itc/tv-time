@@ -40,7 +40,7 @@ body {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  animation: telon-retirar 0s linear calc(var(--telon-espera) + 1.1s)
+  animation: telon-retirar 0s linear calc(var(--telon-espera) + 1.101s)
     forwards;
 }
 
@@ -59,7 +59,7 @@ body {
   box-shadow: inset -18px 0 34px -10px rgba(0, 0, 0, 0.85);
   transform-origin: left center;
   will-change: transform;
-  animation: telon-abrir 1.1s cubic-bezier(0.4, 0, 0.2, 1)
+  animation: telon-salir-izquierda 1.1s cubic-bezier(0.4, 0, 0.2, 1)
     var(--telon-espera) forwards;
 }
 
@@ -67,6 +67,7 @@ body {
   inset: 0 0 0 auto;
   box-shadow: inset 18px 0 34px -10px rgba(0, 0, 0, 0.85);
   transform-origin: right center;
+  animation-name: telon-salir-derecha;
 }
 
 .telon-de-entrada__cenefa {
@@ -78,11 +79,26 @@ body {
   height: 9%;
   background: linear-gradient(180deg, #7c2536, #4a1420);
   box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.8);
+  will-change: transform;
+  animation: telon-salir-arriba 1.1s cubic-bezier(0.4, 0, 0.2, 1)
+    var(--telon-espera) forwards;
 }
 
-@keyframes telon-abrir {
+@keyframes telon-salir-izquierda {
   to {
-    transform: scaleX(0.16);
+    transform: translateX(-101%);
+  }
+}
+
+@keyframes telon-salir-derecha {
+  to {
+    transform: translateX(101%);
+  }
+}
+
+@keyframes telon-salir-arriba {
+  to {
+    transform: translateY(-101%);
   }
 }
 

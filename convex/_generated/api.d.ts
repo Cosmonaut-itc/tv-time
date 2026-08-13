@@ -8,8 +8,12 @@
  * @module
  */
 
+import type * as cartelera from "../cartelera.js";
 import type * as catalogo_inicial from "../catalogo_inicial.js";
 import type * as codigo from "../codigo.js";
+import type * as noche from "../noche.js";
+import type * as noches from "../noches.js";
+import type * as noches_logica from "../noches_logica.js";
 import type * as siembra from "../siembra.js";
 import type * as siembra_catalogo from "../siembra_catalogo.js";
 import type * as taquilla from "../taquilla.js";
@@ -23,8 +27,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  cartelera: typeof cartelera;
   catalogo_inicial: typeof catalogo_inicial;
   codigo: typeof codigo;
+  noche: typeof noche;
+  noches: typeof noches;
+  noches_logica: typeof noches_logica;
   siembra: typeof siembra;
   siembra_catalogo: typeof siembra_catalogo;
   taquilla: typeof taquilla;

@@ -27,7 +27,7 @@ Al cerrar, el ticket registra qué se verificó en qué dispositivo real.
 
 ### El icono: el arco de la marquesina
 
-Un arco de latón sobre terciopelo con tres focos, sin letras. Se probaron tres bocetos a 60 px sobre fondos de pantalla reales antes de elegir — a ese tamaño sólo sobreviven dos formas gruesas, y las letras se convierten en manchas. Vive en **[`app/icon.svg`](../../app/icon.svg) como fuente única**: sirve de favicon tal cual y `pnpm iconos` lo rasteriza a los PNG que piden iOS y el manifest ([`scripts/generar-iconos.mjs`](../../scripts/generar-iconos.mjs)). El nombre bajo el icono es **«Cine»** — iOS corta como a 12 caracteres.
+Un arco de latón sobre terciopelo con tres focos, sin letras. Se probaron tres bocetos a 60 px sobre fondos de pantalla reales antes de elegir — a ese tamaño sólo sobreviven dos formas gruesas, y las letras se convierten en manchas. Vive en **[`app/icon.svg`](../../app/icon.svg) como fuente única**: sirve de favicon tal cual y `pnpm graficos` lo rasteriza a los PNG que piden iOS y el manifest ([`scripts/generar-graficos.ts`](../../scripts/generar-graficos.ts)). El nombre bajo el icono es **«Cine»** — iOS corta como a 12 caracteres.
 
 ### La pantalla de arranque: el PNG es opcional, el fallback es web
 
@@ -58,7 +58,7 @@ Sólo lo que no depende de pantallas que aún no existen:
 |---|---|
 | [`app/manifest.ts`](../../app/manifest.ts) | `standalone`, vertical, `es-MX`, terciopelo en `theme_color` y `background_color`, los tres iconos |
 | [`app/icon.svg`](../../app/icon.svg) | el arco — fuente única, y favicon |
-| [`app/apple-icon.png`](../../app/apple-icon.png) + `public/icono/cine-{192,512,1024}.png` | rasterizados con `pnpm iconos` |
+| [`app/apple-icon.png`](../../app/apple-icon.png) + `public/icono/cine-{192,512,1024}.png` | rasterizados con `pnpm graficos` |
 | [`app/telon-de-entrada.ts`](../../app/telon-de-entrada.ts) + [`app/globals.css`](../../app/globals.css) | telón web server-rendered, espera breve y apertura bilateral |
 | [`app/layout.tsx`](../../app/layout.tsx) | telón antes del contenido, `appleWebApp`, un PNG opcional, `themeColor` y `colorScheme: dark` |
 

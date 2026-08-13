@@ -10,18 +10,22 @@ export type FrenoTaquilla = {
   actualizada: number;
 };
 
-type SalaTaquilla = { codigo: string; butacas: string[] };
+type SalaTaquilla<SalaId extends string> = {
+  salaId: SalaId;
+  codigo: string;
+  butacas: string[];
+};
 
-type DependenciasTaquilla = {
+type DependenciasTaquilla<SalaId extends string> = {
   ahora: () => number;
-  buscarSala: (codigo: string) => Promise<SalaTaquilla | null>;
+  buscarSala: (codigo: string) => Promise<SalaTaquilla<SalaId> | null>;
   leerFreno: () => Promise<FrenoTaquilla | null>;
   guardarFreno: (freno: FrenoTaquilla) => Promise<void>;
   limpiarFreno: () => Promise<void>;
 };
 
-export async function entrarConFreno(
-  dependencias: DependenciasTaquilla,
+export async function entrarConFreno<SalaId extends string>(
+  dependencias: DependenciasTaquilla<SalaId>,
   { codigo }: { codigo: string },
 ) {
   const normalizado = normalizarCodigo(codigo);
@@ -31,7 +35,12 @@ export async function entrarConFreno(
 
   if (sala) {
     await dependencias.limpiarFreno();
-    return { estado: "abierta" as const, codigo: sala.codigo, butacas: sala.butacas };
+    return {
+      estado: "abierta" as const,
+      salaId: sala.salaId,
+      codigo: sala.codigo,
+      butacas: sala.butacas,
+    };
   }
 
   const ahora = dependencias.ahora();

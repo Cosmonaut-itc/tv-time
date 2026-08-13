@@ -13,6 +13,7 @@
   --cuerpo: "Optima", "Avenir Next", "Futura", "Segoe UI", system-ui,
     sans-serif;
   --datos: "DIN Alternate", "Avenir Next Condensed", ui-monospace, monospace;
+  --curva-telon: cubic-bezier(0.66, 0, 0.2, 1);
   --background: var(--terciopelo);
   --foreground: var(--crema);
 }
@@ -277,6 +278,10 @@ a {
 }
 
 .fuente-tmdb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
   margin: -3px 20px 12px;
   color: rgba(242, 229, 198, 0.32);
   font-family: var(--datos);
@@ -284,6 +289,15 @@ a {
   letter-spacing: 0.08em;
   line-height: 1.45;
   text-align: center;
+}
+
+/* 92px contra los 21px de la marquesina: el logo de TMDB tiene que quedar
+   «less prominent» que la marca de la app, y aquí queda al pie, atenuado y
+   diez veces más chico que el rótulo de la sala. */
+.logo-tmdb {
+  width: 92px;
+  height: auto;
+  opacity: 0.55;
 }
 
 .codigo {
@@ -581,6 +595,10 @@ button:disabled {
 }
 .marco > svg, .marco > img { display: block; width: 100%; height: auto; }
 
+.marco.punteado {
+  border: 2px dashed var(--laton);
+}
+
 .ficha {
   text-align: center;
 }
@@ -606,6 +624,45 @@ button:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+.servicios {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid rgba(242,229,198,.22);
+  border-radius: 2px;
+  font-family: var(--datos);
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--crema);
+  background: rgba(242,229,198,.05);
+}
+.chip .punto { width: 7px; height: 7px; border-radius: 50%; }
+.chip.renta { color: var(--laton); border-color: rgba(201,162,39,.45); }
+
+/* JustWatch exige atribución en cada ficha con proveedores (ticket 002). */
+.fuente {
+  margin: 7px 0 0;
+  font-family: var(--datos);
+  font-size: 8.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(242,229,198,.32);
+}
+
+.sin-poster {
+  margin-top: -5px;
+}
+
 .saga {
   margin: 0 0 3px;
   font-family: var(--datos);
@@ -620,6 +677,16 @@ button:disabled {
   gap: 8px;
   width: 100%;
   max-width: 300px;
+}
+
+.btn-ver {
+  flex: 2;
+  padding: 13px 10px;
+  font-size: 12px;
+  border: none;
+  color: #2A1B04;
+  background: linear-gradient(180deg, #E8C65A, var(--laton) 55%, #8A6F1C);
+  box-shadow: 0 2px 0 #5A470F, 0 6px 16px rgba(0,0,0,.5);
 }
 
 .btn-veto {
@@ -755,6 +822,24 @@ button:disabled {
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
+}
+
+.funcion .titulo-funcion {
+  color: var(--laton);
+}
+
+.funcion .disfruten {
+  margin-top: 14px;
+}
+
+.desbloqueo {
+  margin-top: 10px;
+  font-family: var(--datos);
+  font-size: 9.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--laton);
+  opacity: .75;
 }
 
 /* ── Foso: filtros y palanca ────────────────── */
@@ -988,6 +1073,62 @@ button:disabled {
   border: 1px solid rgba(242, 229, 198, 0.18);
 }
 
+/* ── Hoja inferior ──────────────────────────── */
+
+.velo {
+  position: fixed; inset: 0;
+  background: rgba(3,1,2,.72);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s ease; z-index: 40;
+}
+.velo.on { opacity: 1; pointer-events: auto; }
+
+.hoja {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  max-width: 460px; margin: 0 auto;
+  background: linear-gradient(180deg, #1A0D12 0%, var(--terciopelo) 60%, var(--foso) 100%);
+  border: 1px solid var(--laton-tenue); border-bottom: none; border-top-width: 3px;
+  transform: translateY(102%);
+  transition: transform .38s var(--curva-telon);
+  z-index: 50;
+  box-shadow: 0 -14px 40px rgba(0,0,0,.7);
+  padding: 12px 14px 74px;
+}
+.hoja.abierta { transform: none; }
+.hoja .asa { width: 54px; height: 3px; background: var(--laton-tenue); margin: 0 auto 12px; }
+
+.cartel-instalacion {
+  text-align: center;
+}
+
+.cartel-instalacion > p:not(.etiqueta-entrada):not(.codigo-instalacion):not(.pasos-instalacion) {
+  max-width: 340px;
+  margin: 0 auto;
+  color: var(--crema-tenue);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.codigo-instalacion {
+  margin: 15px 0 18px;
+  color: var(--laton);
+  font-family: var(--datos);
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .34em;
+  text-indent: .34em;
+}
+
+.pasos-instalacion {
+  margin: 20px 0;
+  color: var(--crema);
+  font-family: var(--datos);
+  font-size: 11px;
+  letter-spacing: .1em;
+  line-height: 1.6;
+  text-transform: uppercase;
+}
+
 @keyframes entra {
   from {
     opacity: 0;
@@ -1011,6 +1152,11 @@ button:disabled {
   }
 
   .cabina {
+    transition-duration: 0.01ms;
+  }
+
+  .velo,
+  .hoja {
     transition-duration: 0.01ms;
   }
 

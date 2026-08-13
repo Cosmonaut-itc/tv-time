@@ -75,29 +75,40 @@ test("Fisher-Yates permite que el último candidato llegue a la terna", () => {
 test("un veto nuevo a un finalista reinicia el giro", () => {
   const giro = {
     finalistas: [{ _id: "a" }, { _id: "b" }],
-    vetadosAlIniciar: new Set<string>(),
   };
 
-  assert.equal(decidirCambioDelGiro(giro, new Set(["b"])), "reiniciar");
+  assert.equal(decidirCambioDelGiro(giro, new Set(["a"])), "reiniciar");
 });
 
-test("un veto nuevo fuera de la terna deja vivo el giro", () => {
+test("un finalista marcado como visto reinicia el giro", () => {
+  const giro = {
+    finalistas: [{ _id: "a" }, { _id: "b" }, { _id: "c" }],
+  };
+
+  assert.equal(decidirCambioDelGiro(giro, new Set(["a", "c"])), "reiniciar");
+});
+
+test("los finalistas intactos dejan vivo el giro", () => {
   const giro = {
     finalistas: [{ _id: "a" }, { _id: "b" }],
-    vetadosAlIniciar: new Set<string>(),
   };
 
-  assert.equal(decidirCambioDelGiro(giro, new Set(["c"])), "sigue vivo");
+  assert.equal(decidirCambioDelGiro(giro, new Set(["a", "b"])), "sigue vivo");
 });
 
-test("sin giro o sin vetos nuevos no hay nada que cambiar", () => {
+test("un cambio de cartelera fuera de la terna deja vivo el giro", () => {
   const giro = {
-    finalistas: [{ _id: "a" }],
-    vetadosAlIniciar: new Set(["c"]),
+    finalistas: [{ _id: "a" }, { _id: "b" }],
   };
 
+  assert.equal(
+    decidirCambioDelGiro(giro, new Set(["a", "b", "d"])),
+    "sigue vivo",
+  );
+});
+
+test("sin giro no hay nada que cambiar", () => {
   assert.equal(decidirCambioDelGiro(null, new Set(["a"])), "no pasa nada");
-  assert.equal(decidirCambioDelGiro(giro, new Set(["c"])), "no pasa nada");
 });
 
 test("la vuelta vacía distingue vistas, vetos y ambas causas", () => {

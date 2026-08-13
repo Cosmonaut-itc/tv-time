@@ -11,6 +11,10 @@
 import type * as cartelera from "../cartelera.js";
 import type * as catalogo_inicial from "../catalogo_inicial.js";
 import type * as codigo from "../codigo.js";
+import type * as disponibilidad from "../disponibilidad.js";
+import type * as disponibilidad_logica from "../disponibilidad_logica.js";
+import type * as funciones from "../funciones.js";
+import type * as funciones_logica from "../funciones_logica.js";
 import type * as noche from "../noche.js";
 import type * as noches from "../noches.js";
 import type * as noches_logica from "../noches_logica.js";
@@ -30,6 +34,10 @@ declare const fullApi: ApiFromModules<{
   cartelera: typeof cartelera;
   catalogo_inicial: typeof catalogo_inicial;
   codigo: typeof codigo;
+  disponibilidad: typeof disponibilidad;
+  disponibilidad_logica: typeof disponibilidad_logica;
+  funciones: typeof funciones;
+  funciones_logica: typeof funciones_logica;
   noche: typeof noche;
   noches: typeof noches;
   noches_logica: typeof noches_logica;

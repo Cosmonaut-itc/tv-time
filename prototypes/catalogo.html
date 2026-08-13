@@ -1,0 +1,1208 @@
+<title>El Catálogo de la Sala</title>
+
+<style>
+  /* ───────────────────────────────────────────────
+     PROTOTIPO DESECHABLE — El catálogo de 38 títulos
+     Ticket: .wayfinder/tickets/011-el-catalogo-de-38-titulos.md
+
+     Tres formas del catálogo sobre los MISMOS 38 títulos reales
+     de La lista de series. Se cambian abajo. Sin backend; los
+     pósters van dibujados porque el CSP del artifact no deja
+     traer imágenes de image.tmdb.org.
+
+     Un solo tema, a oscuras y deliberado: es una sala de cine.
+     ─────────────────────────────────────────────── */
+
+  :root {
+    --terciopelo:   #12080C;
+    --foso:         #0B0507;
+    --vino:         #4E1122;
+    --vino-claro:   #8E2438;
+    --laton:        #C9A227;
+    --laton-tenue:  #8A6F1C;
+    --crema:        #F2E5C6;
+    --crema-tenue:  #9A8E75;
+
+    --display: 'Copperplate', 'Copperplate Gothic Light', 'Futura', 'Century Gothic', 'Trebuchet MS', sans-serif;
+    --cuerpo:  'Optima', 'Avenir Next', 'Futura', 'Segoe UI', system-ui, sans-serif;
+    --datos:   'DIN Alternate', 'Avenir Next Condensed', ui-monospace, monospace;
+
+    --curva-telon: cubic-bezier(.66,0,.2,1);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--foso);
+    color: var(--crema);
+    font-family: var(--cuerpo);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--laton); outline-offset: 2px; }
+
+  .sala {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    padding-bottom: 104px;
+    background: radial-gradient(120% 55% at 50% 0%, #1E1014 0%, var(--terciopelo) 55%, var(--foso) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Marquesina ─────────────────────────────── */
+
+  .marquesina { padding: 14px 16px 10px; text-align: center; }
+  .focos { display: flex; justify-content: center; gap: 9px; padding: 6px 0; }
+  .foco {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--laton-tenue);
+    transition: background .18s ease, box-shadow .18s ease;
+  }
+  .foco.on {
+    background: #FFE9A8;
+    box-shadow: 0 0 7px 2px rgba(255,214,120,.75), 0 0 18px 6px rgba(201,162,39,.28);
+  }
+  .rotulo {
+    border: 1px solid var(--laton-tenue);
+    border-left-width: 3px; border-right-width: 3px;
+    padding: 11px 10px 9px;
+    background: linear-gradient(180deg, rgba(78,17,34,.55), rgba(18,8,12,.2));
+  }
+  .rotulo h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 23px; font-weight: 400;
+    letter-spacing: .34em; text-indent: .34em;
+    color: var(--laton);
+    text-shadow: 0 1px 0 #3A2A08, 0 0 22px rgba(201,162,39,.35);
+  }
+  .rotulo .abanico {
+    display: block; margin: 7px auto 0; width: 96px; height: 8px;
+    background:
+      linear-gradient(90deg, transparent 0 6%, var(--laton-tenue) 6% 8%, transparent 8% 22%,
+                             var(--laton-tenue) 22% 24%, transparent 24% 42%,
+                             var(--laton) 42% 58%, transparent 58% 76%,
+                             var(--laton-tenue) 76% 78%, transparent 78% 92%,
+                             var(--laton-tenue) 92% 94%, transparent 94%);
+  }
+  .cuenta {
+    margin: 9px 0 0;
+    font-family: var(--datos);
+    font-size: 10.5px; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--crema-tenue);
+  }
+  .cuenta b { color: var(--laton); font-weight: 400; }
+
+  /* ── Encabezado de cada variante ────────────── */
+
+  .encabezado {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 14px 14px 6px;
+  }
+  .encabezado h2 {
+    margin: 0; flex: 1;
+    font-family: var(--display); font-weight: 400;
+    font-size: 13px; letter-spacing: .24em; color: var(--laton);
+  }
+  .encabezado .donde {
+    font-family: var(--datos); font-size: 9px;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(154,142,117,.7);
+  }
+
+  /* ── Controles (buscador, chips) ────────────── */
+
+  .campo {
+    display: flex; align-items: center; gap: 9px;
+    border: 1px solid rgba(201,162,39,.3);
+    background: rgba(3,1,2,.5);
+    padding: 0 11px; margin: 0 12px;
+  }
+  .campo input {
+    flex: 1; background: none; border: none; outline: none;
+    padding: 11px 0; font-size: 16px;
+  }
+  .campo input::placeholder { color: rgba(154,142,117,.7); }
+  .campo .lupa { color: var(--laton-tenue); font-size: 14px; }
+  .campo .limpiar {
+    background: none; border: none; color: var(--crema-tenue);
+    font-size: 16px; padding: 2px 2px;
+  }
+
+  .chips {
+    display: flex; gap: 6px; padding: 10px 12px 4px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none;
+    background: none; border: 1px solid rgba(201,162,39,.22);
+    color: var(--crema-tenue);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase;
+    padding: 7px 10px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .chip b {
+    font-weight: 400; color: var(--laton-tenue);
+    font-variant-numeric: tabular-nums;
+  }
+  .chip.sel { color: var(--laton); border-color: var(--laton); background: rgba(201,162,39,.08); }
+  .chip.sel b { color: var(--laton); }
+
+  /* ── VARIANTE «lista»: el acomodador ────────── */
+
+  .lista { padding: 6px 12px 0; }
+
+  .grupo { margin-bottom: 15px; }
+  .grupo > .cabeza {
+    display: flex; align-items: center; gap: 9px;
+    width: 100%; text-align: left;
+    background: linear-gradient(90deg, rgba(78,17,34,.5), transparent);
+    border: none; border-left: 3px solid var(--laton);
+    padding: 9px 10px;
+  }
+  .grupo > .cabeza .nom-saga {
+    flex: 1;
+    font-family: var(--display); font-size: 12.5px;
+    letter-spacing: .18em; color: var(--laton);
+  }
+  .grupo > .cabeza .progreso {
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; color: var(--crema-tenue);
+    font-variant-numeric: tabular-nums;
+  }
+  .grupo > .cabeza .flecha { color: var(--laton-tenue); font-size: 11px; }
+  .grupo .dentro { padding-top: 6px; }
+  .grupo.cerrado .dentro { display: none; }
+
+  /* La línea de latón de la cabeza sigue, apagada, hasta el pie: es lo
+     que hace que el renglón se lea como parte del grupo de arriba y no
+     como encabezado del de abajo. */
+  .siguiente {
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--crema-tenue);
+    border-left: 3px solid rgba(201, 162, 39, .22);
+    padding: 6px 10px 3px;
+  }
+  .siguiente b { color: var(--crema); font-weight: 400; }
+
+  .ficha {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 11px; align-items: center;
+    padding: 8px 10px;
+    border: 1px solid rgba(201,162,39,.16);
+    border-left: 3px solid var(--laton-tenue);
+    background: linear-gradient(90deg, rgba(78,17,34,.32), rgba(11,5,7,.2));
+    margin-bottom: 6px;
+    transition: opacity .25s ease, border-color .25s ease;
+  }
+  .ficha.esta-vista { opacity: .42; border-left-color: var(--crema-tenue); }
+  .ficha.bloqueada  { border-left-color: var(--vino-claro); }
+  .ficha svg { display: block; width: 40px; height: 60px; }
+  /* Dos líneas: los títulos largos de saga sólo se distinguen por el final. */
+  .ficha .nom {
+    font-size: 14.5px; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .ficha .nom .ord {
+    font-family: var(--datos); font-size: 11px;
+    color: var(--laton-tenue); margin-right: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ficha .sub {
+    font-family: var(--datos);
+    font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--crema-tenue);
+    margin-top: 4px;
+    display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center;
+  }
+  .mas {
+    background: none; border: 1px solid rgba(201,162,39,.3);
+    color: var(--laton); width: 30px; height: 30px;
+    font-family: var(--datos); font-size: 15px; line-height: 1;
+  }
+
+  .sello {
+    border: 1px solid currentColor;
+    padding: 1px 5px;
+    font-size: 9px; letter-spacing: .14em;
+  }
+  .sello.oro   { color: var(--laton); }
+  .sello.vino  { color: var(--vino-claro); }
+  .sello.papel { color: var(--crema-tenue); }
+  .autoria {
+    font-family: var(--datos);
+    font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(154,142,117,.75);
+  }
+
+  .acciones {
+    grid-column: 1 / -1;
+    display: flex; gap: 7px; flex-wrap: wrap; padding-top: 3px;
+  }
+  .acciones button {
+    flex: 1 1 auto;
+    background: rgba(11,5,7,.55);
+    border: 1px solid rgba(201,162,39,.28);
+    color: var(--crema);
+    font-family: var(--datos);
+    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase;
+    padding: 8px 6px;
+  }
+  .acciones button.peligro { border-color: rgba(142,36,56,.75); color: #E0899B; }
+  .acciones button.confirma { background: var(--vino); border-color: var(--vino-claro); color: #FFDDE4; }
+
+  /* la gaveta de vistas al final de la lista */
+  .gaveta {
+    display: flex; align-items: center; gap: 9px;
+    width: 100%; background: none; border: none;
+    border-top: 1px solid rgba(201,162,39,.18);
+    padding: 13px 4px 11px; margin-top: 6px;
+    color: var(--crema-tenue);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .18em; text-transform: uppercase;
+  }
+  .gaveta .linea { flex: 1; height: 1px; background: rgba(201,162,39,.18); }
+
+  /* ── VARIANTE «muro»: rejilla de pósters ────── */
+
+  .muro {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; padding: 8px 12px 0;
+  }
+  .celda {
+    position: relative;
+    background: none; border: none; padding: 0;
+    display: block; width: 100%;
+    transition: opacity .25s ease;
+  }
+  .celda svg { display: block; width: 100%; height: auto; }
+  .celda .marco {
+    position: absolute; inset: 0;
+    border: 1px solid rgba(201,162,39,.28);
+    pointer-events: none;
+  }
+  .celda.esta-vista { opacity: .34; }
+  .celda.esta-vista .marco { border-color: rgba(154,142,117,.35); }
+  .celda.bloqueada .marco { border-color: rgba(142,36,56,.6); }
+
+  .celda .banda {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, transparent, rgba(3,1,2,.92) 42%);
+    padding: 16px 5px 5px;
+    font-family: var(--datos); font-size: 8.5px;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--crema-tenue);
+    display: flex; justify-content: space-between; align-items: center; gap: 4px;
+  }
+  .celda .banda b { color: var(--laton); font-weight: 400; font-variant-numeric: tabular-nums; }
+  /* El estado va arriba: abajo choca con el rótulo que el póster ya trae. */
+  .celda .banda.alto {
+    bottom: auto; top: 0;
+    background: linear-gradient(0deg, transparent, rgba(3,1,2,.92) 42%);
+    padding: 5px 5px 16px;
+    color: var(--crema);
+  }
+  .celda.bloqueada .banda.alto { color: #E39FAE; }
+
+  /* la pila: una saga ocupa una sola celda, con las demás asomando
+     detrás. Las hojas de atrás llevan su propio tono —el terciopelo a
+     secas se confundía con el fondo y la pila no se leía. */
+  .celda.pila::before, .celda.pila::after {
+    content: ''; position: absolute;
+    border: 1px solid rgba(201,162,39,.3);
+    background: linear-gradient(160deg, #2A1520, #140A10);
+    z-index: -1;
+  }
+  /* Los asomos no pasan de los 8px del `gap`: si sobresalen más, la
+     hoja de atrás se dibuja encima del póster vecino. */
+  .celda.pila::before { top: 2px; bottom: -2px; left: 3px; right: -3px; }
+  .celda.pila::after  { top: 4px; bottom: -4px; left: 7px; right: -7px; opacity: .6; }
+  .celda.pila { z-index: 1; }
+  /* La pila abierta se queda sola en su renglón: el hueco a su derecha
+     tiene que leerse como «esta saga está abierta», no como un error. */
+  .celda.pila.abierta .marco { border-color: var(--laton); }
+  .celda.pila.abierta .banda { color: var(--crema); }
+  .celda.pila.abierta::before,
+  .celda.pila.abierta::after { display: none; }
+
+  .tira {
+    grid-column: 1 / -1;
+    display: flex; gap: 8px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: 4px 0 10px;
+    border-bottom: 1px solid rgba(201,162,39,.2);
+    scrollbar-width: none;
+  }
+  .tira::-webkit-scrollbar { display: none; }
+  .tira .celda { flex: none; width: 88px; scroll-snap-align: start; }
+  .tira .rotulo-tira {
+    flex: none; width: 2px; background: var(--laton); align-self: stretch;
+  }
+
+  /* ── VARIANTE «estantes»: carriles ──────────── */
+
+  .estantes { padding: 4px 0 0; }
+  .estante { margin-bottom: 4px; }
+  .estante .titulo-estante {
+    display: flex; align-items: baseline; gap: 9px;
+    padding: 12px 14px 8px;
+  }
+  .estante .titulo-estante h3 {
+    margin: 0;
+    font-family: var(--display); font-weight: 400;
+    font-size: 12px; letter-spacing: .2em; color: var(--laton);
+  }
+  .estante .titulo-estante .n {
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; color: var(--crema-tenue);
+    font-variant-numeric: tabular-nums;
+  }
+  .estante.apagado .titulo-estante h3 { color: var(--crema-tenue); }
+  /* Sin `scroll-padding`, el imán del snap se come los 14px del padding y
+     el carril nace recorrido: la primera tarjeta aparece cortada. */
+  .carril {
+    display: flex; gap: 9px;
+    overflow-x: auto; scroll-snap-type: x proximity;
+    padding: 2px 14px 12px; scroll-padding-left: 14px;
+    scrollbar-width: none;
+  }
+  .carril::-webkit-scrollbar { display: none; }
+  .tarjeta {
+    flex: none; width: 92px; scroll-snap-align: start;
+    background: none; border: none; padding: 0; text-align: left;
+    transition: opacity .25s ease;
+  }
+  .tarjeta svg { display: block; width: 92px; height: 138px; border: 1px solid rgba(201,162,39,.25); }
+  .tarjeta .nom {
+    font-size: 11.5px; line-height: 1.25; margin-top: 6px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .tarjeta .met {
+    font-family: var(--datos); font-size: 9px;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--crema-tenue); margin-top: 3px;
+  }
+  .tarjeta.esta-vista { opacity: .38; }
+  .tarjeta.bloqueada svg { border-color: rgba(142,36,56,.55); }
+  .estante .riel {
+    height: 1px; margin: 0 14px;
+    background: linear-gradient(90deg, rgba(201,162,39,.3), rgba(201,162,39,.05));
+  }
+
+  /* ── Hoja inferior: la ficha completa ───────── */
+
+  .velo {
+    position: fixed; inset: 0;
+    background: rgba(3,1,2,.72);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s ease; z-index: 40;
+  }
+  .velo.on { opacity: 1; pointer-events: auto; }
+
+  .hoja {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-width: 460px; margin: 0 auto;
+    background: linear-gradient(180deg, #1A0D12 0%, var(--terciopelo) 60%, var(--foso) 100%);
+    border: 1px solid var(--laton-tenue); border-bottom: none; border-top-width: 3px;
+    transform: translateY(102%);
+    transition: transform .38s var(--curva-telon);
+    z-index: 50;
+    box-shadow: 0 -14px 40px rgba(0,0,0,.7);
+    padding: 12px 14px 74px;
+  }
+  .hoja.abierta { transform: none; }
+  .hoja .asa { width: 54px; height: 3px; background: var(--laton-tenue); margin: 0 auto 12px; }
+  .hoja .cuerpo-ficha {
+    display: grid; grid-template-columns: 78px 1fr; gap: 13px; align-items: start;
+  }
+  .hoja svg { width: 78px; height: 117px; display: block; }
+  .hoja h3 {
+    margin: 0 0 6px; font-size: 17px; font-weight: 400; line-height: 1.2;
+    font-family: var(--cuerpo);
+  }
+  .hoja .sub {
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--crema-tenue);
+    display: flex; flex-wrap: wrap; gap: 5px 8px; align-items: center;
+  }
+  .hoja .acciones { display: flex; gap: 7px; margin-top: 14px; }
+
+  /* ── Pie del prototipo: el foso ─────────────── */
+
+  .foso-panel { margin: 18px 12px 0; }
+  .foso-panel .fila {
+    display: flex; gap: 7px;
+  }
+  .foso-panel .fila button {
+    flex: 1;
+    background: none; border: 1px solid rgba(201,162,39,.2);
+    color: var(--crema-tenue);
+    font-family: var(--datos); font-size: 9.5px;
+    letter-spacing: .14em; text-transform: uppercase;
+    padding: 9px 4px;
+  }
+  .foso-panel .fila button.sel { color: var(--laton); border-color: var(--laton-tenue); }
+  .foso-panel p {
+    font-family: var(--datos); font-size: 9.5px;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: rgba(154,142,117,.6);
+    margin: 8px 2px 0; line-height: 1.6;
+  }
+
+  /* ── Barra de variantes ─────────────────────── */
+
+  .barra {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    z-index: 60;
+    display: flex; justify-content: center;
+    background: rgba(3,1,2,.92);
+    border-top: 1px solid rgba(201,162,39,.25);
+    backdrop-filter: blur(4px);
+  }
+  .barra span {
+    font-family: var(--datos); font-size: 9px;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(154,142,117,.6);
+    align-self: center; padding-right: 10px;
+  }
+  .barra button {
+    background: none; border: none;
+    color: var(--crema-tenue);
+    font-family: var(--datos); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase;
+    padding: 15px 11px;
+    border-bottom: 2px solid transparent;
+  }
+  .barra button.sel { color: var(--laton); border-bottom-color: var(--laton); }
+
+  .nada {
+    border: 1px dashed rgba(201,162,39,.3);
+    margin: 14px 12px; padding: 24px 18px;
+    text-align: center; color: var(--crema-tenue);
+    line-height: 1.55; font-size: 14px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+
+<div class="sala" id="sala">
+  <header class="marquesina">
+    <div class="focos" id="focos"></div>
+    <div class="rotulo">
+      <h1>EL CINE</h1>
+      <span class="abanico"></span>
+    </div>
+    <p class="cuenta" id="cuenta"></p>
+  </header>
+
+  <div id="lienzo"></div>
+
+  <div class="foso-panel">
+    <p style="margin-bottom:6px">El foso · sólo del prototipo</p>
+    <div class="fila" id="reloj">
+      <button data-tiempo="0" class="sel">Sala nueva</button>
+      <button data-tiempo="1">Un año después</button>
+      <button data-tiempo="2">Dos años</button>
+    </div>
+    <p id="nota-foso"></p>
+  </div>
+</div>
+
+<div class="velo" id="velo"></div>
+<section class="hoja" id="hoja" aria-label="Ficha del título"></section>
+
+<nav class="barra">
+  <span>El catálogo es</span>
+  <button data-variante="lista" class="sel">Una lista</button>
+  <button data-variante="muro">Un muro</button>
+  <button data-variante="estantes">Estantes</button>
+</nav>
+
+<script>
+/* ═══════════════ Los 38 títulos ═══════════════
+   Salidos tal cual de La lista de series: 7 sueltas, 6 sagas
+   (28 películas) y 3 series. Todo por orden de estreno.
+   `alta` finge el orden en que se fueron agregando. */
+
+const SERVICIOS = ['Netflix', 'Prime Video', 'Disney+', 'HBO Max', 'Apple TV'];
+
+const CRUDO = [
+  /* sueltas */
+  { n: 'Pobres Criaturas',                          a: 2023, t: 'pelicula', m: 'ojo',      s: 'HBO Max',     q: 'Sofía', alta: 12 },
+  { n: 'Sheep Detectives',                          a: null, t: 'pelicula', m: 'mano',     s: null,          q: 'Félix', alta: 20, sinTmdb: true },
+  { n: 'Eterno Resplandor de una Mente sin Recuerdos', a: 2004, t: 'pelicula', m: 'ola',   s: 'Prime Video', q: 'Sofía', alta: 7 },
+  { n: 'Un Monstruo Viene a Verme',                 a: 2016, t: 'pelicula', m: 'arbol',    s: 'Netflix',     q: 'Sofía', alta: 15 },
+  { n: 'Forrest Gump',                              a: 1994, t: 'pelicula', m: 'pluma',    s: 'Netflix',     q: 'Félix', alta: 4 },
+  { n: 'Soul',                                      a: 2020, t: 'pelicula', m: 'chispa',   s: 'Disney+',     q: 'Sofía', alta: 18 },
+  { n: 'La Gran Apuesta',                           a: 2015, t: 'pelicula', m: 'torre',    s: 'Prime Video', q: 'Félix', alta: 9 },
+
+  /* series */
+  { n: 'Severance',   a: 2022, t: 'serie', m: 'pasillo',  s: 'Apple TV', q: 'Félix', alta: 2 },
+  { n: "Widow's Bay", a: 2026, t: 'serie', m: 'faro',     s: 'Apple TV', q: 'Sofía', alta: 21 },
+  { n: 'Andor',       a: 2022, t: 'serie', m: 'estrella', s: 'Disney+',  q: 'Félix', alta: 3 },
+
+  /* Star Wars (12) */
+  { n: 'Star Wars: Una Nueva Esperanza',        a: 1977, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 1,  alta: 1 },
+  { n: 'Star Wars: El Imperio Contraataca',     a: 1980, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 2,  alta: 1 },
+  { n: 'Star Wars: El Retorno del Jedi',        a: 1983, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 3,  alta: 1 },
+  { n: 'Star Wars: La Amenaza Fantasma',        a: 1999, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 4,  alta: 1 },
+  { n: 'Star Wars: El Ataque de los Clones',    a: 2002, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 5,  alta: 1 },
+  { n: 'Star Wars: La Venganza de los Sith',    a: 2005, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 6,  alta: 1 },
+  { n: 'Star Wars: El Despertar de la Fuerza',  a: 2015, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 7,  alta: 1 },
+  { n: 'Rogue One: Una Historia de Star Wars',  a: 2016, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 8,  alta: 1 },
+  { n: 'Star Wars: Los Últimos Jedi',           a: 2017, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 9,  alta: 1 },
+  { n: 'Han Solo: Una Historia de Star Wars',   a: 2018, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 10, alta: 1 },
+  { n: 'Star Wars: El Ascenso de Skywalker',    a: 2019, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 11, alta: 1 },
+  { n: 'El Mandaloriano y Grogu',               a: 2026, t: 'pelicula', m: 'estrella', s: 'Disney+', q: 'Félix', saga: 'Star Wars', o: 12, alta: 22 },
+
+  /* Tierra Media (6) */
+  { n: 'El Señor de los Anillos: La Comunidad del Anillo', a: 2001, t: 'pelicula', m: 'anillo', s: 'HBO Max', q: 'Sofía', saga: 'Tierra Media', o: 1, alta: 5 },
+  { n: 'El Señor de los Anillos: Las Dos Torres',          a: 2002, t: 'pelicula', m: 'anillo', s: 'HBO Max', q: 'Sofía', saga: 'Tierra Media', o: 2, alta: 5 },
+  { n: 'El Señor de los Anillos: El Retorno del Rey',      a: 2003, t: 'pelicula', m: 'anillo', s: 'HBO Max', q: 'Sofía', saga: 'Tierra Media', o: 3, alta: 5 },
+  { n: 'El Hobbit: Un Viaje Inesperado',                   a: 2012, t: 'pelicula', m: 'anillo', s: 'HBO Max', q: 'Sofía', saga: 'Tierra Media', o: 4, alta: 5 },
+  { n: 'El Hobbit: La Desolación de Smaug',                a: 2013, t: 'pelicula', m: 'anillo', s: 'HBO Max', q: 'Sofía', saga: 'Tierra Media', o: 5, alta: 5 },
+  { n: 'El Hobbit: La Batalla de los Cinco Ejércitos',     a: 2014, t: 'pelicula', m: 'anillo', s: 'HBO Max', q: 'Sofía', saga: 'Tierra Media', o: 6, alta: 5 },
+
+  /* Dragones (4) */
+  { n: 'Cómo Entrenar a tu Dragón',            a: 2010, t: 'pelicula', m: 'dragon', s: 'Netflix',     q: 'Sofía', saga: 'Dragones', o: 1, alta: 8 },
+  { n: 'Cómo Entrenar a tu Dragón 2',          a: 2014, t: 'pelicula', m: 'dragon', s: 'Netflix',     q: 'Sofía', saga: 'Dragones', o: 2, alta: 8 },
+  { n: 'Cómo Entrenar a tu Dragón 3: El Mundo Oculto', a: 2019, t: 'pelicula', m: 'dragon', s: 'Netflix', q: 'Sofía', saga: 'Dragones', o: 3, alta: 8 },
+  { n: 'Cómo Entrenar a tu Dragón (2025)',     a: 2025, t: 'pelicula', m: 'dragon', s: 'Prime Video', q: 'Sofía', saga: 'Dragones', o: 4, alta: 8 },
+
+  /* Spider-Man (Garfield) (2) */
+  { n: 'El Sorprendente Hombre Araña',                     a: 2012, t: 'pelicula', m: 'telaraña', s: 'Prime Video', q: 'Félix', saga: 'Spider-Man (Garfield)', o: 1, alta: 14 },
+  { n: 'El Sorprendente Hombre Araña 2: La Amenaza de Electro', a: 2014, t: 'pelicula', m: 'telaraña', s: 'Prime Video', q: 'Félix', saga: 'Spider-Man (Garfield)', o: 2, alta: 14 },
+
+  /* Duna (2) */
+  { n: 'Duna',            a: 2021, t: 'pelicula', m: 'duna', s: 'HBO Max', q: 'Félix', saga: 'Duna', o: 1, alta: 6 },
+  { n: 'Duna: Parte Dos', a: 2024, t: 'pelicula', m: 'duna', s: 'HBO Max', q: 'Félix', saga: 'Duna', o: 2, alta: 6 },
+
+  /* Spider-Verse (2) */
+  { n: 'Spider-Man: Un Nuevo Universo',     a: 2018, t: 'pelicula', m: 'telaraña', s: 'Netflix', q: 'Sofía', saga: 'Spider-Verse', o: 1, alta: 11 },
+  { n: 'Spider-Man: Cruzando el Multiverso', a: 2023, t: 'pelicula', m: 'telaraña', s: 'Netflix', q: 'Sofía', saga: 'Spider-Verse', o: 2, alta: 11 }
+];
+
+/* El orden en que las irían viendo: el guion del reloj del foso.
+   Un año = 13 funciones, dos años = 24. Sirve para ver crecer la
+   parte apagada del catálogo, que es de lo que trata este ticket. */
+const GUION = [
+  'Star Wars: Una Nueva Esperanza', 'Forrest Gump', 'Severance',
+  'El Señor de los Anillos: La Comunidad del Anillo', 'Duna',
+  'Star Wars: El Imperio Contraataca', 'Soul', 'Cómo Entrenar a tu Dragón',
+  'El Señor de los Anillos: Las Dos Torres', 'Pobres Criaturas',
+  'Star Wars: El Retorno del Jedi', 'Duna: Parte Dos', 'La Gran Apuesta',
+  /* segundo año */
+  'El Señor de los Anillos: El Retorno del Rey', 'Star Wars: La Amenaza Fantasma',
+  'Cómo Entrenar a tu Dragón 2', 'Spider-Man: Un Nuevo Universo',
+  'Eterno Resplandor de una Mente sin Recuerdos', 'El Hobbit: Un Viaje Inesperado',
+  'Star Wars: El Ataque de los Clones', 'Andor', 'Un Monstruo Viene a Verme',
+  'Spider-Man: Cruzando el Multiverso', 'Cómo Entrenar a tu Dragón 3: El Mundo Oculto'
+];
+
+const CORTES = [0, 13, 24];
+
+/* ═══════════════ Pósters dibujados ═══════════════
+   Mismos motivos que el prototipo del alta, más los que
+   pedían las siete sueltas. */
+
+const PALETAS = {
+  duna:     ['#3A2A10', '#8A5A18', '#E8C877'],
+  anillo:   ['#0E1A12', '#1E3A24', '#B99A48'],
+  estrella: ['#0A0A16', '#1A1A38', '#D8D8F0'],
+  dragon:   ['#101E28', '#1E3E52', '#6ECBD6'],
+  telaraña: ['#2A0A18', '#5A123A', '#FF6FA8'],
+  pasillo:  ['#0E1214', '#1E2A2E', '#8FE0D8'],
+  faro:     ['#160A20', '#38124E', '#C08CFF'],
+  ojo:      ['#1E0A18', '#4A1038', '#F2A0C8'],
+  ola:      ['#0A1220', '#12305A', '#8FC4F0'],
+  arbol:    ['#0C1410', '#1A3020', '#9ED07A'],
+  pluma:    ['#141410', '#2E3020', '#E8DCA8'],
+  chispa:   ['#160E1E', '#2E1848', '#7FE0C0'],
+  torre:    ['#141008', '#302614', '#D8B040'],
+  mano:     ['#1A1014', '#3A1C24', '#C9A227']
+};
+
+let semilla = 0;
+
+function dibujo(m, ac, f2) {
+  if (m === 'duna') return `<path d="M0 300 Q75 262 150 300 T300 300 V450 H0Z" fill="${ac}" opacity=".28"/>
+    <path d="M0 344 Q90 300 150 344 T300 336 V450 H0Z" fill="${ac}" opacity=".4"/>
+    <circle cx="150" cy="152" r="52" fill="${ac}" opacity=".9"/>`;
+  if (m === 'anillo') return `<circle cx="150" cy="200" r="76" fill="none" stroke="${ac}" stroke-width="9" opacity=".9"/>
+    <circle cx="150" cy="200" r="98" fill="none" stroke="${ac}" stroke-width="2" opacity=".4"/>
+    <path d="M0 380 L90 250 L150 320 L210 230 L300 380Z" fill="${ac}" opacity=".2"/>`;
+  if (m === 'estrella') return `<path d="M150 96 L166 176 L246 192 L166 208 L150 288 L134 208 L54 192 L134 176Z" fill="${ac}" opacity=".92"/>
+    <circle cx="150" cy="192" r="120" fill="none" stroke="${ac}" stroke-width="1.5" opacity=".3"/>`;
+  if (m === 'dragon') return `<path d="M36 250 Q150 130 264 250 Q210 214 150 240 Q90 214 36 250Z" fill="${ac}" opacity=".85"/>
+    <path d="M150 240 L150 320 M110 290 L150 320 L190 290" stroke="${ac}" stroke-width="4" fill="none" opacity=".7"/>`;
+  if (m === 'telaraña') return `${[40,74,108,142].map(r => `<circle cx="150" cy="200" r="${r}" fill="none" stroke="${ac}" stroke-width="1.6" opacity=".55"/>`).join('')}
+    ${[0,45,90,135].map(g => { const r = g*Math.PI/180, x = Math.cos(r)*150, y = Math.sin(r)*150;
+      return `<line x1="${150-x}" y1="${200-y}" x2="${150+x}" y2="${200+y}" stroke="${ac}" stroke-width="1.4" opacity=".45"/>`; }).join('')}`;
+  if (m === 'pasillo') return `<path d="M0 60 L104 176 V300 L0 400Z" fill="${ac}" opacity=".16"/>
+    <path d="M300 60 L196 176 V300 L300 400Z" fill="${ac}" opacity=".16"/>
+    <path d="M104 176 H196 V300 H104Z" fill="${ac}" opacity=".9"/>`;
+  if (m === 'faro') return `<path d="M132 132 H168 L180 322 H120Z" fill="${ac}" opacity=".9"/>
+    <rect x="126" y="112" width="48" height="24" fill="${f2}"/>
+    <path d="M126 124 L18 78 V170Z" fill="${ac}" opacity=".28"/>
+    <path d="M174 124 L282 78 V170Z" fill="${ac}" opacity=".28"/>`;
+  if (m === 'ojo') return `<path d="M40 200 Q150 108 260 200 Q150 292 40 200Z" fill="none" stroke="${ac}" stroke-width="4" opacity=".85"/>
+    <circle cx="150" cy="200" r="42" fill="${ac}" opacity=".8"/>
+    <circle cx="150" cy="200" r="16" fill="#000" opacity=".65"/>`;
+  if (m === 'ola') return `${[0,1,2,3].map(i => `<path d="M0 ${170+i*44} Q75 ${140+i*44} 150 ${170+i*44} T300 ${170+i*44}" fill="none" stroke="${ac}" stroke-width="3" opacity="${.7-i*.13}"/>`).join('')}
+    <circle cx="150" cy="112" r="34" fill="${ac}" opacity=".35"/>`;
+  if (m === 'arbol') return `<path d="M144 330 V210 M144 250 L96 208 M144 232 L196 190" stroke="${ac}" stroke-width="7" fill="none" opacity=".85"/>
+    <circle cx="144" cy="168" r="58" fill="${ac}" opacity=".55"/>
+    <circle cx="96" cy="200" r="30" fill="${ac}" opacity=".35"/>`;
+  if (m === 'pluma') return `<path d="M96 320 Q150 200 204 128 Q216 220 150 288 Q120 314 96 320Z" fill="${ac}" opacity=".8"/>
+    <path d="M96 320 Q150 232 204 128" stroke="${f2}" stroke-width="2" fill="none" opacity=".9"/>`;
+  if (m === 'chispa') return `<circle cx="150" cy="200" r="30" fill="${ac}" opacity=".95"/>
+    ${[0,60,120,180,240,300].map(g => { const r = g*Math.PI/180;
+      return `<line x1="${150+Math.cos(r)*46}" y1="${200+Math.sin(r)*46}" x2="${150+Math.cos(r)*112}" y2="${200+Math.sin(r)*112}" stroke="${ac}" stroke-width="3" opacity=".5"/>`; }).join('')}`;
+  if (m === 'torre') return `${[[52,240],[100,180],[148,268],[196,140],[244,300]].map(([x,y]) =>
+      `<rect x="${x}" y="${y}" width="34" height="${360-y}" fill="${ac}" opacity=".55"/>`).join('')}
+    <path d="M40 120 L120 176 L180 140 L268 96" stroke="${ac}" stroke-width="3" fill="none" opacity=".9"/>`;
+  return `<path d="M150 96 L214 200 L150 304 L86 200Z" fill="none" stroke="${ac}" stroke-width="3" opacity=".8"/>
+    <path d="M150 140 L188 200 L150 260 L112 200Z" fill="${ac}" opacity=".7"/>`;
+}
+
+function poster(t, conRotulo) {
+  const [f1, f2, ac] = PALETAS[t.motivo] || PALETAS.mano;
+  const id = 'g' + (semilla++);
+  const nom = t.nombre.length > 22 ? t.nombre.slice(0, 20) + '…' : t.nombre;
+
+  return `<svg viewBox="0 0 300 450" role="img" aria-label="Póster de ${esc(t.nombre)}">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${f2}"/><stop offset="100%" stop-color="${f1}"/>
+    </linearGradient></defs>
+    <rect width="300" height="450" fill="url(#${id})"/>
+    ${dibujo(t.motivo, ac, f2)}
+    <rect x="10" y="10" width="280" height="430" fill="none" stroke="${ac}" stroke-width="1" opacity=".35"
+          ${t.sinTmdb ? 'stroke-dasharray="10 7"' : ''}/>
+    ${conRotulo === false ? '' : `<rect x="0" y="368" width="300" height="82" fill="#000" opacity=".62"/>
+    <text x="150" y="404" text-anchor="middle" fill="#F2E5C6"
+          font-family="Copperplate, Futura, sans-serif" font-size="18" letter-spacing="1.2">${esc(nom.toUpperCase())}</text>
+    <text x="150" y="426" text-anchor="middle" fill="#9A8E75"
+          font-family="DIN Alternate, monospace" font-size="12" letter-spacing="3">${t.anio || '—'}</text>`}
+  </svg>`;
+}
+
+/* ═══════════════ Estado ═══════════════ */
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+const sinAcentos = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+const catalogo = CRUDO.map((c, i) => ({
+  uid: i + 1, nombre: c.n, anio: c.a, tipo: c.t, motivo: c.m,
+  servicio: c.s, agregadoPor: c.q, saga: c.saga || null, orden: c.o || 0,
+  alta: c.alta, sinTmdb: !!c.sinTmdb, visto: false
+}));
+
+const app = {
+  variante: 'lista',
+  tiempo: 0,
+  q: '',
+  filtro: 'todo',         // todo · pendiente · visto  (el selector propio del catálogo)
+  cerradas: new Set(),    // sagas plegadas (lista)
+  abiertaPila: null,      // saga desplegada (muro)
+  gaveta: false,          // la gaveta de vistas (lista)
+  abierta: null,          // ficha desplegada en línea (lista)
+  hoja: null,             // ficha en la hoja inferior (muro · estantes)
+  confirmando: null
+};
+
+/* El candado: una película de saga sólo compite si todas las
+   anteriores están vistas. */
+function bloqueadaPor(t) {
+  if (!t.saga) return null;
+  return catalogo.find(o => o.saga === t.saga && o.orden < t.orden && !o.visto) || null;
+}
+const enCartelera = t => !t.visto && !bloqueadaPor(t);
+
+/* Dentro del grupo, el nombre de la saga ya está en la cabeza: repetirlo
+   en cada renglón sólo empuja al fondo la parte que distingue una película
+   de la siguiente. Cortar NO es parte de esto — el renglón de la ficha
+   tiene dos líneas y «El Señor de los An…» tres veces seguidas no dice
+   nada. Sólo los renglones de una línea llaman a `corto`. */
+function sinPrefijo(nombre, saga) {
+  if (!saga || !sinAcentos(nombre).startsWith(sinAcentos(saga))) return nombre;
+  const n = nombre.slice(saga.length).replace(/^[\s:–-]+/, '');
+  return n.length < 4 ? nombre : n;
+}
+const corto = (s, n = 20) => s.length > n ? s.slice(0, n - 2) + '…' : s;
+
+function coincide(t) {
+  if (app.q.trim()) {
+    const n = sinAcentos(app.q);
+    if (!sinAcentos(t.nombre).includes(n) && !(t.saga && sinAcentos(t.saga).includes(n))) return false;
+  }
+  if (app.filtro === 'pendiente' && t.visto) return false;
+  if (app.filtro === 'visto' && !t.visto) return false;
+  return true;
+}
+
+/* `enSaga` = la ficha se está viendo dentro de su grupo, donde el orden ya
+   está a la vista: ahí el candado no necesita nombrar la que falta. */
+function sellos(t, enSaga) {
+  const bloq = bloqueadaPor(t);
+  return [
+    t.tipo === 'serie' ? '<span class="sello papel">SERIE</span>' : '',
+    t.visto ? '<span class="sello papel">VISTA</span>' : '',
+    bloq ? `<span class="sello vino">🔒${enSaga ? '' : ' falta ' + esc(corto(sinPrefijo(bloq.nombre, t.saga)))}</span>` : '',
+    t.sinTmdb ? '<span class="sello papel">A MANO</span>' : '',
+    t.servicio ? `<span class="sello oro">${esc(t.servicio)}</span>` : ''
+  ].filter(Boolean).join('');
+}
+
+/* ═══════════════ Marquesina ═══════════════ */
+
+const focos = $('#focos');
+focos.innerHTML = Array.from({ length: 11 }, () => '<i class="foco"></i>').join('');
+const bombillas = [...focos.children];
+let f = 0;
+setInterval(() => {
+  bombillas.forEach((b, i) => b.classList.toggle('on', (i + f) % 3 === 0));
+  f++;
+}, 620);
+
+function pintarCuenta() {
+  const n = catalogo.length;
+  const cart = catalogo.filter(enCartelera).length;
+  const vistos = catalogo.filter(t => t.visto).length;
+  const v = vistos === 1 ? '1 vista' : `${vistos} vistas`;
+  $('#cuenta').innerHTML = `<b>${n}</b> títulos · <b>${cart}</b> en cartelera · ${v}`;
+  $('#nota-foso').textContent =
+    `${cart} candidatos · ${catalogo.filter(t => !t.visto && bloqueadaPor(t)).length} con candado · ${v}`;
+}
+
+/* ═══════════════ Piezas compartidas ═══════════════ */
+
+function sagasDelCatalogo() {
+  return [...new Set(catalogo.filter(t => t.saga).map(t => t.saga))]
+    .map(s => ({ nombre: s, items: catalogo.filter(t => t.saga === s).sort((a, b) => a.orden - b.orden) }))
+    .sort((a, b) => a.items[0].alta - b.items[0].alta);
+}
+const sueltasDelCatalogo = () => catalogo.filter(t => !t.saga).sort((a, b) => b.alta - a.alta);
+
+function buscador(placeholder) {
+  return `<div class="campo">
+    <span class="lupa">⌕</span>
+    <input id="buscador" value="${esc(app.q)}" placeholder="${esc(placeholder)}"
+           autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    ${app.q ? '<button class="limpiar" id="limpiar" aria-label="Limpiar">✕</button>' : ''}
+  </div>`;
+}
+
+/* ═══════════════ A · UNA LISTA ═══════════════
+   Pantalla propia. Agrupada por saga, y las sagas nacen
+   plegadas: 38 títulos caben en 16 renglones. Dentro de
+   cada saga manda el orden de estreno; los grupos van por
+   antigüedad y lo suelto por lo último agregado. */
+
+function vistaLista() {
+  const n = { todo: 0, pendiente: 0, visto: 0 };
+  catalogo.forEach(t => { n.todo++; t.visto ? n.visto++ : n.pendiente++; });
+
+  const chip = (k, txt) => `<button class="chip ${app.filtro === k ? 'sel' : ''}" data-filtro="${k}">
+      ${txt} <b>${n[k]}</b></button>`;
+
+  const grupos = sagasDelCatalogo().map(s => {
+    const dentro = s.items.filter(coincide);
+    if (!dentro.length) return '';
+    const vistas = s.items.filter(t => t.visto).length;
+    const sigue = s.items.find(t => !t.visto);
+    // Buscar o filtrar abre las sagas: esconder el resultado detrás de un pliegue
+    // sería contestar la búsqueda con un cajón cerrado.
+    const cerrada = app.cerradas.has(s.nombre) && !app.q.trim() && app.filtro === 'todo';
+
+    // La autoría es de la saga entera, no de cada parte: repetirla doce
+    // veces convertía el grupo en un muro de «AGREGÓ FÉLIX».
+    const pie = cerrada
+      ? (sigue ? `Sigue <b>${esc(corto(sinPrefijo(sigue.nombre, s.nombre), 24))}</b>` : 'Saga completa')
+      : `${s.items.length} películas`;
+
+    return `<section class="grupo ${cerrada ? 'cerrado' : ''}" data-saga="${esc(s.nombre)}">
+      <button class="cabeza" data-plegar="${esc(s.nombre)}">
+        <span class="nom-saga">${esc(s.nombre)}</span>
+        <span class="progreso">${vistas}/${s.items.length}</span>
+        <span class="flecha">${cerrada ? '▸' : '▾'}</span>
+      </button>
+      <p class="siguiente">${pie} · agregó ${esc(s.items[0].agregadoPor)}</p>
+      ${cerrada ? '' : `<div class="dentro">${dentro.map(t => fichaHTML(t, true)).join('')}</div>`}
+    </section>`;
+  }).join('');
+
+  const sueltas = sueltasDelCatalogo().filter(coincide);
+  const vivas = sueltas.filter(t => !t.visto);
+  const muertas = sueltas.filter(t => t.visto);
+
+  // `.map(fichaHTML)` a secas le pasaría el índice como `enSaga`.
+  const sueltasHTML = arr => arr.map(t => fichaHTML(t, false)).join('');
+
+  const cuerpo = grupos + sueltasHTML(vivas) +
+    (muertas.length && app.filtro === 'todo'
+      ? `<button class="gaveta" id="gaveta">
+           <span class="linea"></span> ${app.gaveta ? '▾' : '▸'} ya vistas · ${muertas.length} <span class="linea"></span>
+         </button>${app.gaveta ? sueltasHTML(muertas) : ''}`
+      : sueltasHTML(muertas));
+
+  return `<div class="encabezado"><h2>EL CATÁLOGO</h2><span class="donde">pantalla propia</span></div>
+    ${buscador('Buscar entre los 38…')}
+    <div class="chips">${chip('todo', 'Todo')}${chip('pendiente', 'Sin ver')}${chip('visto', 'Vistas')}</div>
+    <main class="lista" id="lista">${cuerpo || sinNada()}</main>`;
+}
+
+function fichaHTML(t, enSaga) {
+  const bloq = bloqueadaPor(t);
+  const abierta = app.abierta === t.uid;
+  const confirma = app.confirmando === t.uid;
+  const nombre = enSaga ? sinPrefijo(t.nombre, t.saga) : t.nombre;
+
+  return `<article class="ficha ${t.visto ? 'esta-vista' : ''} ${bloq ? 'bloqueada' : ''}" data-uid="${t.uid}">
+    ${poster(t, false)}
+    <div>
+      <div class="nom">${enSaga ? `<span class="ord">${t.orden}</span>` : ''}${esc(nombre)}</div>
+      <div class="sub">${t.anio || 's/f'} ${sellos(t, enSaga)}${
+        enSaga ? '' : `<span class="autoria">Agregó ${esc(t.agregadoPor)}</span>`}</div>
+    </div>
+    <button class="mas" data-mas="${t.uid}" aria-label="Acciones">${abierta ? '×' : '⋯'}</button>
+    ${abierta ? accionesHTML(t, confirma) : ''}
+  </article>`;
+}
+
+function accionesHTML(t, confirma) {
+  return `<div class="acciones">
+    <button data-visto="${t.uid}">${t.visto ? '↩ Devolver a la cartelera' : '✓ Ya la vimos'}</button>
+    <button class="peligro ${confirma ? 'confirma' : ''}" data-quitar="${t.uid}">
+      ${confirma ? '¿Seguro? Quitar' : '✕ Quitar'}</button>
+  </div>`;
+}
+
+const sinNada = () => `<div class="nada">Nada con <b>«${esc(app.q)}»</b> en el catálogo.</div>`;
+
+/* ═══════════════ B · UN MURO ═══════════════
+   Cajón que baja sobre la sala. Puro póster, tres columnas,
+   y cada saga es UNA pila: 38 títulos son 16 celdas y caben
+   casi de un vistazo.
+
+   El selector es SUYO, no el de la cartelera: aquí la pregunta
+   es qué falta por ver, no qué va a girar. Y las vistas no se
+   van a ningún lado — se quedan en su celda, apagadas. */
+
+function vistaMuro() {
+  const n = { todo: 0, pendiente: 0, visto: 0 };
+  catalogo.forEach(t => { n.todo++; t.visto ? n.visto++ : n.pendiente++; });
+
+  const chip = (k, txt) => `<button class="chip ${app.filtro === k ? 'sel' : ''}" data-filtro="${k}">
+      ${txt} <b>${n[k]}</b></button>`;
+
+  const celdas = [];
+  sagasDelCatalogo().forEach(s => {
+    const dentro = s.items.filter(coincide);
+    if (!dentro.length) return;
+    celdas.push(pilaHTML(s));
+    if (app.abiertaPila === s.nombre) celdas.push(`<div class="tira">
+      <span class="rotulo-tira"></span>
+      ${dentro.map(celdaHTML).join('')}
+    </div>`);
+  });
+
+  sueltasDelCatalogo().filter(coincide).forEach(t => celdas.push(celdaHTML(t)));
+
+  return `<div class="encabezado"><h2>EL CATÁLOGO</h2><span class="donde">cajón sobre la sala</span></div>
+    ${buscador('Buscar…')}
+    <div class="chips">${chip('todo', 'Todo')}${chip('pendiente', 'Sin ver')}${chip('visto', 'Vistas')}</div>
+    <main class="muro" id="muro">${celdas.join('')}</main>
+    ${celdas.length ? '' : sinNada()}`;
+}
+
+/* La saga ocupa una sola celda: se ve la que sigue, con las demás
+   asomando detrás y el marcador de cuántas llevan. */
+function pilaHTML(s) {
+  const vistas = s.items.filter(t => t.visto).length;
+  const cara = s.items.find(t => !t.visto) || s.items[s.items.length - 1];
+  // Sin rótulo: la banda ya dice el nombre de la saga, y el título de la
+  // que sigue debajo era un renglón encimado sobre otro.
+  const abierta = app.abiertaPila === s.nombre;
+  return `<button class="celda pila ${abierta ? 'abierta' : ''} ${vistas === s.items.length ? 'esta-vista' : ''}"
+      data-pila="${esc(s.nombre)}">
+    ${poster(cara, false)}
+    <span class="marco"></span>
+    <span class="banda"><span>${esc(s.nombre)}</span><b>${vistas}/${s.items.length}</b></span>
+  </button>`;
+}
+
+function celdaHTML(t) {
+  const bloq = bloqueadaPor(t);
+  const estado = t.visto ? '✓ vista' : bloq ? '🔒 falta la anterior' : '';
+  return `<button class="celda ${t.visto ? 'esta-vista' : ''} ${bloq ? 'bloqueada' : ''}"
+      data-uid="${t.uid}" data-hoja="${t.uid}">
+    ${poster(t)}
+    <span class="marco"></span>
+    ${estado ? `<span class="banda alto"><span>${estado}</span></span>` : ''}
+  </button>`;
+}
+
+/* ═══════════════ C · ESTANTES ═══════════════
+   El catálogo no es una pantalla: es el fondo de la sala,
+   debajo de la ruleta. Tres estantes que hacen el trabajo
+   del filtro, y cada título vive en uno solo. */
+
+function vistaEstantes() {
+  const filtrado = catalogo.filter(coincide);
+  const estantes = [
+    { t: 'ESTA NOCHE PUEDEN VER', items: filtrado.filter(enCartelera) },
+    { t: 'ESPERANDO SU TURNO',    items: filtrado.filter(x => !x.visto && bloqueadaPor(x)) },
+    { t: 'YA LAS VIERON',         items: filtrado.filter(x => x.visto), apagado: true }
+  ];
+
+  const cuerpo = estantes.filter(e => e.items.length).map(e => `
+    <section class="estante ${e.apagado ? 'apagado' : ''}">
+      <div class="titulo-estante"><h3>${e.t}</h3><span class="n">${e.items.length}</span></div>
+      <div class="carril">${e.items.map(tarjetaHTML).join('')}</div>
+      <div class="riel"></div>
+    </section>`).join('');
+
+  return `<div class="encabezado"><h2>EL CATÁLOGO</h2><span class="donde">el fondo de la sala</span></div>
+    ${buscador('Buscar…')}
+    <main class="estantes" id="estantes">${cuerpo || sinNada()}</main>`;
+}
+
+function tarjetaHTML(t) {
+  const bloq = bloqueadaPor(t);
+  const met = bloq ? `🔒 falta ${corto(sinPrefijo(bloq.nombre, t.saga), 18)}`
+    : t.saga ? `${t.saga} · ${t.orden}`
+    : t.tipo === 'serie' ? 'Serie' : (t.servicio || 'a mano');
+  return `<button class="tarjeta ${t.visto ? 'esta-vista' : ''} ${bloq ? 'bloqueada' : ''}"
+      data-uid="${t.uid}" data-hoja="${t.uid}">
+    ${poster(t, false)}
+    <span class="nom">${esc(t.nombre)}</span>
+    <span class="met">${esc(met)}</span>
+  </button>`;
+}
+
+/* ═══════════════ La hoja inferior ═══════════════ */
+
+function abrirHoja(uid) {
+  app.hoja = uid;
+  app.confirmando = null;
+  pintarHoja();
+  requestAnimationFrame(() => {
+    $('#hoja').classList.add('abierta');
+    $('#velo').classList.add('on');
+  });
+}
+
+function cerrarHoja() {
+  app.hoja = null;
+  app.confirmando = null;
+  $('#hoja').classList.remove('abierta');
+  $('#velo').classList.remove('on');
+}
+
+function pintarHoja() {
+  const t = catalogo.find(x => x.uid === app.hoja);
+  if (!t) return;
+  $('#hoja').innerHTML = `<div class="asa"></div>
+    <div class="cuerpo-ficha">
+      ${poster(t, false)}
+      <div>
+        <h3>${esc(t.nombre)}</h3>
+        <div class="sub">${t.anio || 's/f'} ${sellos(t)}</div>
+        <div class="sub" style="margin-top:8px"><span class="autoria">Agregó ${esc(t.agregadoPor)}</span></div>
+      </div>
+    </div>
+    ${accionesHTML(t, app.confirmando === t.uid)}`;
+}
+
+/* ═══════════════ Pintar ═══════════════ */
+
+function pintar() {
+  pintarCuenta();
+  $('#lienzo').innerHTML =
+    app.variante === 'lista' ? vistaLista() :
+    app.variante === 'muro'  ? vistaMuro()  : vistaEstantes();
+}
+
+/* La regla de El alta de títulos: ninguna interacción repinta una
+   lista entera. Tocar una ficha cambia esa ficha —y sus hermanas de
+   saga, porque el candado se mueve— y nada más. */
+function refrescarUno(uid) {
+  const t = catalogo.find(x => x.uid === uid);
+  const nodo = document.querySelector(`#lienzo [data-uid="${uid}"]`);
+  if (!t || !nodo) return;
+  nodo.outerHTML =
+    app.variante === 'lista' ? fichaHTML(t, !!t.saga) :
+    app.variante === 'muro'  ? celdaHTML(t) : tarjetaHTML(t);
+}
+
+function refrescarParientes(t) {
+  // Los estantes SON el filtro: un título que cambia de estado cambia de
+  // estante, y no hay forma de moverlo sin rehacer los carriles. Es el
+  // precio de la variante, y cuenta en su contra.
+  if (app.variante === 'estantes') { pintar(); return; }
+
+  (t.saga ? catalogo.filter(o => o.saga === t.saga) : [t]).forEach(o => refrescarUno(o.uid));
+
+  // La cabeza de la saga cuelga de toda la saga, no de una película: el
+  // marcador y el «sigue» cambian con cualquiera de sus partes. Se tocan
+  // los dos renglones, no se rehace el grupo.
+  if (t.saga && app.variante === 'lista') {
+    const s = sagasDelCatalogo().find(x => x.nombre === t.saga);
+    const grupo = document.querySelector(`[data-saga="${CSS.escape(t.saga)}"]`);
+    if (s && grupo) {
+      const vistas = s.items.filter(x => x.visto).length;
+      const sigue = s.items.find(x => !x.visto);
+      grupo.querySelector('.progreso').textContent = `${vistas}/${s.items.length}`;
+      grupo.querySelector('.siguiente').innerHTML =
+        `${grupo.classList.contains('cerrado')
+            ? (sigue ? `Sigue <b>${esc(corto(sinPrefijo(sigue.nombre, s.nombre), 24))}</b>` : 'Saga completa')
+            : `${s.items.length} películas`} · agregó ${esc(s.items[0].agregadoPor)}`;
+    }
+  }
+
+  // La cara de la pila y su marcador cuelgan de toda la saga, no de una película.
+  if (t.saga && app.variante === 'muro') {
+    const nodo = document.querySelector(`[data-pila="${CSS.escape(t.saga)}"]`);
+    if (nodo) nodo.outerHTML = pilaHTML(sagasDelCatalogo().find(x => x.nombre === t.saga));
+  }
+  pintarCuenta();
+  actualizarCuentasChips();
+}
+
+function actualizarCuentasChips() {
+  const n = { todo: catalogo.length, visto: catalogo.filter(t => t.visto).length };
+  n.pendiente = n.todo - n.visto;
+  $$('#lienzo .chip').forEach(c => { c.querySelector('b').textContent = n[c.dataset.filtro]; });
+}
+
+/* ═══════════════ Acciones ═══════════════ */
+
+function marcarVisto(uid) {
+  const t = catalogo.find(x => x.uid === uid);
+  t.visto = !t.visto;
+  app.confirmando = null;
+  if (app.hoja === uid) pintarHoja();
+  refrescarParientes(t);
+}
+
+function quitar(uid) {
+  if (app.confirmando !== uid) {
+    app.confirmando = uid;
+    if (app.hoja === uid) pintarHoja(); else refrescarUno(uid);
+    return;
+  }
+  const t = catalogo.find(x => x.uid === uid);
+  const i = catalogo.indexOf(t);
+  catalogo.splice(i, 1);
+  app.confirmando = null;
+  if (app.hoja === uid) cerrarHoja();
+  pintar();   // quitar sí cambia la lista: es la única acción que lo hace
+}
+
+/* ═══════════════ Eventos ═══════════════ */
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+
+  // barra de variantes
+  if (b.dataset.variante) {
+    app.variante = b.dataset.variante;
+    app.abierta = app.abiertaPila = app.confirmando = null;
+    $$('.barra button').forEach(x => x.classList.toggle('sel', x === b));
+    cerrarHoja();
+    return pintar();
+  }
+
+  // reloj del foso
+  if (b.dataset.tiempo !== undefined) return correrTiempo(+b.dataset.tiempo, b);
+
+  // filtros
+  if (b.dataset.filtro) { app.filtro = b.dataset.filtro; return pintar(); }
+  if (b.id === 'limpiar') { app.q = ''; return pintar(); }
+  if (b.id === 'gaveta')  { app.gaveta = !app.gaveta; return pintar(); }
+  if (b.dataset.plegar) {
+    const s = b.dataset.plegar;
+    app.cerradas.has(s) ? app.cerradas.delete(s) : app.cerradas.add(s);
+    return pintar();
+  }
+  if (b.dataset.pila) {
+    app.abiertaPila = app.abiertaPila === b.dataset.pila ? null : b.dataset.pila;
+    return pintar();
+  }
+
+  // ficha
+  if (b.dataset.mas) {
+    const uid = +b.dataset.mas, antes = app.abierta;
+    app.abierta = antes === uid ? null : uid;
+    app.confirmando = null;
+    if (antes && antes !== uid) refrescarUno(antes);
+    return refrescarUno(uid);
+  }
+  if (b.dataset.hoja)   return abrirHoja(+b.dataset.hoja);
+  if (b.dataset.visto)  return marcarVisto(+b.dataset.visto);
+  if (b.dataset.quitar) return quitar(+b.dataset.quitar);
+});
+
+$('#velo').addEventListener('click', cerrarHoja);
+
+// El campo se conserva entre repintados: se rescata el foco y el cursor.
+document.addEventListener('input', e => {
+  if (e.target.id !== 'buscador') return;
+  const pos = e.target.selectionStart;
+  app.q = e.target.value;
+  app.abiertaPila = null;
+  pintar();
+  const i = $('#buscador');
+  if (i) { i.focus({ preventScroll: true }); i.setSelectionRange(pos, pos); }
+});
+
+// Las flechas cambian de variante, salvo mientras se escribe.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+  const orden = ['lista', 'muro', 'estantes'];
+  const i = orden.indexOf(app.variante);
+  const sig = orden[(i + (e.key === 'ArrowRight' ? 1 : orden.length - 1)) % orden.length];
+  document.querySelector(`.barra button[data-variante="${sig}"]`).click();
+});
+
+/* ═══════════════ El reloj del foso ═══════════════
+   Marca vistas según el guion, para poder juzgar cómo se ve
+   el catálogo cuando la parte apagada ya pesa. */
+
+function correrTiempo(k, boton) {
+  app.tiempo = k;
+  const hasta = new Set(GUION.slice(0, CORTES[k]));
+  catalogo.forEach(t => { t.visto = hasta.has(t.nombre); });
+  $$('#reloj button').forEach(x => x.classList.toggle('sel', x === boton));
+  cerrarHoja();
+  pintar();
+}
+
+// Las sagas nacen plegadas: es lo que baja 38 renglones a 16 y hace
+// que el catálogo quepa de un vistazo.
+sagasDelCatalogo().forEach(s => app.cerradas.add(s.nombre));
+
+pintar();
+</script>

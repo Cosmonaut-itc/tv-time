@@ -1,0 +1,790 @@
+<title>Tres marquesinas</title>
+
+<style>
+  :root {
+    --terciopelo: #12080C;
+    --terciopelo-alto: #1B0D12;
+    --vino: #4A1420;
+    --vino-claro: #6B1E2E;
+    --laton: #C9A227;
+    --laton-claro: #E8CE86;
+    --laton-hondo: #8A6E18;
+    --crema: #F2E6D0;
+    --humo: #9A867E;
+    --humo-hondo: #5E4D4A;
+
+    --font-display: "Copperplate", "Copperplate Gothic Light", "Trajan Pro", Georgia, "Times New Roman", serif;
+    --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --paso: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--terciopelo);
+    background-image:
+      radial-gradient(120% 80% at 50% -10%, rgba(201, 162, 39, 0.10), transparent 60%),
+      radial-gradient(90% 60% at 50% 110%, rgba(74, 20, 32, 0.55), transparent 70%);
+    background-attachment: fixed;
+    color: var(--crema);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .envoltura {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 4.5rem) var(--paso) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3rem, 7vw, 5rem);
+  }
+
+  /* ---------- encabezado ---------- */
+
+  .encabezado {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    max-width: 62ch;
+  }
+
+  .cintillo {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--laton);
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(2.4rem, 7vw, 3.9rem);
+    line-height: 1.05;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-wrap: balance;
+    margin: 0;
+    color: var(--laton-claro);
+  }
+
+  .entrada {
+    margin: 0;
+    color: var(--humo);
+    font-size: 1.05rem;
+  }
+
+  .entrada strong { color: var(--crema); font-weight: 600; }
+
+  /* ---------- controles ---------- */
+
+  .barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid rgba(201, 162, 39, 0.22);
+    border-radius: 2px;
+    background: rgba(27, 13, 18, 0.7);
+  }
+
+  .barra-titulo {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--humo);
+    margin-right: 0.35rem;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  .fondo-btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.45rem 0.9rem;
+    background: transparent;
+    color: var(--humo);
+    border: 1px solid var(--humo-hondo);
+    transition: color 0.18s, border-color 0.18s, background 0.18s;
+  }
+
+  .fondo-btn:hover { color: var(--crema); border-color: var(--laton-hondo); }
+
+  .fondo-btn[aria-pressed="true"] {
+    color: var(--terciopelo);
+    background: var(--laton);
+    border-color: var(--laton);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--laton-claro);
+    outline-offset: 3px;
+  }
+
+  /* ---------- rejilla de variantes ---------- */
+
+  .variantes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .tarjeta {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.6rem 1.4rem 1.5rem;
+    background: linear-gradient(170deg, rgba(74, 20, 32, 0.38), rgba(18, 8, 12, 0.6));
+    border: 1px solid rgba(201, 162, 39, 0.2);
+    border-radius: 3px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .tarjeta[data-elegida="true"] {
+    border-color: var(--laton);
+    box-shadow: 0 0 0 1px var(--laton), 0 18px 50px -24px rgba(201, 162, 39, 0.7);
+  }
+
+  .tarjeta h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.35rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--laton-claro);
+  }
+
+  .lienzo {
+    display: grid;
+    place-items: center;
+    padding: 1.4rem 0;
+    background: var(--terciopelo-alto);
+    border: 1px solid rgba(201, 162, 39, 0.12);
+    border-radius: 2px;
+  }
+
+  .lienzo svg { width: 168px; height: 168px; display: block; }
+
+  /* ---------- pantalla de inicio ---------- */
+
+  .inicio {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .inicio-etiqueta {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--humo-hondo);
+  }
+
+  .rejilla-inicio {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1.1rem 0.9rem 0.9rem;
+    border-radius: 14px;
+    background: var(--muro, linear-gradient(160deg, #232631, #0d0e13));
+    transition: background 0.35s ease;
+  }
+
+  .app { width: 60px; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+
+  .app-cara {
+    width: 60px;
+    height: 60px;
+    border-radius: 13.5px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    display: block;
+  }
+
+  .app-cara svg { width: 100%; height: 100%; display: block; }
+
+  .app-nombre {
+    font-size: 10px;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--tinta-muro, #fff);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    transition: color 0.35s ease;
+  }
+
+  .vecino-notas { background: linear-gradient(165deg, #FCF4D8, #F3DE9B); }
+  .vecino-clima { background: linear-gradient(165deg, #4C8FD6, #1D4E8F); }
+  .vecino-fotos { background: linear-gradient(165deg, #F5F5F7, #DDDDE2); }
+
+  .vecino-glifo { opacity: 0.55; }
+
+  /* ---------- prosa de la tarjeta ---------- */
+
+  .veredicto { display: flex; flex-direction: column; gap: 0.5rem; margin: 0; }
+
+  .veredicto p { margin: 0; font-size: 0.9rem; color: var(--humo); }
+  .veredicto p strong { color: var(--crema); font-weight: 600; }
+
+  .costo {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--vino-claro);
+    filter: brightness(1.5);
+  }
+
+  .elegir {
+    margin-top: auto;
+    padding: 0.6rem 1rem;
+    background: transparent;
+    border: 1px solid var(--laton-hondo);
+    color: var(--laton-claro);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: background 0.18s, color 0.18s;
+  }
+
+  .elegir:hover { background: rgba(201, 162, 39, 0.14); }
+
+  .tarjeta[data-elegida="true"] .elegir {
+    background: var(--laton);
+    border-color: var(--laton);
+    color: var(--terciopelo);
+  }
+
+  .recado {
+    min-height: 1.6rem;
+    font-size: 0.95rem;
+    color: var(--laton-claro);
+    text-align: center;
+  }
+
+  .recado:empty::after {
+    content: "Toca una para elegirla.";
+    color: var(--humo-hondo);
+  }
+
+  /* ---------- el telón ---------- */
+
+  .telon-seccion {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+    align-items: center;
+  }
+
+  @media (min-width: 760px) {
+    .telon-seccion { grid-template-columns: 250px minmax(0, 1fr); gap: 3rem; }
+  }
+
+  h2.seccion {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    margin: 0 0 0.9rem;
+    color: var(--laton-claro);
+  }
+
+  .telon-marco {
+    position: relative;
+    width: 100%;
+    max-width: 250px;
+    aspect-ratio: 9 / 19.5;
+    margin: 0 auto;
+    border-radius: 30px;
+    border: 8px solid #050305;
+    overflow: hidden;
+    background: var(--terciopelo);
+    box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.9);
+  }
+
+  .cortina {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 50.5%;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        #3A0F1A 0px,
+        #6B1E2E 14px,
+        #7C2536 20px,
+        #6B1E2E 26px,
+        #3A0F1A 40px
+      );
+    box-shadow: inset -18px 0 34px -10px rgba(0, 0, 0, 0.85);
+    transform-origin: left center;
+  }
+
+  .cortina.derecha {
+    inset: 0 0 0 auto;
+    transform-origin: right center;
+    box-shadow: inset 18px 0 34px -10px rgba(0, 0, 0, 0.85);
+  }
+
+  .telon-marco.abierto .cortina { transform: scaleX(0.16); }
+  .telon-marco .cortina { transition: transform 1.1s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  .telon-fondo {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--terciopelo);
+  }
+
+  .telon-fondo svg { width: 78px; height: 78px; opacity: 0.9; }
+
+  .cenefa {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 9%;
+    background: linear-gradient(180deg, #7C2536, #4A1420);
+    box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.8);
+    z-index: 2;
+  }
+
+  .telon-pie {
+    position: absolute;
+    bottom: 6%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(242, 230, 208, 0.45);
+    z-index: 3;
+  }
+
+  .telon-texto p { color: var(--humo); }
+  .telon-texto p strong { color: var(--crema); font-weight: 600; }
+  .telon-texto p:first-of-type { margin-top: 0; }
+
+  .telon-btn {
+    margin-top: 0.6rem;
+    padding: 0.55rem 1.1rem;
+    background: transparent;
+    border: 1px solid var(--laton-hondo);
+    color: var(--laton-claro);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .telon-btn:hover { background: rgba(201, 162, 39, 0.14); }
+
+  /* ---------- pie ---------- */
+
+  .pie {
+    border-top: 1px solid rgba(201, 162, 39, 0.18);
+    padding-top: 1.6rem;
+    color: var(--humo-hondo);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .pie strong { color: var(--humo); font-weight: 600; }
+
+  /* ---------- focos ---------- */
+
+  .foco { transform-box: fill-box; transform-origin: center; }
+
+  .lienzo .foco { animation: titilar 4.2s ease-in-out infinite; }
+  .lienzo .foco:nth-of-type(2) { animation-delay: -1.4s; }
+  .lienzo .foco:nth-of-type(3) { animation-delay: -2.8s; }
+  .lienzo .foco:nth-of-type(4) { animation-delay: -0.7s; }
+  .lienzo .foco:nth-of-type(5) { animation-delay: -2.1s; }
+
+  @keyframes titilar {
+    0%, 100% { opacity: 1; }
+    46% { opacity: 1; }
+    52% { opacity: 0.58; }
+    58% { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lienzo .foco { animation: none; }
+    .telon-marco .cortina { transition: none; }
+    .tarjeta { transition: none; }
+  }
+</style>
+
+<div class="envoltura">
+
+  <header class="encabezado">
+    <span class="cintillo">La sala instalada · decisión 5 de 11</span>
+    <h1>Tres marquesinas</h1>
+    <p class="entrada">
+      El icono es lo primero de la sala que existe fuera del navegador, y en la pantalla de
+      inicio mide <strong>60 píxeles</strong> — ahí un dibujo bonito se vuelve una mancha.
+      Las tres son el mismo arco de marquesina en latón sobre terciopelo; cambia cuánto
+      detalle aguanta el achicón. Abajo las ves al tamaño real, entre vecinos y sobre el
+      fondo que quieras.
+    </p>
+  </header>
+
+  <section aria-labelledby="titulo-variantes">
+    <h2 class="seccion" id="titulo-variantes">Las tres, a tamaño real</h2>
+
+    <div class="barra" role="group" aria-label="Fondo de la pantalla de inicio">
+      <span class="barra-titulo">Wallpaper</span>
+      <button class="fondo-btn" data-muro="noche" aria-pressed="true">Noche</button>
+      <button class="fondo-btn" data-muro="claro" aria-pressed="false">Claro</button>
+      <button class="fondo-btn" data-muro="foto" aria-pressed="false">Foto</button>
+    </div>
+
+    <div class="variantes" style="margin-top: 1.5rem;">
+
+      <!-- ─────────── EL ARCO ─────────── -->
+      <article class="tarjeta" data-variante="El arco" data-elegida="false">
+        <h2>El arco</h2>
+
+        <div class="lienzo">
+          <svg viewBox="0 0 512 512" role="img" aria-label="Arco de marquesina con tres focos, en latón sobre terciopelo">
+            <defs>
+              <linearGradient id="laton-a" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#E8CE86"/>
+                <stop offset="55%" stop-color="#C9A227"/>
+                <stop offset="100%" stop-color="#8A6E18"/>
+              </linearGradient>
+              <radialGradient id="halo-a" cx="0.5" cy="0.42" r="0.62">
+                <stop offset="0%" stop-color="#2A1119"/>
+                <stop offset="100%" stop-color="#12080C"/>
+              </radialGradient>
+            </defs>
+            <rect width="512" height="512" fill="url(#halo-a)"/>
+            <path d="M 96 352 A 160 160 0 0 1 416 352" fill="none" stroke="url(#laton-a)" stroke-width="40"/>
+            <rect x="74" y="336" width="364" height="34" rx="6" fill="url(#laton-a)"/>
+            <circle class="foco" cx="95" cy="259" r="25" fill="#F6E7B0"/>
+            <circle class="foco" cx="256" cy="166" r="25" fill="#F6E7B0"/>
+            <circle class="foco" cx="417" cy="259" r="25" fill="#F6E7B0"/>
+          </svg>
+        </div>
+
+        <div class="inicio">
+          <span class="inicio-etiqueta">60 px · pantalla de inicio</span>
+          <div class="rejilla-inicio">
+            <div class="app">
+              <span class="app-cara">
+                <svg viewBox="0 0 512 512" role="img" aria-label="El icono El arco a tamaño real">
+                  <rect width="512" height="512" fill="url(#halo-a)"/>
+                  <path d="M 96 352 A 160 160 0 0 1 416 352" fill="none" stroke="url(#laton-a)" stroke-width="40"/>
+                  <rect x="74" y="336" width="364" height="34" rx="6" fill="url(#laton-a)"/>
+                  <circle cx="95" cy="259" r="25" fill="#F6E7B0"/>
+                  <circle cx="256" cy="166" r="25" fill="#F6E7B0"/>
+                  <circle cx="417" cy="259" r="25" fill="#F6E7B0"/>
+                </svg>
+              </span>
+              <span class="app-nombre">Cine</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-notas">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo" stroke="#9A7B22" stroke-width="3" stroke-linecap="round"><path d="M16 22h28M16 30h28M16 38h18"/></g></svg>
+              </span>
+              <span class="app-nombre">Notas</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-clima">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo"><circle cx="24" cy="24" r="9" fill="#FFF3C4"/><path d="M20 40h22a8 8 0 0 0 0-16 12 12 0 0 0-22 4z" fill="#EAF2FB"/></g></svg>
+              </span>
+              <span class="app-nombre">Clima</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-fotos">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo"><circle cx="30" cy="30" r="8" fill="#D9534F"/><circle cx="22" cy="24" r="8" fill="#F0AD4E" opacity="0.75"/><circle cx="38" cy="24" r="8" fill="#5BC0DE" opacity="0.75"/><circle cx="30" cy="38" r="8" fill="#5CB85C" opacity="0.75"/></g></svg>
+              </span>
+              <span class="app-nombre">Fotos</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="veredicto">
+          <p><strong>Tres formas y nada más</strong>: la curva, la base y los focos. Es la que menos pierde al achicarse, porque a 60 px todavía se distinguen las tres.</p>
+          <p class="costo">Riesgo: sin contexto puede leerse como un puente.</p>
+        </div>
+
+        <button class="elegir" type="button">Elegir esta</button>
+      </article>
+
+      <!-- ─────────── LA MARQUESINA ─────────── -->
+      <article class="tarjeta" data-variante="La marquesina" data-elegida="false">
+        <h2>La marquesina</h2>
+
+        <div class="lienzo">
+          <svg viewBox="0 0 512 512" role="img" aria-label="Marquesina escalonada de tres pisos con cinco focos, en latón sobre terciopelo">
+            <defs>
+              <linearGradient id="laton-b" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#E8CE86"/>
+                <stop offset="55%" stop-color="#C9A227"/>
+                <stop offset="100%" stop-color="#8A6E18"/>
+              </linearGradient>
+              <radialGradient id="halo-b" cx="0.5" cy="0.42" r="0.62">
+                <stop offset="0%" stop-color="#2A1119"/>
+                <stop offset="100%" stop-color="#12080C"/>
+              </radialGradient>
+            </defs>
+            <rect width="512" height="512" fill="url(#halo-b)"/>
+            <rect x="62" y="140" width="388" height="58" rx="4" fill="url(#laton-b)"/>
+            <rect x="108" y="216" width="296" height="52" rx="4" fill="url(#laton-b)"/>
+            <rect x="154" y="286" width="204" height="48" rx="4" fill="url(#laton-b)"/>
+            <circle class="foco" cx="176" cy="382" r="21" fill="#F6E7B0"/>
+            <circle class="foco" cx="216" cy="382" r="21" fill="#F6E7B0"/>
+            <circle class="foco" cx="256" cy="382" r="21" fill="#F6E7B0"/>
+            <circle class="foco" cx="296" cy="382" r="21" fill="#F6E7B0"/>
+            <circle class="foco" cx="336" cy="382" r="21" fill="#F6E7B0"/>
+          </svg>
+        </div>
+
+        <div class="inicio">
+          <span class="inicio-etiqueta">60 px · pantalla de inicio</span>
+          <div class="rejilla-inicio">
+            <div class="app">
+              <span class="app-cara">
+                <svg viewBox="0 0 512 512" role="img" aria-label="El icono La marquesina a tamaño real">
+                  <rect width="512" height="512" fill="url(#halo-b)"/>
+                  <rect x="62" y="140" width="388" height="58" rx="4" fill="url(#laton-b)"/>
+                  <rect x="108" y="216" width="296" height="52" rx="4" fill="url(#laton-b)"/>
+                  <rect x="154" y="286" width="204" height="48" rx="4" fill="url(#laton-b)"/>
+                  <circle cx="176" cy="382" r="21" fill="#F6E7B0"/>
+                  <circle cx="216" cy="382" r="21" fill="#F6E7B0"/>
+                  <circle cx="256" cy="382" r="21" fill="#F6E7B0"/>
+                  <circle cx="296" cy="382" r="21" fill="#F6E7B0"/>
+                  <circle cx="336" cy="382" r="21" fill="#F6E7B0"/>
+                </svg>
+              </span>
+              <span class="app-nombre">Cine</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-notas">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo" stroke="#9A7B22" stroke-width="3" stroke-linecap="round"><path d="M16 22h28M16 30h28M16 38h18"/></g></svg>
+              </span>
+              <span class="app-nombre">Notas</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-clima">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo"><circle cx="24" cy="24" r="9" fill="#FFF3C4"/><path d="M20 40h22a8 8 0 0 0 0-16 12 12 0 0 0-22 4z" fill="#EAF2FB"/></g></svg>
+              </span>
+              <span class="app-nombre">Clima</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-fotos">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo"><circle cx="30" cy="30" r="8" fill="#D9534F"/><circle cx="22" cy="24" r="8" fill="#F0AD4E" opacity="0.75"/><circle cx="38" cy="24" r="8" fill="#5BC0DE" opacity="0.75"/><circle cx="30" cy="38" r="8" fill="#5CB85C" opacity="0.75"/></g></svg>
+              </span>
+              <span class="app-nombre">Fotos</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="veredicto">
+          <p><strong>El zigurat de los treinta</strong>, la forma déco por antonomasia: tres pisos que decrecen y la hilera de focos abajo, como el letrero que sobresale de la fachada.</p>
+          <p class="costo">Riesgo: a 60 px los cinco focos se funden en una barra.</p>
+        </div>
+
+        <button class="elegir" type="button">Elegir esta</button>
+      </article>
+
+      <!-- ─────────── LOS RAYOS ─────────── -->
+      <article class="tarjeta" data-variante="Los rayos" data-elegida="false">
+        <h2>Los rayos</h2>
+
+        <div class="lienzo">
+          <svg viewBox="0 0 512 512" role="img" aria-label="Arco de marquesina con tres focos sobre un abanico de rayos déco, en latón sobre terciopelo">
+            <defs>
+              <linearGradient id="laton-c" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#E8CE86"/>
+                <stop offset="55%" stop-color="#C9A227"/>
+                <stop offset="100%" stop-color="#8A6E18"/>
+              </linearGradient>
+              <radialGradient id="halo-c" cx="0.5" cy="0.42" r="0.62">
+                <stop offset="0%" stop-color="#2A1119"/>
+                <stop offset="100%" stop-color="#12080C"/>
+              </radialGradient>
+            </defs>
+            <rect width="512" height="512" fill="url(#halo-c)"/>
+            <g stroke="#8A6E18" stroke-width="13" stroke-linecap="round" opacity="0.6">
+              <path d="M256 352 L 26 352"/>
+              <path d="M256 352 L 61 219"/>
+              <path d="M256 352 L 141 129"/>
+              <path d="M256 352 L 256 82"/>
+              <path d="M256 352 L 371 129"/>
+              <path d="M256 352 L 451 219"/>
+              <path d="M256 352 L 486 352"/>
+            </g>
+            <path d="M 116 352 A 140 140 0 0 1 396 352" fill="none" stroke="url(#laton-c)" stroke-width="38"/>
+            <rect x="88" y="336" width="336" height="34" rx="6" fill="url(#laton-c)"/>
+            <circle class="foco" cx="140" cy="272" r="23" fill="#F6E7B0"/>
+            <circle class="foco" cx="256" cy="190" r="23" fill="#F6E7B0"/>
+            <circle class="foco" cx="372" cy="272" r="23" fill="#F6E7B0"/>
+          </svg>
+        </div>
+
+        <div class="inicio">
+          <span class="inicio-etiqueta">60 px · pantalla de inicio</span>
+          <div class="rejilla-inicio">
+            <div class="app">
+              <span class="app-cara">
+                <svg viewBox="0 0 512 512" role="img" aria-label="El icono Los rayos a tamaño real">
+                  <rect width="512" height="512" fill="url(#halo-c)"/>
+                  <g stroke="#8A6E18" stroke-width="13" stroke-linecap="round" opacity="0.6">
+                    <path d="M256 352 L 26 352"/>
+                    <path d="M256 352 L 61 219"/>
+                    <path d="M256 352 L 141 129"/>
+                    <path d="M256 352 L 256 82"/>
+                    <path d="M256 352 L 371 129"/>
+                    <path d="M256 352 L 451 219"/>
+                    <path d="M256 352 L 486 352"/>
+                  </g>
+                  <path d="M 116 352 A 140 140 0 0 1 396 352" fill="none" stroke="url(#laton-c)" stroke-width="38"/>
+                  <rect x="88" y="336" width="336" height="34" rx="6" fill="url(#laton-c)"/>
+                  <circle cx="140" cy="272" r="23" fill="#F6E7B0"/>
+                  <circle cx="256" cy="190" r="23" fill="#F6E7B0"/>
+                  <circle cx="372" cy="272" r="23" fill="#F6E7B0"/>
+                </svg>
+              </span>
+              <span class="app-nombre">Cine</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-notas">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo" stroke="#9A7B22" stroke-width="3" stroke-linecap="round"><path d="M16 22h28M16 30h28M16 38h18"/></g></svg>
+              </span>
+              <span class="app-nombre">Notas</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-clima">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo"><circle cx="24" cy="24" r="9" fill="#FFF3C4"/><path d="M20 40h22a8 8 0 0 0 0-16 12 12 0 0 0-22 4z" fill="#EAF2FB"/></g></svg>
+              </span>
+              <span class="app-nombre">Clima</span>
+            </div>
+            <div class="app">
+              <span class="app-cara vecino-fotos">
+                <svg viewBox="0 0 60 60" aria-hidden="true"><g class="vecino-glifo"><circle cx="30" cy="30" r="8" fill="#D9534F"/><circle cx="22" cy="24" r="8" fill="#F0AD4E" opacity="0.75"/><circle cx="38" cy="24" r="8" fill="#5BC0DE" opacity="0.75"/><circle cx="30" cy="38" r="8" fill="#5CB85C" opacity="0.75"/></g></svg>
+              </span>
+              <span class="app-nombre">Fotos</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="veredicto">
+          <p><strong>El arco, pero encendido</strong>: el abanico de rayos detrás es la luz saliendo del cine a la calle. Es la única que dice «esto brilla» sin escribirlo.</p>
+          <p class="costo">Riesgo: los rayos son línea fina — a 60 px pueden volverse ruido.</p>
+        </div>
+
+        <button class="elegir" type="button">Elegir esta</button>
+      </article>
+
+    </div>
+
+    <p class="recado" id="recado" role="status"></p>
+  </section>
+
+  <section class="telon-seccion" aria-labelledby="titulo-telon">
+    <div class="telon-marco" id="telon">
+      <div class="telon-fondo">
+        <svg viewBox="0 0 512 512" aria-hidden="true">
+          <path d="M 96 352 A 160 160 0 0 1 416 352" fill="none" stroke="#C9A227" stroke-width="40" opacity="0.4"/>
+          <rect x="74" y="336" width="364" height="34" rx="6" fill="#C9A227" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="cenefa"></div>
+      <div class="cortina izquierda"></div>
+      <div class="cortina derecha"></div>
+      <div class="telon-pie">Cine</div>
+    </div>
+
+    <div class="telon-texto">
+      <h2 class="seccion" id="titulo-telon">El telón no cambia</h2>
+      <p>
+        La pantalla de arranque es la misma para las tres, así que no se elige aquí:
+        <strong>el telón cerrado</strong>. Safari ignora el color de fondo del manifest y exige
+        una imagen por resolución exacta, así que este telón <strong>se dibuja al vuelo</strong>
+        en un canvas del tamaño de esa pantalla y se inyecta como imagen de arranque —
+        cero archivos, cualquier iPhone.
+      </p>
+      <p>
+        Lo que compra: la web arranca con las cortinas <em>ya</em> cerradas, así que el paso
+        de lo nativo a la web no tiene costura. Nadie ve el brinco. Cuando Convex responde,
+        las cortinas se abren — y esa parte se construye en una rebanada de la v1.
+      </p>
+      <button class="telon-btn" type="button" id="abrir-telon">Abrir el telón</button>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <p style="margin:0"><strong>Qué falta:</strong> dime cuál y salen los archivos — el manifest, el icono en sus tamaños y el generador del telón, verificados en tu iPhone.</p>
+    <p style="margin:0">Prototipo desechable de <em>La sala instalada</em>. El icono definitivo se dibuja en PNG a 180, 192, 512 y 1024 px.</p>
+  </footer>
+
+</div>
+
+<script>
+  const muros = {
+    noche: { fondo: "linear-gradient(160deg, #232631, #0d0e13)", tinta: "#ffffff" },
+    claro: { fondo: "linear-gradient(160deg, #e8eef4, #c9d6e2)", tinta: "#1b2430" },
+    foto:  { fondo: "linear-gradient(155deg, #E9915B 0%, #B4527A 42%, #3C3E86 100%)", tinta: "#ffffff" }
+  };
+
+  const rejillas = document.querySelectorAll(".rejilla-inicio");
+  const botonesMuro = document.querySelectorAll(".fondo-btn");
+
+  function pintarMuro(clave) {
+    const muro = muros[clave];
+    rejillas.forEach((r) => {
+      r.style.setProperty("--muro", muro.fondo);
+      r.style.setProperty("--tinta-muro", muro.tinta);
+    });
+    botonesMuro.forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.muro === clave));
+    });
+  }
+
+  botonesMuro.forEach((b) => {
+    b.addEventListener("click", () => pintarMuro(b.dataset.muro));
+  });
+
+  pintarMuro("noche");
+
+  const tarjetas = document.querySelectorAll(".tarjeta");
+  const recado = document.getElementById("recado");
+
+  tarjetas.forEach((t) => {
+    t.querySelector(".elegir").addEventListener("click", () => {
+      tarjetas.forEach((otra) => otra.setAttribute("data-elegida", String(otra === t)));
+      recado.textContent = "Elegiste «" + t.dataset.variante + "». Dímelo y lo construyo.";
+    });
+  });
+
+  const telon = document.getElementById("telon");
+  const botonTelon = document.getElementById("abrir-telon");
+
+  botonTelon.addEventListener("click", () => {
+    const abierto = telon.classList.toggle("abierto");
+    botonTelon.textContent = abierto ? "Cerrar el telón" : "Abrir el telón";
+  });
+</script>

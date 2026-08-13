@@ -1,8 +1,8 @@
 # El giro, de verdad
 
 - **Tipo**: `wayfinder:task` (AFK, con aceptación HITL en el iPhone)
-- **Estado**: abierto
-- **Asignado**: —
+- **Estado**: cerrado
+- **Asignado**: sesión de Claude (orquestación) · `gpt-5.6-sol` (implementación y review)
 - **Bloqueado por**: [La sala y su cartelera](014-la-sala-y-su-cartelera.md)
 - **Mapa**: [La sala de cine](../map.md)
 
@@ -58,3 +58,64 @@ Aquí el ganador puede salir crudo.
 
 Al cerrar: desplegada, y el ritmo dramático juzgado en el iPhone real — cuánto
 dura antes de aburrir es lo único que no se puede medir en una Mac.
+
+## Resolución
+
+**La palanca gira.** Implementó `gpt-5.6-sol`·`high`, review adversarial del
+mismo modelo, veto del orquestador y medición en navegador a 390×844.
+
+### Lo que quedó construido
+
+Los dos actos, con el primero saltándose solo cuando hay tres o menos
+candidatos: duelo con dos, y con uno se gira igual. Los dos vetos por noche,
+compartidos y sin dueño, en fichas de latón que se apagan; `noches` se crea
+perezosamente y su identidad es el timestamp del corte. El veto se apaga con un
+solo título en la cartelera, con la razón al lado. Y **la vuelta en vacío**: si
+el filtro está agotado la palanca gira igual y termina señalando el filtro.
+
+**El corte de las 5 a.m. vive en [`convex/noche.ts`](../../convex/noche.ts), del
+lado del servidor.** Calcularlo en el cliente habría dejado que un reloj movido
+fabricara noches nuevas y con ellas vetos ilimitados. El cliente sólo tiene
+`momento` como **clave de caché**, nunca como fuente de verdad — por eso la
+noche rueda a las 05:00 aunque la app lleve horas abierta.
+
+**El bug del `<svg>` que el ticket avisaba** salió, y se arregló como estaba
+escrito: `line-height: 0` en la celda, el SVG en `display: block`, y la altura
+real medida con `getBoundingClientRect()` en vez de asumida.
+
+### Lo que la review encontró — seis, todas aceptadas
+
+- **El servidor dejaba vaciar la cartelera.** El veto se validaba en el cliente,
+  así que un `fetch` anónimo podía vetar hasta dejarla en cero. La derivación se
+  mudó a [`convex/cartelera.ts`](../../convex/cartelera.ts) y el servidor la
+  recalcula antes de aceptar cada veto. **Es la regla del ticket —la cartelera no
+  puede llegar a cero a media noche— hecha imposible, no sólo evitada.**
+- **La noche no rodaba a las 05:00 con la app abierta**; el cliente se quedaba
+  con la noche vieja hasta recargar.
+- **Un título vetado por la otra butaca podía ganar** — dos giros simultáneos se
+  pisaban. El giro quedó versionado.
+- La vuelta en vacío **mentía sobre los vetos**, descontándolos cuando no había
+  nada que vetar.
+- Los carretes **giraban sin esperar las imágenes**, y en una red lenta paraban
+  sobre huecos. Se quitaron los pósters del carrete: el giro es tipografía.
+- El veto **perdía el foco** al tirar la terna.
+
+Una anotación **se rechazó**: que
+[`tests/superficie-convex.test.ts`](../../tests/superficie-convex.test.ts) es una
+prueba de regex sobre el fuente. Es un candado deliberado sobre la superficie
+pública de Convex, no una prueba de comportamiento disfrazada.
+
+### Verificado
+
+Medido en navegador: el giro dramático dura **~13 s**, hace **0 peticiones a
+`image.tmdb.org`** durante el ritual, y el carrete monta **45 celdas con 0
+`<img>`**. `prefers-reduced-motion` alcanza el mismo resultado sin animación.
+
+### Lo que no se cumplió del criterio de cierre
+
+**El ritmo dramático no tiene veredicto del iPhone.** El dueño aceptó la sala
+desplegada, pero nunca reportó si el giro se hace largo en el teléfono, y
+producción sigue con **cero funciones**. Los ~13 s están medidos, no juzgados.
+Queda para la primera noche de verdad, y si estorba se ajusta desde el cajón de
+[La cabina y el historial](019-la-cabina-y-el-historial.md), que es justo donde
+vive el control del ritmo.

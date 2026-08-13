@@ -1,8 +1,8 @@
 # El ganador y la función
 
 - **Tipo**: `wayfinder:task` (AFK, con aceptación HITL en el iPhone)
-- **Estado**: abierto
-- **Asignado**: —
+- **Estado**: cerrado
+- **Asignado**: sesión de Claude (orquestación) · `gpt-5.6-sol` (implementación y review)
 - **Bloqueado por**: [El giro, de verdad](015-el-giro-de-verdad.md)
 - **Mapa**: [La sala de cine](../map.md)
 
@@ -55,3 +55,58 @@ escribe; verla listada llega después.
 
 Al cerrar: desplegada, y **una función real decidida en el iPhone** — el destino
 del mapa. Esa noche se registra en el ticket con lo que salió.
+
+## Resolución
+
+**La maquinaria del destino está construida y desplegada; la noche todavía no se
+ha vivido.** Implementó `gpt-5.6-sol`·`high`, review adversarial del mismo
+modelo, veto del orquestador y medición en navegador a 390×844.
+
+### Lo que quedó construido
+
+El ganador en marquesina con su póster dentro del marco de latón, **sin
+ornamento encima**. *Sheep Detectives* sale con marco punteado y la nota *sin
+póster oficial*, que era su papel desde la siembra. Los chips de disponibilidad
+en el orden flatrate → renta → compra, **sin logos de proveedor** —sólo punto de
+color y nombre—, y la línea *Disponibilidad · JustWatch* aparece **sólo cuando
+hay un chip que atribuir**, nunca de adorno. Caché de 7 días para refrescar y
+**tope duro de 6 meses**, que es la cláusula heredada de
+[Pósters y streaming en México](002-posters-y-streaming-en-mexico.md).
+
+**La hoja inferior nació aquí** y quedó aislada a la primera: la reusaron sin
+tocarla [El muro de pósters](017-el-muro-de-posters.md) y
+[El cajón del alta](018-el-cajon-del-alta.md), que era exactamente la apuesta.
+
+**`disponibilidad:deTitulo` nunca acepta un `tmdbId` del cliente.** Recibe el id
+del título y lo resuelve del lado del servidor. Aceptarlo habría convertido
+nuestro `TMDB_READ_TOKEN` en un proxy abierto a TMDB para cualquiera con la URL
+del backend.
+
+**`funciones:cerrar` rearma la cartelera del lado del servidor** al encender
+`visto` — es lo que desbloquea la siguiente de la saga, y el candado no puede
+depender de que el cliente lo recalcule.
+
+El cartel de instalación se dispara aquí y en ningún otro lado, con el código en
+grande y la advertencia de que la app instalada lo va a pedir una vez.
+
+### Verificado
+
+El póster del ganador sale **fuera del optimizador de Next**: 1 petición a
+`image.tmdb.org` y **0 a `/_next/image`**. La distinción de
+[La forma de los datos](006-la-forma-de-los-datos.md) queda viva desde aquí —
+`visto` con función es «lo vimos aquí», `visto` sin ninguna es «ya lo habíamos
+visto».
+
+Después del despliegue, `.marco` se partió en `.marco-laton` y `.filete-muro`
+para arreglar el defecto que encontró el iPhone en la 017. **La geometría del
+marco del ganador quedó intacta**, comprobado leyendo la regla y no girando la
+sala, que la habría ensuciado.
+
+### Lo que no se cumplió del criterio de cierre
+
+**No se ha decidido una función real.** Producción marca hoy **38 títulos y 0
+vistos**: la sala nunca ha coronado nada. El renglón que este ticket pide —«esa
+noche se registra en el ticket con lo que salió»— **queda en blanco a
+propósito**, esperando la primera función de verdad. La rebanada se cierra
+porque su maquinaria está construida, revisada, desplegada y aceptada en
+pantalla; el destino del mapa lo camina el dueño, no yo.

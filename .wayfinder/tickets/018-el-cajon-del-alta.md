@@ -1,8 +1,8 @@
 # El cajón del alta
 
 - **Tipo**: `wayfinder:task` (AFK, con aceptación HITL en el iPhone)
-- **Estado**: abierto
-- **Asignado**: —
+- **Estado**: cerrado
+- **Asignado**: sesión de Claude (orquestación) · `gpt-5.6-sol` (implementación y review)
 - **Bloqueado por**: [El muro de pósters](017-el-muro-de-posters.md)
 - **Mapa**: [La sala de cine](../map.md)
 
@@ -68,3 +68,58 @@ calza, calzaba mal desde el principio.
 Al cerrar: desplegada, y **una saga nueva armada de verdad desde el iPhone**
 uniendo al menos dos colecciones — es el único camino que la siembra nunca
 ejercitó.
+
+## Resolución
+
+**La sala dejó de depender de la siembra.** Implementó `gpt-5.6-sol`·`high`,
+review adversarial del mismo modelo, veto del orquestador y aceptación en
+navegador a 390×844. PR 7 de la rama acumuladora.
+
+### Las tres formas del alta, construidas
+
+- **Suelto** — el cajón se queda abierto, sólo la fila agregada pasa a dorado y
+  la búsqueda sigue viva. Agregar un título **no repinta la lista de
+  resultados**, que era la mitad del punto.
+- **Saga** — se arma **uniendo** colecciones y películas sueltas, se reordena
+  siempre por fecha de estreno y el nombre lo escribe la sala. Reconoce una saga
+  **ya catalogada por `tmdbId`** y continúa su `orden` sin renumerar, para no
+  romper el candado de los títulos que ya estaban dentro.
+- **Manual** — conserva el nombre que se buscó, entra con marco punteado y *sin
+  póster oficial*, y puede unirse a una saga existente.
+
+La línea de latón corta lo ya visto de lo que entra a la cartelera, y el botón
+final lo dice en voz alta. Ese corte es exactamente `visto: true` sin ninguna
+función — la mitad sin fecha del historial de
+[La cabina y el historial](019-la-cabina-y-el-historial.md).
+
+**El buscador se monta una sola vez** y sólo se repinta la lista: teclear de
+corrido no pierde el cursor ni salta el foco. Los resultados viejos se quedan
+atenuados en vez de desaparecer.
+
+**Lo no estrenado sale en gris**, comparado contra **el día de México** y no
+contra el reloj del aparato. Un título sin fecha en TMDB dice *«sin fecha»* en
+vez de afirmar un estreno futuro que TMDB nunca dio.
+
+### El servidor
+
+Convex sumó `tmdb:buscar`, `tmdb:coleccion` y `titulos:altaEnLote`. **El lote
+valida sala, butaca, catálogo y lugares de saga antes de escribir nada**, porque
+todo lo que no es `internal*` lo alcanza un `fetch` anónimo. El
+`TMDB_READ_TOKEN` se lee sólo de `process.env` dentro de la action; ninguna
+credencial toca el repo.
+
+### La hoja inferior, tercer uso
+
+`app/hoja-inferior.tsx` se usó al revés —el alta baja un cajón, el catálogo sube
+una hoja— y calzó con 14 líneas de cambio. Era la prueba que
+[El ganador y la función](016-el-ganador-y-la-funcion.md) se había puesto a sí
+misma: si aquí no calzaba, calzaba mal desde el principio.
+
+### Lo que no se cumplió del criterio de cierre
+
+**No se ha armado una saga nueva desde el iPhone.** Producción sigue con las
+**seis sagas sembradas** —Dragones, Dune, Spider-Man (Garfield), Spider-Verse,
+Star Wars, Tierra Media— y ningún título dado de alta desde la app. El camino
+está construido, revisado y desplegado, y quedó ejercitado en navegador; **el
+que la siembra nunca ejercitó sigue sin ejercitarse en el aparato del dueño**.
+Se cierra la rebanada, no ese renglón.

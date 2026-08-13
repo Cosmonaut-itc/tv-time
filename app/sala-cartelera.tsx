@@ -646,7 +646,7 @@ export default function SalaCartelera({
 
           {fase === "ganador" && ganador && (
             <div className="ganador">
-              <div className={`marco${ganador.posterPath ? "" : " punteado"}`}>
+              <div className={`marco-laton${ganador.posterPath ? "" : " punteado"}`}>
                 {ganador.posterPath ? (
                   // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
                   <img
@@ -819,50 +819,52 @@ export default function SalaCartelera({
         <span>Giros <b>{giros}</b></span>
       </div>
 
-      <button
-        ref={botonAbrir}
-        className="cabina-abrir cartelera-abrir"
-        type="button"
-        aria-label="Ver la cartelera"
-        aria-expanded={cajonAbierto}
-        aria-controls="cartelera-cajon"
-        onClick={() => setCajonAbierto(true)}
-      >
-        ☰
-      </button>
+      <nav className="cornisa-controles" aria-label="Controles del mezzanine">
+        <button
+          ref={botonCatalogo}
+          className="cornisa-control"
+          type="button"
+          aria-label="Ver el catálogo"
+          aria-expanded={catalogoAbierto}
+          onClick={() => setCatalogoAbierto(true)}
+        >
+          ▦
+        </button>
 
-      <button
-        ref={botonCabina}
-        className="cabina-abrir cabina-ajustes-abrir"
-        type="button"
-        aria-label="Abrir la cabina"
-        aria-expanded={cabinaAbierta}
-        onClick={() => setCabinaAbierta(true)}
-      >
-        ⚙
-      </button>
+        <button
+          ref={botonHistorial}
+          className="cornisa-control"
+          type="button"
+          aria-label="Ver el historial"
+          aria-expanded={historialAbierto}
+          onClick={() => setHistorialAbierto(true)}
+        >
+          ◷
+        </button>
 
-      <button
-        ref={botonHistorial}
-        className="cabina-abrir historial-abrir"
-        type="button"
-        aria-label="Ver el historial"
-        aria-expanded={historialAbierto}
-        onClick={() => setHistorialAbierto(true)}
-      >
-        ◷
-      </button>
+        <button
+          ref={botonAbrir}
+          className="cornisa-control"
+          type="button"
+          aria-label="Ver la cartelera"
+          aria-expanded={cajonAbierto}
+          aria-controls="cartelera-cajon"
+          onClick={() => setCajonAbierto(true)}
+        >
+          ☰
+        </button>
 
-      <button
-        ref={botonCatalogo}
-        className="cabina-abrir catalogo-abrir"
-        type="button"
-        aria-label="Ver el catálogo"
-        aria-expanded={catalogoAbierto}
-        onClick={() => setCatalogoAbierto(true)}
-      >
-        ▦
-      </button>
+        <button
+          ref={botonCabina}
+          className="cornisa-control"
+          type="button"
+          aria-label="Abrir la cabina"
+          aria-expanded={cabinaAbierta}
+          onClick={() => setCabinaAbierta(true)}
+        >
+          ⚙
+        </button>
+      </nav>
 
       <aside
         className={`cabina${cajonAbierto ? " abierta" : ""}`}

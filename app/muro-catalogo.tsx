@@ -54,7 +54,7 @@ const CeldaDeTitulo = memo(function CeldaDeTitulo({
       onClick={(evento) => onAbrir(titulo, evento.currentTarget)}
     >
       <PosterDelMuro titulo={titulo} />
-      <span className="marco" />
+      <span className="filete-muro" />
       {estado && <span className="banda alto">{estado}</span>}
     </button>
   );
@@ -82,7 +82,7 @@ const CeldaDePila = memo(function CeldaDePila({
       onClick={() => onAlternar(pila.saga)}
     >
       <PosterDelMuro titulo={pila.cara} />
-      <span className="marco" />
+      <span className="filete-muro" />
       {completa && <span className="banda alto">✓ vista</span>}
       <span className="banda"><span>{pila.saga}</span><b>{pila.vistas}/{pila.titulos.length}</b></span>
     </button>
@@ -251,7 +251,7 @@ export default function MuroCatalogo({
       >
         {tituloAbierto && (
           <div className="catalogo-ficha">
-            <div className={`marco${tituloAbierto.posterPath ? "" : " punteado"}`}>
+            <div className={`marco-laton${tituloAbierto.posterPath ? "" : " punteado"}`}>
               {tituloAbierto.posterPath ? (
                 // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
                 <img src={`https://image.tmdb.org/t/p/w342${tituloAbierto.posterPath}`} alt="" width={342} height={513} loading="lazy" />

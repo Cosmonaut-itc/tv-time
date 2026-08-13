@@ -486,6 +486,254 @@ button:disabled {
   justify-content: center;
 }
 
+/* ── Carretes ───────────────────────────────── */
+
+.carretes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.carrete {
+  position: relative;
+  height: 100%;
+  width: auto;
+  max-width: calc((100% - 16px) / 3);
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  background: #050204;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.9);
+}
+
+.carrete .tira {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+/* line-height 0 + svg en block: sin esto cada celda arrastra el
+   descender del inline y la tira aterriza corrida. */
+.carrete .celda {
+  flex: none;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  line-height: 0;
+}
+
+.carrete .celda svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.carrete .celda img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carrete .vidrio {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.75) 0%,
+    transparent 24%,
+    transparent 76%,
+    rgba(0, 0, 0, 0.75) 100%
+  );
+}
+
+.carrete.elegido {
+  border-color: var(--laton);
+  box-shadow: 0 0 0 1px var(--laton), 0 0 22px rgba(201, 162, 39, 0.45);
+}
+
+.carrete.descartado {
+  opacity: 0.28;
+  filter: saturate(0.3);
+}
+
+/* ── Ganador ────────────────────────────────── */
+
+.ganador {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: entra 0.5s ease both;
+}
+
+.marco {
+  position: relative;
+  width: 172px;
+  padding: 7px;
+  background: linear-gradient(145deg, var(--laton) 0%, #6E5410 42%, var(--laton) 58%, #4A390B 100%);
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px),
+                     calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+}
+.marco > svg, .marco > img { display: block; width: 100%; height: auto; }
+
+.ficha {
+  text-align: center;
+}
+
+.ficha h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.13em;
+  color: var(--crema);
+  text-wrap: balance;
+  line-height: 1.25;
+}
+
+.ficha .meta {
+  margin: 6px 0 0;
+  font-family: var(--datos);
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--crema-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.saga {
+  margin: 0 0 3px;
+  font-family: var(--datos);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--laton);
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.btn-veto {
+  flex: 1;
+  padding: 13px 6px;
+  font-size: 11px;
+  background: transparent;
+  color: var(--vino-claro);
+  border: 1px solid rgba(142, 36, 56, 0.75);
+}
+
+.btn-veto:not([disabled]):hover {
+  background: rgba(142, 36, 56, 0.18);
+  color: #c9566c;
+}
+
+.razon-veto {
+  max-width: 300px;
+  color: var(--crema-tenue);
+  font-family: var(--datos);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.razon-veto.error {
+  color: #c9566c;
+}
+
+/* ── Conteo de proyector ────────────────────── */
+
+.conteo {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 2, 4, 0.92);
+  font-family: var(--display);
+  font-size: 78px;
+  color: var(--crema);
+}
+
+.conteo span {
+  animation: pulso 0.55s ease both;
+  display: block;
+}
+
+.conteo .aro {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border: 1px solid rgba(242, 229, 198, 0.35);
+  border-radius: 50%;
+}
+
+.conteo .cruz-h,
+.conteo .cruz-v {
+  position: absolute;
+  background: rgba(242, 229, 198, 0.22);
+}
+
+.conteo .cruz-h {
+  width: 100%;
+  height: 1px;
+}
+
+.conteo .cruz-v {
+  height: 100%;
+  width: 1px;
+}
+
+@keyframes pulso {
+  from {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Sello de veto ──────────────────────────── */
+
+.sello {
+  position: absolute;
+  z-index: 7;
+  top: 50%;
+  left: 50%;
+  font-family: var(--display);
+  font-size: 38px;
+  letter-spacing: 0.16em;
+  color: #c9566c;
+  border: 4px solid #c9566c;
+  padding: 8px 18px;
+  text-transform: uppercase;
+  animation: sellar 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+@keyframes sellar {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-16deg) scale(2.4);
+  }
+  to {
+    opacity: 0.92;
+    transform: translate(-50%, -50%) rotate(-11deg) scale(1);
+  }
+}
+
 /* ── Reposo ─────────────────────────────────── */
 
 .reposo {
@@ -543,6 +791,10 @@ button:disabled {
   background: rgba(201, 162, 39, 0.1);
 }
 
+.filtro.senalada {
+  box-shadow: 0 0 0 2px var(--laton), 0 0 20px rgba(201, 162, 39, 0.45);
+}
+
 .btn-palanca {
   width: 100%;
   padding: 16px 12px;
@@ -551,6 +803,51 @@ button:disabled {
   color: #2a1b04;
   background: linear-gradient(180deg, #e8c65a, var(--laton) 55%, #8a6f1c);
   box-shadow: 0 3px 0 #5a470f, 0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+.panel-vetos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid rgba(242, 229, 198, 0.14);
+  background: rgba(142, 36, 56, 0.12);
+}
+
+.panel-vetos.agotado {
+  opacity: 0.45;
+}
+
+.panel-vetos .etiqueta {
+  font-family: var(--datos);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--crema-tenue);
+}
+
+.panel-vetos .fichas {
+  display: flex;
+  gap: 5px;
+}
+
+.panel-vetos .ficha-veto {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid var(--vino-claro);
+  background: var(--vino-claro);
+  transition: background 0.3s ease;
+}
+
+.panel-vetos .ficha-veto.usada {
+  background: transparent;
+}
+
+.vuelta-vacia p {
+  max-width: 290px;
+  line-height: 1.65;
 }
 
 .bitacora {
@@ -717,6 +1014,13 @@ button:disabled {
     transition-duration: 0.01ms;
   }
 
+  .carrete .tira {
+    transition-duration: 0.01ms !important;
+  }
+
+  .ganador,
+  .conteo span,
+  .sello,
   .reposo {
     animation: none;
   }

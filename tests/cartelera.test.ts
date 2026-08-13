@@ -231,20 +231,12 @@ test("un candidato anuncia no había de otra", () => {
 });
 
 test("cero no salta ningún acto; de uno a tres salta el primero y con cuatro hace falta", () => {
-  const cero = derivarCartelera([], {
-    filtro: "loQueSea",
-    vetados: new Set(),
-  });
-  const tres = derivarCartelera(catalogoSembrado().slice(0, 3), {
-    filtro: "loQueSea",
-    vetados: new Set(),
-  });
-  const cuatro = derivarCartelera(catalogoSembrado().slice(0, 4), {
-    filtro: "loQueSea",
-    vetados: new Set(),
-  });
+  const saltos = Array.from({ length: 5 }, (_, candidatos) =>
+    derivarCartelera(catalogoSembrado().slice(0, candidatos), {
+      filtro: "loQueSea",
+      vetados: new Set(),
+    }).saltaPrimerActo,
+  );
 
-  assert.equal(cero.saltaPrimerActo, false);
-  assert.equal(tres.saltaPrimerActo, true);
-  assert.equal(cuatro.saltaPrimerActo, false);
+  assert.deepEqual(saltos, [false, true, true, true, false]);
 });

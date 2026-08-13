@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
-test("la siembra es interna y la superficie pública sólo abre la sala y lee sus títulos por id", async () => {
+test("la siembra es interna y la superficie pública usa ids, nunca códigos", async () => {
   const siembra = await readFile("convex/siembra.ts", "utf8");
   assert.match(siembra, /export const sembrar = internalAction\s*\(/);
 
@@ -20,11 +20,15 @@ test("la siembra es interna y la superficie pública sólo abre la sala y lee su
   }
 
   assert.deepEqual(publicas, [
+    "noches.ts:vigente:query",
+    "noches.ts:vetar:mutation",
     "taquilla.ts:entrar:mutation",
     "titulos.ts:deSala:query",
   ]);
 
-  const titulos = await readFile("convex/titulos.ts", "utf8");
-  assert.doesNotMatch(titulos, /codigo/);
-  assert.match(titulos, /args:\s*{\s*salaId:\s*v\.id\("salas"\)\s*}/);
+  for (const modulo of ["convex/noches.ts", "convex/titulos.ts"]) {
+    const fuente = await readFile(modulo, "utf8");
+    assert.doesNotMatch(fuente, /codigo/);
+  }
+
 });

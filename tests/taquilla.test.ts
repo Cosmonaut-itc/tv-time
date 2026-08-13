@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { entrarConFreno, type FrenoTaquilla } from "../convex/taquilla_logica.ts";
+import {
+  elegirCodigoNuevo,
+  entrarConFreno,
+  type FrenoTaquilla,
+} from "../convex/taquilla_logica.ts";
 
 const CODIGO_CORRECTO = "R4346N";
 
@@ -54,4 +58,37 @@ test("el freno sólo responde a un código inexistente y conserva el mensaje aco
     mensaje: "No hay ninguna sala con ese código.",
     intentosRestantes: 4,
   });
+});
+
+test("la rotación descarta el código actual y los ocupados antes de elegir uno libre", async () => {
+  const candidatos = [CODIGO_CORRECTO, "OCUPA1", "NUEV01"];
+  const ocupados = new Set([CODIGO_CORRECTO, "OCUPA1"]);
+
+  const nuevo = await elegirCodigoNuevo(
+    {
+      generarCodigo: () => candidatos.shift()!,
+      codigoEstaTomado: async (codigo) => ocupados.has(codigo),
+    },
+    { codigoActual: CODIGO_CORRECTO },
+  );
+
+  assert.equal(nuevo, "NUEV01");
+});
+
+test("la rotación se rinde sin candidato después de dieciséis intentos", async () => {
+  let intentos = 0;
+
+  const nuevo = await elegirCodigoNuevo(
+    {
+      generarCodigo: () => {
+        intentos += 1;
+        return "OCUPA1";
+      },
+      codigoEstaTomado: async () => true,
+    },
+    { codigoActual: CODIGO_CORRECTO },
+  );
+
+  assert.equal(nuevo, null);
+  assert.equal(intentos, 16);
 });

@@ -24,6 +24,24 @@ type DependenciasTaquilla<SalaId extends string> = {
   limpiarFreno: () => Promise<void>;
 };
 
+type DependenciasRotacion = {
+  generarCodigo: () => string;
+  codigoEstaTomado: (codigo: string) => Promise<boolean>;
+};
+
+export async function elegirCodigoNuevo(
+  dependencias: DependenciasRotacion,
+  { codigoActual }: { codigoActual: string },
+): Promise<string | null> {
+  for (let intento = 0; intento < 16; intento += 1) {
+    const candidato = dependencias.generarCodigo();
+    if (candidato !== codigoActual && !(await dependencias.codigoEstaTomado(candidato))) {
+      return candidato;
+    }
+  }
+  return null;
+}
+
 export async function entrarConFreno<SalaId extends string>(
   dependencias: DependenciasTaquilla<SalaId>,
   { codigo }: { codigo: string },

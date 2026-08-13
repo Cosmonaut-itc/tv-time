@@ -19,6 +19,7 @@ import type * as funciones_logica from "../funciones_logica.js";
 import type * as noche from "../noche.js";
 import type * as noches from "../noches.js";
 import type * as noches_logica from "../noches_logica.js";
+import type * as salas from "../salas.js";
 import type * as siembra from "../siembra.js";
 import type * as siembra_catalogo from "../siembra_catalogo.js";
 import type * as taquilla from "../taquilla.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   noche: typeof noche;
   noches: typeof noches;
   noches_logica: typeof noches_logica;
+  salas: typeof salas;
   siembra: typeof siembra;
   siembra_catalogo: typeof siembra_catalogo;
   taquilla: typeof taquilla;

@@ -9,7 +9,7 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { CATALOGO_INICIAL, type TituloInicial } from "./catalogo_inicial";
-import { ALFABETO_CODIGO } from "./codigo";
+import { generarCodigo } from "./codigo";
 import {
   agregadoDelIndice,
   baseDeAgregados,
@@ -173,13 +173,6 @@ export const estado = internalQuery({
     return examinada ? resumir(examinada) : null;
   },
 });
-
-function generarCodigo(): string {
-  return Array.from(
-    { length: 6 },
-    () => ALFABETO_CODIGO[Math.floor(Math.random() * ALFABETO_CODIGO.length)],
-  ).join("");
-}
 
 export const guardar = internalMutation({
   args: { titulos: v.array(tituloResuelto), codigo: v.optional(v.string()) },

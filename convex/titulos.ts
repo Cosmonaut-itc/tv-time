@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+import { validarTituloDeSala } from "./titulos_logica";
 
 const tituloDeSala = v.object({
   _id: v.id("titulos"),
@@ -51,5 +52,35 @@ export const deSala = query({
         agregado,
       }),
     );
+  },
+});
+
+export const marcarVisto = mutation({
+  args: { salaId: v.id("salas"), tituloId: v.id("titulos"), visto: v.boolean() },
+  returns: v.null(),
+  handler: async (ctx, { salaId, tituloId, visto }) => {
+    const titulo = await ctx.db.get(tituloId);
+    validarTituloDeSala(titulo, salaId);
+    await ctx.db.patch(tituloId, { visto });
+    return null;
+  },
+});
+
+export const quitar = mutation({
+  args: { salaId: v.id("salas"), tituloId: v.id("titulos") },
+  returns: v.null(),
+  handler: async (ctx, { salaId, tituloId }) => {
+    const titulo = await ctx.db.get(tituloId);
+    validarTituloDeSala(titulo, salaId);
+    const funciones = await ctx.db
+      .query("funciones")
+      .withIndex("por_titulo", (q) => q.eq("tituloId", tituloId))
+      .collect();
+
+    await Promise.all(funciones.map(({ _id }) => ctx.db.delete(_id)));
+    await ctx.db.delete(tituloId);
+    // `noches.vetados` puede conservar el id: la derivación sólo mira títulos
+    // que siguen en la sala y esa fila efímera caduca al próximo corte.
+    return null;
   },
 });

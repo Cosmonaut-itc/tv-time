@@ -26,6 +26,8 @@ test("la siembra es interna y la superficie pública usa ids, nunca códigos", a
     "noches.ts:vetar:mutation",
     "taquilla.ts:entrar:mutation",
     "titulos.ts:deSala:query",
+    "titulos.ts:marcarVisto:mutation",
+    "titulos.ts:quitar:mutation",
   ]);
 
   for (const modulo of [
@@ -33,6 +35,7 @@ test("la siembra es interna y la superficie pública usa ids, nunca códigos", a
     "convex/funciones.ts",
     "convex/noches.ts",
     "convex/titulos.ts",
+    "convex/titulos_logica.ts",
   ]) {
     const fuente = await readFile(modulo, "utf8");
     assert.doesNotMatch(fuente, /codigo/);

@@ -8,7 +8,7 @@ import { codigoTieneFormatoValido, normalizarCodigo } from "@/convex/codigo";
 import { debeOlvidarCodigo } from "./entrada-sala-logica";
 import LogoTmdb from "./logo-tmdb";
 import { nocheDe } from "./noche";
-import SalaCartelera from "./sala-cartelera";
+import SalaCartelera, { type CuentaDeSala } from "./sala-cartelera";
 
 const CLAVE_CODIGO = "cine.codigo";
 const CLAVE_BUTACA = "cine.butaca";
@@ -63,6 +63,7 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
   const [enviando, setEnviando] = useState(false);
   const [sala, setSala] = useState<SalaAbierta | null>(null);
   const [butaca, setButaca] = useState<string | null>(null);
+  const [cuentaDeSala, setCuentaDeSala] = useState<CuentaDeSala | null>(null);
 
   const abrir = useCallback(
     async (codigoPorProbar: string) => {
@@ -145,7 +146,15 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
         <div className="rotulo">
           <h1>EL CINE</h1>
           <span className="abanico" aria-hidden="true" />
-          <p className="fecha">función privada</p>
+          <p className="fecha">
+            {fase === "sala" && cuentaDeSala ? (
+              <>
+                <b>{cuentaDeSala.titulos}</b> {cuentaDeSala.titulos === 1 ? "título" : "títulos"} ·{" "}
+                <b>{cuentaDeSala.enCartelera}</b> en cartelera ·{" "}
+                {cuentaDeSala.vistas === 1 ? "1 vista" : `${cuentaDeSala.vistas} vistas`}
+              </>
+            ) : "función privada"}
+          </p>
         </div>
         <div className="focos" aria-hidden="true">
           {Array.from({ length: 13 }, (_, indice) => <i className="foco" key={indice} />)}
@@ -153,7 +162,11 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
       </header>
 
       {fase === "sala" && sala && butaca ? (
-        <SalaCartelera salaId={sala.salaId} codigo={sala.codigo} />
+        <SalaCartelera
+          salaId={sala.salaId}
+          codigo={sala.codigo}
+          onCambiarCuenta={setCuentaDeSala}
+        />
       ) : <section className="entrada" aria-live="polite">
         {fase === "cargando" && <p className="estado-entrada">Abriendo la taquilla…</p>}
 

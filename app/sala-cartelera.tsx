@@ -2,7 +2,7 @@
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   derivarCartelera,
@@ -19,6 +19,10 @@ import {
 } from "./giro";
 import { nocheDe, nocheLocalEsMasReciente, proximoCorte } from "./noche";
 import HojaInferior from "./hoja-inferior";
+import ChipsDisponibilidad from "./chips-disponibilidad";
+import MarquesinaApagada from "./marquesina-apagada";
+import MuroCatalogo from "./muro-catalogo";
+import PosterCrudo from "./poster-crudo";
 
 const FILTROS: readonly { valor: FiltroCartelera; etiqueta: string }[] = [
   { valor: "pelicula", etiqueta: "Peli" },
@@ -36,56 +40,11 @@ type FaseDelGiro =
   | "vuelta vacía"
   | "vetando";
 
-type ProveedorDisponibilidad = { nombre: string; logoPath: string };
-type EstadoDisponibilidad =
-  | { estado: "buscando" }
-  | { estado: "sin tmdb" }
-  | { estado: "sin datos" }
-  | {
-      estado: "datos";
-      flatrate: ProveedorDisponibilidad[];
-      renta: ProveedorDisponibilidad[];
-      compra: ProveedorDisponibilidad[];
-    };
-
-type ChipDisponibilidad = {
-  proveedor: ProveedorDisponibilidad;
-  prefijo?: "Renta" | "Compra";
+export type CuentaDeSala = {
+  titulos: number;
+  enCartelera: number;
+  vistas: number;
 };
-
-function normalizarProveedor(nombre: string): string {
-  return nombre
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-function colorDeProveedor(nombre: string): string {
-  const normalizado = normalizarProveedor(nombre);
-  if (normalizado.includes("netflix")) return "#E50914";
-  if (normalizado.includes("prime")) return "#00A8E1";
-  if (normalizado.includes("disney")) return "#1F6FEB";
-  if (normalizado.includes("hbo max") || normalizado === "max") return "#8A2BE2";
-  if (normalizado.includes("apple tv")) return "#C9C9C9";
-  return "var(--laton)";
-}
-
-function chipsDe(
-  disponibilidad: EstadoDisponibilidad | null,
-): ChipDisponibilidad[] {
-  if (disponibilidad?.estado !== "datos") return [];
-  if (disponibilidad.flatrate.length > 0) {
-    return disponibilidad.flatrate.map((proveedor) => ({ proveedor }));
-  }
-  if (disponibilidad.renta.length > 0) {
-    return disponibilidad.renta
-      .slice(0, 3)
-      .map((proveedor) => ({ proveedor, prefijo: "Renta" }));
-  }
-  return disponibilidad.compra
-    .slice(0, 3)
-    .map((proveedor) => ({ proveedor, prefijo: "Compra" }));
-}
 
 function appEstaInstalada(): boolean {
   return (
@@ -121,24 +80,6 @@ function mismaCelda(anterior: PropiedadesDeCelda, siguiente: PropiedadesDeCelda)
 
 const CeldaDeCartelera = memo(CeldaDeCarteleraBase, mismaCelda);
 
-function PosterCrudo({ titulo }: { titulo: TituloDeSala }) {
-  return (
-    <svg viewBox="0 0 300 450" aria-hidden="true" focusable="false">
-      <rect width="300" height="450" fill="#1E1014" />
-      <circle cx="150" cy="175" r="82" fill="none" stroke="#C9A227" strokeWidth="2" />
-      <path d="M52 330 H248" stroke="#8A6F1C" strokeWidth="3" />
-      <text x="150" y="360" textAnchor="middle" fill="#F2E5C6" fontSize="18">
-        {titulo.nombre.slice(0, 24).toUpperCase()}
-      </text>
-      {titulo.anio && (
-        <text x="150" y="390" textAnchor="middle" fill="#9A8E75" fontSize="14">
-          {titulo.anio}
-        </text>
-      )}
-    </svg>
-  );
-}
-
 function tiraDe(
   candidatos: readonly TituloDeSala[],
   finalista: TituloDeSala,
@@ -153,16 +94,17 @@ function tiraDe(
 export default function SalaCartelera({
   salaId,
   codigo,
+  onCambiarCuenta,
 }: {
   salaId: Id<"salas">;
   codigo: string;
+  onCambiarCuenta: (cuenta: CuentaDeSala | null) => void;
 }) {
   const titulos = useQuery(api.titulos.deSala, { salaId });
   const [momentoConsulta, setMomentoConsulta] = useState(() => Date.now());
   const noche = useQuery(api.noches.vigente, { salaId, momento: momentoConsulta });
   const vetarTitulo = useMutation(api.noches.vetar);
   const cerrarFuncion = useMutation(api.funciones.cerrar);
-  const buscarDisponibilidad = useAction(api.disponibilidad.deTitulo);
   const [filtro, setFiltro] = useState<FiltroCartelera>("loQueSea");
   const [fase, setFase] = useState<FaseDelGiro>("reposo");
   const [giros, setGiros] = useState(0);
@@ -179,8 +121,6 @@ export default function SalaCartelera({
   const [siguienteDesbloqueado, setSiguienteDesbloqueado] = useState<
     string | null
   >(null);
-  const [disponibilidad, setDisponibilidad] =
-    useState<EstadoDisponibilidad | null>(null);
   const [instalacionAbierta, setInstalacionAbierta] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [nocheLocal, setNocheLocal] = useState<{
@@ -189,14 +129,15 @@ export default function SalaCartelera({
     vetados: Id<"titulos">[];
   } | null>(null);
   const [cajonAbierto, setCajonAbierto] = useState(false);
+  const [catalogoAbierto, setCatalogoAbierto] = useState(false);
   const botonAbrir = useRef<HTMLButtonElement>(null);
+  const botonCatalogo = useRef<HTMLButtonElement>(null);
   const botonCerrar = useRef<HTMLButtonElement>(null);
   const escenario = useRef<HTMLElement>(null);
   const palanca = useRef<HTMLButtonElement>(null);
   const tiras = useRef<Array<HTMLDivElement | null>>([]);
   const montado = useRef(false);
   const secuenciaGiro = useRef(0);
-  const secuenciaDisponibilidad = useRef(0);
   const giroEnVuelo = useRef<{
     id: number;
     finalistas: readonly TituloDeSala[];
@@ -214,6 +155,14 @@ export default function SalaCartelera({
   const cartelera = useMemo(
     () => derivarCartelera(titulos ?? [], { filtro, vetados }),
     [filtro, titulos, vetados],
+  );
+  const cuentaDeSala = useMemo(
+    () => titulos === undefined ? null : {
+      titulos: titulos.length,
+      enCartelera: cartelera.cuentas.loQueSea,
+      vistas: titulos.filter(({ visto }) => visto).length,
+    },
+    [cartelera.cuentas.loQueSea, titulos],
   );
   const vetosDisponibles =
     VETOS_POR_NOCHE - (estadoNoche?.vetosGastados ?? 0);
@@ -236,31 +185,8 @@ export default function SalaCartelera({
   }, [cartelera.candidatos, filtro, noche, titulos, vetados]);
 
   useEffect(() => {
-    const secuencia = secuenciaDisponibilidad.current + 1;
-    secuenciaDisponibilidad.current = secuencia;
-    if (fase !== "ganador" || !ganador) return;
-
-    void buscarDisponibilidad({
-      salaId,
-      tituloId: ganador._id as Id<"titulos">,
-    })
-      .then((resultado) => {
-        if (
-          montado.current &&
-          secuenciaDisponibilidad.current === secuencia
-        ) {
-          setDisponibilidad(resultado);
-        }
-      })
-      .catch(() => {
-        if (
-          montado.current &&
-          secuenciaDisponibilidad.current === secuencia
-        ) {
-          setDisponibilidad({ estado: "sin datos" });
-        }
-      });
-  }, [buscarDisponibilidad, fase, ganador, salaId]);
+    onCambiarCuenta(cuentaDeSala);
+  }, [cuentaDeSala, onCambiarCuenta]);
 
   function esperar(ms: number): Promise<void> {
     return new Promise((resolver) => {
@@ -289,7 +215,6 @@ export default function SalaCartelera({
     return () => {
       montado.current = false;
       secuenciaGiro.current += 1;
-      secuenciaDisponibilidad.current += 1;
       giroEnVuelo.current = null;
       for (const [id, resolver] of esperasPendientes) {
         window.clearTimeout(id);
@@ -326,6 +251,10 @@ export default function SalaCartelera({
 
   useEffect(() => {
     const luces = Array.from(document.querySelectorAll<HTMLElement>(".foco"));
+    if (titulos?.length === 0) {
+      luces.forEach((luz) => luz.classList.remove("on"));
+      return;
+    }
     const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     luces.forEach((luz) => luz.classList.remove("on"));
     if (reducido) {
@@ -349,7 +278,7 @@ export default function SalaCartelera({
       modo === "fiesta" ? 240 : modo === "girando" ? 110 : 620,
     );
     return () => window.clearInterval(intervalo);
-  }, [fase, ocupado]);
+  }, [fase, ocupado, titulos?.length]);
 
   function cerrarCajon() {
     botonAbrir.current?.focus();
@@ -368,7 +297,6 @@ export default function SalaCartelera({
     setFiltroSenalado(false);
     setErrorVeto("");
     setErrorFuncion("");
-    setDisponibilidad(null);
     setSiguienteDesbloqueado(null);
   }
 
@@ -470,7 +398,6 @@ export default function SalaCartelera({
     await esperar(reducido ? 40 : 700);
     if (!giroPuedeContinuar(id)) return;
     giroEnVuelo.current = null;
-    setDisponibilidad({ estado: "buscando" });
     setGanador(nuevosFinalistas[ganadorIndice]);
     setFase("ganador");
     setOcupado(false);
@@ -629,9 +556,14 @@ export default function SalaCartelera({
 
   const mostrandoCarretes =
     fase === "girando" || fase === "finalistas" || fase === "vetando";
-  const chipsDisponibles = chipsDe(disponibilidad);
-  const sinProveedoresEnMexico =
-    disponibilidad?.estado === "datos" && chipsDisponibles.length === 0;
+  if (titulos?.length === 0) {
+    return (
+      <MarquesinaApagada
+        rotulo="La sala espera su primera función"
+        linea="Agreguen su primera película."
+      />
+    );
+  }
 
   return (
     <>
@@ -721,36 +653,11 @@ export default function SalaCartelera({
                   {ganador.tipo === "serie" ? "Serie" : "Película"}
                   {ganador.anio ? ` · ${ganador.anio}` : ""}
                 </p>
-                {chipsDisponibles.length > 0 && (
-                  <>
-                    <div className="servicios">
-                      {chipsDisponibles.map(({ proveedor, prefijo }) => (
-                        <span
-                          className={`chip${prefijo ? " renta" : ""}`}
-                          key={`${prefijo ?? "suscripción"}-${proveedor.nombre}`}
-                        >
-                          <i
-                            className="punto"
-                            style={{ background: colorDeProveedor(proveedor.nombre) }}
-                          />
-                          {prefijo ? `${prefijo} · ` : ""}
-                          {proveedor.nombre}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="fuente">Disponibilidad · JustWatch</p>
-                  </>
-                )}
-                {disponibilidad?.estado === "buscando" && (
-                  <p className="fuente">buscando disponibilidad…</p>
-                )}
-                {sinProveedoresEnMexico && (
-                  <p className="fuente">sin disponibilidad en México</p>
-                )}
-                {(disponibilidad?.estado === "sin datos" ||
-                  disponibilidad?.estado === "sin tmdb") && (
-                  <p className="fuente">sin datos de disponibilidad</p>
-                )}
+                <ChipsDisponibilidad
+                  key={ganador._id}
+                  salaId={salaId}
+                  tituloId={ganador._id as Id<"titulos">}
+                />
               </div>
               <div className="acciones">
                 <button
@@ -901,6 +808,17 @@ export default function SalaCartelera({
         ☰
       </button>
 
+      <button
+        ref={botonCatalogo}
+        className="cabina-abrir catalogo-abrir"
+        type="button"
+        aria-label="Ver el catálogo"
+        aria-expanded={catalogoAbierto}
+        onClick={() => setCatalogoAbierto(true)}
+      >
+        ▦
+      </button>
+
       <aside
         className={`cabina${cajonAbierto ? " abierta" : ""}`}
         id="cartelera-cajon"
@@ -930,6 +848,16 @@ export default function SalaCartelera({
           Cerrar
         </button>
       </aside>
+
+      <MuroCatalogo
+        abierta={catalogoAbierto}
+        onCerrar={() => {
+          setCatalogoAbierto(false);
+          botonCatalogo.current?.focus();
+        }}
+        salaId={salaId}
+        titulos={titulos ?? []}
+      />
 
       <HojaInferior
         abierta={instalacionAbierta}

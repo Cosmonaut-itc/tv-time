@@ -41,7 +41,7 @@ function compararLugarEnSaga(
   return 0;
 }
 
-function tieneAnteriorSinVer(
+export function tieneAnteriorSinVer(
   titulo: TituloDeSala,
   titulos: readonly TituloDeSala[],
 ): boolean {

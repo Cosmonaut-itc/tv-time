@@ -1,4 +1,5 @@
 const CACHE_CASCARON = "tv-time-cascaron-v1";
+const LIMITE_NAVEGACION_MS = 30_000;
 
 // Si cambia la copia del telón de entrada, hay que actualizar también ésta.
 const DOCUMENTO_TELON_RESPALDO = `<!doctype html>
@@ -117,7 +118,55 @@ const DOCUMENTO_TELON_RESPALDO = `<!doctype html>
       <p class="telon-de-entrada__mensaje">No hay red. El telón se abrirá solo cuando vuelva.</p>
     </div>
   </main>
-  <script>addEventListener("online", () => location.reload());</script>
+  <script>
+    (() => {
+      let demora = 5_000;
+      let temporizador;
+      let comprobando = false;
+
+      async function comprobarOrigen() {
+        if (comprobando) return;
+        comprobando = true;
+        const controlador = new AbortController();
+        let temporizadorLimite;
+        const limite = new Promise((resolve) => {
+          temporizadorLimite = setTimeout(() => {
+            resolve(undefined);
+            controlador.abort();
+          }, 5_000);
+        });
+
+        try {
+          const response = await Promise.race([
+            fetch(location.href, {
+              cache: "no-store",
+              method: "HEAD",
+              signal: controlador.signal,
+            }),
+            limite,
+          ]);
+          if (response?.ok) {
+            location.reload();
+            return;
+          }
+        } catch {
+        } finally {
+          clearTimeout(temporizadorLimite);
+          comprobando = false;
+        }
+
+        temporizador = setTimeout(comprobarOrigen, demora);
+        demora = Math.min(demora * 2, 30_000);
+      }
+
+      addEventListener("online", () => {
+        if (comprobando) return;
+        clearTimeout(temporizador);
+        void comprobarOrigen();
+      });
+      void comprobarOrigen();
+    })();
+  </script>
 </body>
 </html>`;
 
@@ -128,6 +177,42 @@ function responderConTelonDeRespaldo() {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
     },
+  });
+}
+
+async function recuperarNavegacion(request) {
+  let cache;
+  try {
+    cache = await caches.open(CACHE_CASCARON);
+  } catch {
+    return responderConTelonDeRespaldo();
+  }
+
+  try {
+    const documento = await cache.match(request);
+    if (documento) return documento;
+  } catch {
+    // Una lectura puntual no impide probar el siguiente peldaño.
+  }
+
+  try {
+    const cascaron = await cache.match("/", { ignoreVary: true });
+    if (cascaron) return cascaron;
+  } catch {
+    // El telón incrustado tampoco depende de que CacheStorage responda.
+  }
+
+  return responderConTelonDeRespaldo();
+}
+
+function esperarRespuestaDeRed(respuestaDeRed) {
+  let temporizador;
+  const limite = new Promise((resolve) => {
+    temporizador = setTimeout(() => resolve(undefined), LIMITE_NAVEGACION_MS);
+  });
+
+  return Promise.race([respuestaDeRed, limite]).finally(() => {
+    clearTimeout(temporizador);
   });
 }
 
@@ -201,18 +286,10 @@ self.addEventListener("activate", (event) => {
 function navegarConRedPrimero(request) {
   const respuestaDeRed = fetch(request);
 
-  const respuestaAlCliente = respuestaDeRed.catch(async () => {
-    try {
-      const cache = await caches.open(CACHE_CASCARON);
-      const documento =
-        (await cache.match(request)) ??
-        (await cache.match("/", { ignoreVary: true }));
-      if (documento) return documento;
-    } catch {
-      // El telón incrustado tampoco depende de que CacheStorage responda.
-    }
-    return responderConTelonDeRespaldo();
-  });
+  const respuestaAlCliente = esperarRespuestaDeRed(respuestaDeRed).then(
+    (response) => response ?? recuperarNavegacion(request),
+    () => recuperarNavegacion(request),
+  );
 
   const actualizacion = respuestaDeRed
     .then(async (response) => {

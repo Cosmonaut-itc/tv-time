@@ -93,6 +93,8 @@ const comodin = await sharp(Buffer.from(telonSVG(1320, 2868)))
   .toBuffer();
 await escribir("public/telon/comodin.jpg", comodin, "sin media query");
 
+// Candidato PNG opaco para compatibilidad con iOS 26: flatten fija el fondo
+// antes de codificar para impedir que la imagen conserve un canal alpha.
 const candidatoIOS26 = await sharp(Buffer.from(telonSVG(1320, 2868)))
   .flatten({ background: "#12080C" })
   .png({ compressionLevel: 9, adaptiveFiltering: true })

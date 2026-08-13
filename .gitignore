@@ -45,3 +45,7 @@ next-env.d.ts
 
 # data URL temporal para pruebas manuales del telón
 telon-dataurl.txt
+
+# capturas temporales de exploración visual
+catalogo.png
+v-lista.png

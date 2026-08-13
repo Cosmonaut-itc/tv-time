@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { enlacesTelon } from "./telon-arranque";
+import TelonDeEntrada from "./telon-de-entrada";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -48,7 +49,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es-MX" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <TelonDeEntrada />
+        {children}
+      </body>
     </html>
   );
 }

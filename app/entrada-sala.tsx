@@ -7,6 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { codigoTieneFormatoValido, normalizarCodigo } from "@/convex/codigo";
 import { debeOlvidarCodigo } from "./entrada-sala-logica";
 import LogoTmdb from "./logo-tmdb";
+import MascotaClaude from "./mascota-claude";
 import { nocheDe } from "./noche";
 import SalaCartelera, { type CuentaDeSala } from "./sala-cartelera";
 
@@ -236,16 +237,25 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
         )}
 
       </section>}
-      {/* Los términos de TMDB piden las dos piezas juntas —el texto y el
-          logo—, no una de las dos. Va en español porque esta sala se lee en
-          español, y la frase dice exactamente lo que la cláusula exige que
-          diga: que TMDB no respalda esto. */}
-      <div className="fuente-tmdb">
-        <LogoTmdb />
-        <p>
-          Este producto usa TMDB y sus API, pero TMDB no lo respalda, certifica ni aprueba.
-        </p>
-      </div>
+      {/* Dentro de la sala el pie es la firma de la casa; la atribución de TMDB
+          se queda en la taquilla, que es donde el dueño la quiso. Las dos piezas
+          de TMDB —texto y logo— siguen viajando juntas, porque la cláusula pide
+          las dos y no una: la frase dice exactamente que TMDB no respalda esto. */}
+      {fase === "sala" ? (
+        <div className="firma-casa">
+          <p>
+            Hecho con amor por Félix y Claude
+            <MascotaClaude />
+          </p>
+        </div>
+      ) : (
+        <div className="fuente-tmdb">
+          <LogoTmdb />
+          <p>
+            Este producto usa TMDB y sus API, pero TMDB no lo respalda, certifica ni aprueba.
+          </p>
+        </div>
+      )}
     </main>
   );
 }

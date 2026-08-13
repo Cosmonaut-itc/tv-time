@@ -360,6 +360,33 @@ a {
   text-align: center;
 }
 
+/* La firma de la casa hereda el tono del pie de TMDB —misma tipografía de
+   datos, mismo color apagado, mismo margen— pero es su propia regla: la lección
+   de `.marco` fue que dos piezas compartiendo nombre acaban peleándose. */
+.firma-casa {
+  margin: -3px 20px 12px;
+  color: rgba(242, 229, 198, 0.32);
+  font-family: var(--datos);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.firma-casa p {
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* La mascota se mide en `em`, así que crece y se sienta con la frase en vez de
+   depender de un tamaño fijo que se despegaría al cambiar la tipografía. */
+.mascota-claude {
+  width: 1.2em;
+  height: 0.9em;
+  margin-left: 0.45em;
+  vertical-align: -0.08em;
+}
+
 /* 92px contra los 21px de la marquesina: el logo de TMDB tiene que quedar
    «less prominent» que la marca de la app, y aquí queda al pie, atenuado y
    diez veces más chico que el rótulo de la sala. */

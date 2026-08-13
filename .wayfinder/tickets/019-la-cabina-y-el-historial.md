@@ -101,10 +101,13 @@ Calificaciones, rachas y *«hace un año vieron…»* siguen sin graduarse. El t
 decía que se verían al construir el historial; se construyó y **no se vio la
 forma**, así que se quedan en la niebla del mapa en lugar de inventarles una.
 
-### Lo que no se cumplió del criterio de cierre
+### El criterio de cierre, cumplido
 
-**El código nunca se ha rotado de verdad.** Producción sigue con el código
-original de la siembra. La rotación está construida, revisada, desplegada y
-ejercitada en navegador —incluida la comprobación de que el aparato que la
-dispara se queda dentro—, pero **no desde el iPhone del dueño**. Es la primera
-cosa que conviene probar el día que el código se comparta de más.
+**El dueño rotó el código desde su iPhone y funcionó.** Comprobado contra
+producción: el código anterior ya no abre nada —la taquilla responde *«No hay
+ninguna sala con ese código»* y descuenta un intento del freno—, mientras la
+sala sigue viva y completa bajo el mismo `salaId`. El aparato que rotó se quedó
+dentro, que es la mitad difícil de la maniobra.
+
+Con esto, **las tres defensas de [La taquilla](007-la-taquilla.md) están
+construidas y las tres se han ejercitado de verdad**.

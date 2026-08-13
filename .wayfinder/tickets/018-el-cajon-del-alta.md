@@ -115,11 +115,31 @@ una hoja— y calzó con 14 líneas de cambio. Era la prueba que
 [El ganador y la función](016-el-ganador-y-la-funcion.md) se había puesto a sí
 misma: si aquí no calzaba, calzaba mal desde el principio.
 
-### Lo que no se cumplió del criterio de cierre
+### El alta, ejercitada de verdad
 
-**No se ha armado una saga nueva desde el iPhone.** Producción sigue con las
-**seis sagas sembradas** —Dragones, Dune, Spider-Man (Garfield), Spider-Verse,
-Star Wars, Tierra Media— y ningún título dado de alta desde la app. El camino
-está construido, revisado y desplegado, y quedó ejercitado en navegador; **el
-que la siembra nunca ejercitó sigue sin ejercitarse en el aparato del dueño**.
-Se cierra la rebanada, no ese renglón.
+**El dueño armó Indiana Jones desde su iPhone y entró completa.** Producción
+pasó de 38 a **43 títulos**: cinco películas en orden de estreno del 1 al 5, las
+cinco con `agregadoPor: Félix` —el primer dato de autoría real del catálogo, que
+la siembra deliberadamente no fabricó—, y ningún título existente tocado.
+
+**El renglón del ticket queda a medias, y conviene decirlo:** pedía una saga
+armada **uniendo al menos dos colecciones**, y las cinco de Indiana Jones son
+una sola colección de TMDB. El camino recorrido es el del alta por colección; el
+de **⛓ Añadir a esta saga** —unir una segunda colección o una película suelta,
+que es lo que costó armar *Star Wars* de doce— **sigue sin ejercitarse en el
+aparato**.
+
+### Lo que destapó el primer alta real
+
+La saga quedó nombrada **«Indiana Jones - Colección»**, que es el nombre que
+TMDB le da a la colección y no el que escribiría la sala. No es un defecto: el
+campo es editable y `abrirColeccion` sólo lo **precarga** con
+`sagaExistente ?? respuesta.nombre`. Pero la precarga empuja hacia el nombre de
+TMDB, y el ticket pedía lo contrario —«Star Wars», no «Star Wars: trilogía
+original»—, así que el valor por omisión está tirando en contra de la regla.
+
+Y no hay forma de arreglarlo desde dentro: la superficie de `convex/titulos.ts`
+es `deSala`, `altaEnLote`, `marcarVisto` y `quitar`. **No existe renombrar una
+saga**, así que corregir el nombre hoy obliga a quitar las cinco y volverlas a
+dar de alta. Queda anotado; ninguna de las dos cosas se cambió sin decisión del
+dueño.

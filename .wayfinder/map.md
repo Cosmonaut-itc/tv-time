@@ -35,6 +35,7 @@
 
 <!-- una línea por ticket cerrado -->
 
+- [El corte de la v1](tickets/012-el-corte-de-la-v1.md) — **ocho rebanadas cortadas por pantalla**, en el orden del ritual, y **nada se recorta**: todo lo decidido en once tickets entra a la v1. Los 38 títulos entran por **siembra** —que también crea la sala— para que el giro no espere al alta; TMDB llega en **tres momentos distintos**, cada uno con la rebanada que lo usa. La sala decide su primera función real en la cuarta. Del prototipo se copia el CSS literal y se rehace la lógica, y **cada rebanada se despliega a producción**, para que el iPhone real pruebe desde el primer día.
 - [La sala instalada](tickets/010-la-sala-instalada.md) — PWA instalable con arco de marquesina, terciopelo desde manifest y un telón **renderizado en el HTML inicial** como fallback controlable. En iOS 26.6 el PNG nativo no es una promesa: tras la transición del sistema, cortinas y cenefa salen completamente del viewport. Validado en Simulator y confirmado por el usuario en un iPhone 17 Pro Max real.
 - [El catálogo de 38 títulos](tickets/011-el-catalogo-de-38-titulos.md) — un **muro de pósters** que se abre como cajón sobre la sala, donde **cada saga es una pila** que se despliega en su sitio: 38 títulos caben en 16 celdas. Sagas primero por antigüedad, lo suelto por lo último agregado. Las vistas **se quedan en su celda, apagadas**, sin gaveta ni estante. Filtro propio —*todo / sin ver / vistas*— porque la cartelera pregunta qué va a girar y el catálogo qué falta por ver, y el detalle vive en una **hoja que sube desde abajo**.
 - [Cuando la cartelera se queda corta](tickets/009-cuando-la-cartelera-se-queda-corta.md) — la cartelera corta no es un error, es una función más rara: el primer acto **se salta** con tres o menos, con dos es un **duelo** y con uno se gira igual, anunciado antes de jalar la palanca. **El veto se apaga con un solo título**, así que la cartelera ya no puede vaciarse a media noche. El filtro trae su cuenta en vivo, y el único cartel es **la marquesina apagada** — el catálogo agotado y la sala recién nacida.
@@ -57,7 +58,7 @@
 ## Not yet specified
 
 - **Cuando salga una película que completa una saga.** *Dune: Parte Tres* estrena en diciembre y *Beyond the Spider-Verse* en 2027. Se agregarán a mano — pero si la sala pudiera avisar, sería un momento bonito. No sé aún si es una notificación, una marquesina, o nada.
-- **El historial como recuerdo.** Calificaciones, rachas, "hace un año vieron…". Hay algo bonito ahí, pero no sé su forma hasta que el historial exista.
+- **El historial como recuerdo.** Calificaciones, rachas, "hace un año vieron…". Hay algo bonito ahí, pero no sé su forma hasta que el historial exista — o sea, hasta que cierre [La cabina y el historial](tickets/019-la-cabina-y-el-historial.md). Es la única mancha con fecha.
 - **Modo duelo por pares** como alternativa al azar, para noches en las que sí quieren opinar.
 - **Sincronía de dos celulares** con vetos en vivo — descartado para la v1, no para siempre.
 - **Filtros más finos** antes de girar: duración, género, ánimo.

@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import ProveedorConvex from "./proveedor-convex";
+import RegistroServiceWorker from "./registro-service-worker";
 import TelonDeEntrada from "./telon-de-entrada";
 import "./globals.css";
 
@@ -44,7 +46,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="es-MX" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <TelonDeEntrada />
-        {children}
+        <RegistroServiceWorker />
+        <ProveedorConvex>{children}</ProveedorConvex>
       </body>
     </html>
   );

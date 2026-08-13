@@ -278,6 +278,10 @@ a {
 }
 
 .fuente-tmdb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
   margin: -3px 20px 12px;
   color: rgba(242, 229, 198, 0.32);
   font-family: var(--datos);
@@ -285,6 +289,15 @@ a {
   letter-spacing: 0.08em;
   line-height: 1.45;
   text-align: center;
+}
+
+/* 92px contra los 21px de la marquesina: el logo de TMDB tiene que quedar
+   «less prominent» que la marca de la app, y aquí queda al pie, atenuado y
+   diez veces más chico que el rótulo de la sala. */
+.logo-tmdb {
+  width: 92px;
+  height: auto;
+  opacity: 0.55;
 }
 
 .codigo {

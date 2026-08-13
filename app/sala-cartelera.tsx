@@ -200,7 +200,6 @@ export default function SalaCartelera({
   const giroEnVuelo = useRef<{
     id: number;
     finalistas: readonly TituloDeSala[];
-    vetadosAlIniciar: ReadonlySet<string>;
   } | null>(null);
   const esperas = useRef(new Map<number, () => void>());
   const pintados = useRef(new Map<number, () => void>());
@@ -222,13 +221,19 @@ export default function SalaCartelera({
   const nocheRef = useRef(noche);
   const filtroRef = useRef(filtro);
   const vetadosRef = useRef<ReadonlySet<string>>(vetados);
+  const idsQueSiguenCompitiendoRef = useRef<ReadonlySet<string>>(
+    new Set(cartelera.candidatos.map(({ _id }) => _id)),
+  );
 
   useEffect(() => {
     titulosRef.current = titulos;
     nocheRef.current = noche;
     filtroRef.current = filtro;
     vetadosRef.current = vetados;
-  }, [filtro, noche, titulos, vetados]);
+    idsQueSiguenCompitiendoRef.current = new Set(
+      cartelera.candidatos.map(({ _id }) => _id),
+    );
+  }, [cartelera.candidatos, filtro, noche, titulos, vetados]);
 
   useEffect(() => {
     const secuencia = secuenciaDisponibilidad.current + 1;
@@ -381,7 +386,6 @@ export default function SalaCartelera({
     giroEnVuelo.current = {
       id,
       finalistas: nuevosFinalistas,
-      vetadosAlIniciar: new Set(vetadosRef.current),
     };
     const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setOcupado(true);
@@ -502,7 +506,10 @@ export default function SalaCartelera({
     if (!montado.current || secuenciaGiro.current !== id || giro?.id !== id) {
       return false;
     }
-    if (decidirCambioDelGiro(giro, vetadosRef.current) === "reiniciar") {
+    if (
+      decidirCambioDelGiro(giro, idsQueSiguenCompitiendoRef.current) ===
+      "reiniciar"
+    ) {
       secuenciaGiro.current += 1;
       giroEnVuelo.current = null;
       reiniciarGiroConCarteleraFresca();
@@ -846,8 +853,12 @@ export default function SalaCartelera({
           disabled={titulos === undefined || noche === undefined || ocupado}
           onClick={girar}
         >
+          {/* No dice «otra noche»: la noche es la ventana de los vetos y va de
+              cinco a cinco de la mañana, así que este botón no la empieza —
+              el corte es el mismo y los vetos siguen gastados. Lo que hace es
+              elegir qué ponen después de la que acaban de ver. */}
           {fase === "función"
-            ? "Empezar otra noche"
+            ? "Poner otra función"
             : giros
               ? "Girar otra vez"
               : "Comenzar la función"}

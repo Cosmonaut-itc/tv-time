@@ -14,7 +14,11 @@ const listas = {
   renta: v.array(proveedor),
   compra: v.array(proveedor),
 };
-const filaDeCache = v.object({ ...listas, actualizada: v.number() });
+const filaDeCache = v.object({
+  _id: v.id("disponibilidad"),
+  ...listas,
+  actualizada: v.number(),
+});
 const respuesta = v.union(
   v.object({ estado: v.literal("sin tmdb") }),
   v.object({ estado: v.literal("sin datos") }),
@@ -57,6 +61,7 @@ export const leerTituloYCache = internalQuery({
       tipo: titulo.tipo,
       cache: cache
         ? {
+            _id: cache._id,
             flatrate: cache.flatrate,
             renta: cache.renta,
             compra: cache.compra,
@@ -64,6 +69,15 @@ export const leerTituloYCache = internalQuery({
           }
         : null,
     };
+  },
+});
+
+export const borrarCache = internalMutation({
+  args: { cacheId: v.id("disponibilidad") },
+  returns: v.null(),
+  handler: async (ctx, { cacheId }) => {
+    if (await ctx.db.get(cacheId)) await ctx.db.delete(cacheId);
+    return null;
   },
 });
 
@@ -111,6 +125,11 @@ export const deTitulo = action({
     const politica = politicaDeCache(lectura.cache, ahora);
     if (politica.decision === "servir" && lectura.cache) {
       return conDatos(lectura.cache);
+    }
+    if (politica.borrar && lectura.cache) {
+      await ctx.runMutation(internal.disponibilidad.borrarCache, {
+        cacheId: lectura.cache._id,
+      });
     }
 
     try {

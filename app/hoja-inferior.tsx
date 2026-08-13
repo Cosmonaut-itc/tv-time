@@ -54,9 +54,11 @@ export default function HojaInferior({
       const primero = enfocables[0];
       const ultimo = enfocables[enfocables.length - 1];
       const foco = document.activeElement;
+      const focoEnFrontera =
+        foco === hoja.current || !hoja.current.contains(foco);
       if (
-        (evento.shiftKey && (foco === primero || !hoja.current.contains(foco))) ||
-        (!evento.shiftKey && (foco === ultimo || !hoja.current.contains(foco)))
+        (evento.shiftKey && (foco === primero || focoEnFrontera)) ||
+        (!evento.shiftKey && (foco === ultimo || focoEnFrontera))
       ) {
         evento.preventDefault();
         (evento.shiftKey ? ultimo : primero).focus();

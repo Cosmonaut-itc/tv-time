@@ -13,21 +13,30 @@ export type DisponibilidadMapeada = {
 export function politicaDeCache(
   fila: { actualizada: number } | null,
   ahora: number,
-): { decision: "servir" | "pedir"; servirSiFalla: boolean } {
-  if (!fila) return { decision: "pedir", servirSiFalla: false };
+): {
+  decision: "servir" | "pedir";
+  servirSiFalla: boolean;
+  borrar: boolean;
+} {
+  if (!fila) {
+    return { decision: "pedir", servirSiFalla: false, borrar: false };
+  }
 
   const edad = ahora - fila.actualizada;
   if (edad < FRESCURA_EN_MS) {
-    return { decision: "servir", servirSiFalla: true };
+    return { decision: "servir", servirSiFalla: true, borrar: false };
   }
   return {
     decision: "pedir",
     servirSiFalla: edad < CADUCIDAD_EN_MS,
+    borrar: edad >= CADUCIDAD_EN_MS,
   };
 }
 
 function mapearLista(valor: unknown): Proveedor[] {
-  if (!Array.isArray(valor)) return [];
+  if (!Array.isArray(valor)) {
+    throw new Error("Respuesta inválida de TMDB.");
+  }
 
   return valor.flatMap((proveedor) => {
     if (
@@ -47,21 +56,31 @@ function mapearLista(valor: unknown): Proveedor[] {
 export function mapearDisponibilidadDeMexico(
   respuesta: unknown,
 ): DisponibilidadMapeada {
-  const mexico =
-    typeof respuesta === "object" &&
-    respuesta !== null &&
-    "results" in respuesta &&
-    typeof respuesta.results === "object" &&
-    respuesta.results !== null &&
-    "MX" in respuesta.results &&
-    typeof respuesta.results.MX === "object" &&
-    respuesta.results.MX !== null
-      ? respuesta.results.MX
-      : null;
+  if (
+    typeof respuesta !== "object" ||
+    respuesta === null ||
+    Array.isArray(respuesta) ||
+    !("results" in respuesta) ||
+    typeof respuesta.results !== "object" ||
+    respuesta.results === null ||
+    Array.isArray(respuesta.results)
+  ) {
+    throw new Error("Respuesta inválida de TMDB.");
+  }
+
+  let mexico: object | null = null;
+  if ("MX" in respuesta.results) {
+    const valor = respuesta.results.MX;
+    if (typeof valor !== "object" || valor === null || Array.isArray(valor)) {
+      throw new Error("Respuesta inválida de TMDB.");
+    }
+    mexico = valor;
+  }
 
   return {
-    flatrate: mapearLista(mexico && "flatrate" in mexico ? mexico.flatrate : null),
-    renta: mapearLista(mexico && "rent" in mexico ? mexico.rent : null),
-    compra: mapearLista(mexico && "buy" in mexico ? mexico.buy : null),
+    flatrate:
+      mexico && "flatrate" in mexico ? mapearLista(mexico.flatrate) : [],
+    renta: mexico && "rent" in mexico ? mapearLista(mexico.rent) : [],
+    compra: mexico && "buy" in mexico ? mapearLista(mexico.buy) : [],
   };
 }

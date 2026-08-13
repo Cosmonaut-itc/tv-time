@@ -21,22 +21,17 @@ export function elegirIndiceGanador(
 
 type GiroEnVuelo = {
   finalistas: readonly { _id: string }[];
-  vetadosAlIniciar: ReadonlySet<string>;
 };
 
 export type CambioDelGiro = "sigue vivo" | "reiniciar" | "no pasa nada";
 
 export function decidirCambioDelGiro(
   giro: GiroEnVuelo | null,
-  vetadosNuevos: ReadonlySet<string>,
+  idsQueSiguenCompitiendo: ReadonlySet<string>,
 ): CambioDelGiro {
   if (!giro) return "no pasa nada";
 
-  const agregados = [...vetadosNuevos].filter(
-    (tituloId) => !giro.vetadosAlIniciar.has(tituloId),
-  );
-  if (agregados.length === 0) return "no pasa nada";
-  return giro.finalistas.some(({ _id }) => agregados.includes(_id))
+  return giro.finalistas.some(({ _id }) => !idsQueSiguenCompitiendo.has(_id))
     ? "reiniciar"
     : "sigue vivo";
 }

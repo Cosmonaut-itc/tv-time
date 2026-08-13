@@ -12,6 +12,7 @@ test("sin caché pide datos y no inventa un respaldo", () => {
   assert.deepEqual(politicaDeCache(null, AHORA), {
     decision: "pedir",
     servirSiFalla: false,
+    borrar: false,
   });
 });
 
@@ -19,6 +20,7 @@ test("una fila de menos de siete días se sirve sin pedir", () => {
   assert.deepEqual(politicaDeCache({ actualizada: AHORA - 6 * DIA }, AHORA), {
     decision: "servir",
     servirSiFalla: true,
+    borrar: false,
   });
 });
 
@@ -26,13 +28,14 @@ test("una fila rancia se refresca pero todavía sirve de respaldo", () => {
   assert.deepEqual(politicaDeCache({ actualizada: AHORA - 7 * DIA }, AHORA), {
     decision: "pedir",
     servirSiFalla: true,
+    borrar: false,
   });
 });
 
-test("una fila caducada a los seis meses jamás sirve de respaldo", () => {
+test("una fila caducada a los seis meses se marca para borrar y no sirve de respaldo", () => {
   assert.deepEqual(
     politicaDeCache({ actualizada: AHORA - 180 * DIA }, AHORA),
-    { decision: "pedir", servirSiFalla: false },
+    { decision: "pedir", servirSiFalla: false, borrar: true },
   );
 });
 
@@ -61,6 +64,33 @@ test("sin región México cachea tres listas vacías", () => {
     renta: [],
     compra: [],
   });
+});
+
+test("México sin ninguna lista cachea tres listas vacías", () => {
+  assert.deepEqual(mapearDisponibilidadDeMexico({ results: { MX: {} } }), {
+    flatrate: [],
+    renta: [],
+    compra: [],
+  });
+});
+
+test("una envoltura inválida de TMDB se rechaza en vez de parecer disponibilidad vacía", () => {
+  for (const respuesta of [null, { error: "temporal" }, { results: "mal" }]) {
+    assert.throws(
+      () => mapearDisponibilidadDeMexico(respuesta),
+      /respuesta inválida de TMDB/i,
+    );
+  }
+});
+
+test("una lista de México que no es array se rechaza como respuesta inválida", () => {
+  assert.throws(
+    () =>
+      mapearDisponibilidadDeMexico({
+        results: { MX: { flatrate: { provider_name: "Netflix" } } },
+      }),
+    /respuesta inválida de TMDB/i,
+  );
 });
 
 test("una respuesta con sólo renta conserva esa pista", () => {

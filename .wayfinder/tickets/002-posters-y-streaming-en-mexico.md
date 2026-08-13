@@ -25,7 +25,9 @@ Entregar los hallazgos como Markdown en `docs/research/` con citas a las fuentes
 
 ## Resolución
 
-**TMDB alcanza sola.** Informe completo con fuentes en [`docs/research/tmdb-mexico.md`](../../docs/research/tmdb-mexico.md).
+**TMDB alcanza sola.** El informe de investigación permanece fuera de este
+repositorio; las conclusiones que gobiernan el producto quedan registradas a
+continuación.
 
 Lo que quedó confirmado:
 

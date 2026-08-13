@@ -52,7 +52,6 @@
 - [El ritual del giro — prototipo jugable](https://claude.ai/code/artifact/60bbb8d9-0e17-4024-b8bd-99579b2a7101) · fuente en [`prototypes/ritual-del-giro.html`](../prototypes/ritual-del-giro.html)
 - [El alta de títulos — prototipo jugable](https://claude.ai/code/artifact/12bd87c8-73b7-4c30-a355-c94d1dae52ff) · fuente en [`prototypes/alta-de-titulos.html`](../prototypes/alta-de-titulos.html)
 - [El catálogo — tres formas sobre los 38 títulos reales](https://claude.ai/code/artifact/d26464fd-d94f-4751-b784-19a84bb24d02) · fuente en [`prototypes/catalogo.html`](../prototypes/catalogo.html) · las tres variantes siguen dentro, y la ganadora es *Un muro*
-- [Research de TMDB para México](../docs/research/tmdb-mexico.md)
 - **La sala, en vivo y vacía**: https://cine.felixddhs.dev · detalle del terreno en [Infraestructura viva](tickets/003-infraestructura-viva.md)
 
 ## Not yet specified

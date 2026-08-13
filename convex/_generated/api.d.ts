@@ -8,13 +8,23 @@
  * @module
  */
 
+import type * as catalogo_inicial from "../catalogo_inicial.js";
+import type * as codigo from "../codigo.js";
+import type * as siembra from "../siembra.js";
+import type * as taquilla from "../taquilla.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  catalogo_inicial: typeof catalogo_inicial;
+  codigo: typeof codigo;
+  siembra: typeof siembra;
+  taquilla: typeof taquilla;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.

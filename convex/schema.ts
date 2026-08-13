@@ -16,6 +16,14 @@ import { v } from "convex/values";
 const tipoTitulo = v.union(v.literal("pelicula"), v.literal("serie"));
 
 export default defineSchema({
+  // El freno vive en Convex para que recargar o cambiar de navegador no
+  // reponga intentos. La v1 tiene una sola taquilla y por eso una sola fila.
+  taquilla: defineTable({
+    fallosSeguidos: v.number(),
+    trabadaHasta: v.optional(v.number()),
+    actualizada: v.number(),
+  }),
+
   salas: defineTable({
     // Los 6 caracteres. Convex no tiene índices únicos: la unicidad la
     // defiende la mutación que crea la sala.

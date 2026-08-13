@@ -152,7 +152,7 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
       </header>
 
       {fase === "sala" && sala && butaca ? (
-        <SalaCartelera salaId={sala.salaId} />
+        <SalaCartelera salaId={sala.salaId} codigo={sala.codigo} />
       ) : <section className="entrada" aria-live="polite">
         {fase === "cargando" && <p className="estado-entrada">Abriendo la taquilla…</p>}
 

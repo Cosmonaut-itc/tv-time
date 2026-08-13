@@ -20,13 +20,20 @@ test("la siembra es interna y la superficie pública usa ids, nunca códigos", a
   }
 
   assert.deepEqual(publicas, [
+    "disponibilidad.ts:deTitulo:action",
+    "funciones.ts:cerrar:mutation",
     "noches.ts:vigente:query",
     "noches.ts:vetar:mutation",
     "taquilla.ts:entrar:mutation",
     "titulos.ts:deSala:query",
   ]);
 
-  for (const modulo of ["convex/noches.ts", "convex/titulos.ts"]) {
+  for (const modulo of [
+    "convex/disponibilidad.ts",
+    "convex/funciones.ts",
+    "convex/noches.ts",
+    "convex/titulos.ts",
+  ]) {
     const fuente = await readFile(modulo, "utf8");
     assert.doesNotMatch(fuente, /codigo/);
   }

@@ -2,7 +2,7 @@
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   derivarCartelera,
@@ -18,6 +18,7 @@ import {
   RITMOS,
 } from "./giro";
 import { nocheDe, nocheLocalEsMasReciente, proximoCorte } from "./noche";
+import HojaInferior from "./hoja-inferior";
 
 const FILTROS: readonly { valor: FiltroCartelera; etiqueta: string }[] = [
   { valor: "pelicula", etiqueta: "Peli" },
@@ -31,8 +32,67 @@ type FaseDelGiro =
   | "girando"
   | "finalistas"
   | "ganador"
+  | "función"
   | "vuelta vacía"
   | "vetando";
+
+type ProveedorDisponibilidad = { nombre: string; logoPath: string };
+type EstadoDisponibilidad =
+  | { estado: "buscando" }
+  | { estado: "sin tmdb" }
+  | { estado: "sin datos" }
+  | {
+      estado: "datos";
+      flatrate: ProveedorDisponibilidad[];
+      renta: ProveedorDisponibilidad[];
+      compra: ProveedorDisponibilidad[];
+    };
+
+type ChipDisponibilidad = {
+  proveedor: ProveedorDisponibilidad;
+  prefijo?: "Renta" | "Compra";
+};
+
+function normalizarProveedor(nombre: string): string {
+  return nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function colorDeProveedor(nombre: string): string {
+  const normalizado = normalizarProveedor(nombre);
+  if (normalizado.includes("netflix")) return "#E50914";
+  if (normalizado.includes("prime")) return "#00A8E1";
+  if (normalizado.includes("disney")) return "#1F6FEB";
+  if (normalizado.includes("hbo max") || normalizado === "max") return "#8A2BE2";
+  if (normalizado.includes("apple tv")) return "#C9C9C9";
+  return "var(--laton)";
+}
+
+function chipsDe(
+  disponibilidad: EstadoDisponibilidad | null,
+): ChipDisponibilidad[] {
+  if (disponibilidad?.estado !== "datos") return [];
+  if (disponibilidad.flatrate.length > 0) {
+    return disponibilidad.flatrate.map((proveedor) => ({ proveedor }));
+  }
+  if (disponibilidad.renta.length > 0) {
+    return disponibilidad.renta
+      .slice(0, 3)
+      .map((proveedor) => ({ proveedor, prefijo: "Renta" }));
+  }
+  return disponibilidad.compra
+    .slice(0, 3)
+    .map((proveedor) => ({ proveedor, prefijo: "Compra" }));
+}
+
+function appEstaInstalada(): boolean {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
+  );
+}
 
 type PropiedadesDeCelda = { titulo: TituloDeSala };
 
@@ -90,11 +150,19 @@ function tiraDe(
   return [...vueltas, finalista];
 }
 
-export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
+export default function SalaCartelera({
+  salaId,
+  codigo,
+}: {
+  salaId: Id<"salas">;
+  codigo: string;
+}) {
   const titulos = useQuery(api.titulos.deSala, { salaId });
   const [momentoConsulta, setMomentoConsulta] = useState(() => Date.now());
   const noche = useQuery(api.noches.vigente, { salaId, momento: momentoConsulta });
   const vetarTitulo = useMutation(api.noches.vetar);
+  const cerrarFuncion = useMutation(api.funciones.cerrar);
+  const buscarDisponibilidad = useAction(api.disponibilidad.deTitulo);
   const [filtro, setFiltro] = useState<FiltroCartelera>("loQueSea");
   const [fase, setFase] = useState<FaseDelGiro>("reposo");
   const [giros, setGiros] = useState(0);
@@ -107,6 +175,13 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
   const [filtroSenalado, setFiltroSenalado] = useState(false);
   const [selloVisible, setSelloVisible] = useState(false);
   const [errorVeto, setErrorVeto] = useState("");
+  const [errorFuncion, setErrorFuncion] = useState("");
+  const [siguienteDesbloqueado, setSiguienteDesbloqueado] = useState<
+    string | null
+  >(null);
+  const [disponibilidad, setDisponibilidad] =
+    useState<EstadoDisponibilidad | null>(null);
+  const [instalacionAbierta, setInstalacionAbierta] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [nocheLocal, setNocheLocal] = useState<{
     corte: number;
@@ -117,9 +192,11 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
   const botonAbrir = useRef<HTMLButtonElement>(null);
   const botonCerrar = useRef<HTMLButtonElement>(null);
   const escenario = useRef<HTMLElement>(null);
+  const palanca = useRef<HTMLButtonElement>(null);
   const tiras = useRef<Array<HTMLDivElement | null>>([]);
   const montado = useRef(false);
   const secuenciaGiro = useRef(0);
+  const secuenciaDisponibilidad = useRef(0);
   const giroEnVuelo = useRef<{
     id: number;
     finalistas: readonly TituloDeSala[];
@@ -153,6 +230,33 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
     vetadosRef.current = vetados;
   }, [filtro, noche, titulos, vetados]);
 
+  useEffect(() => {
+    const secuencia = secuenciaDisponibilidad.current + 1;
+    secuenciaDisponibilidad.current = secuencia;
+    if (fase !== "ganador" || !ganador) return;
+
+    void buscarDisponibilidad({
+      salaId,
+      tituloId: ganador._id as Id<"titulos">,
+    })
+      .then((resultado) => {
+        if (
+          montado.current &&
+          secuenciaDisponibilidad.current === secuencia
+        ) {
+          setDisponibilidad(resultado);
+        }
+      })
+      .catch(() => {
+        if (
+          montado.current &&
+          secuenciaDisponibilidad.current === secuencia
+        ) {
+          setDisponibilidad({ estado: "sin datos" });
+        }
+      });
+  }, [buscarDisponibilidad, fase, ganador, salaId]);
+
   function esperar(ms: number): Promise<void> {
     return new Promise((resolver) => {
       const id = window.setTimeout(() => {
@@ -180,6 +284,7 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
     return () => {
       montado.current = false;
       secuenciaGiro.current += 1;
+      secuenciaDisponibilidad.current += 1;
       giroEnVuelo.current = null;
       for (const [id, resolver] of esperasPendientes) {
         window.clearTimeout(id);
@@ -257,6 +362,9 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
     setMensajeVacio("");
     setFiltroSenalado(false);
     setErrorVeto("");
+    setErrorFuncion("");
+    setDisponibilidad(null);
+    setSiguienteDesbloqueado(null);
   }
 
   async function ejecutarGiro(
@@ -278,6 +386,7 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
     const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setOcupado(true);
     setErrorVeto("");
+    setErrorFuncion("");
     setFiltroSenalado(false);
     setMensajeVacio("");
     setGanador(null);
@@ -357,6 +466,7 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
     await esperar(reducido ? 40 : 700);
     if (!giroPuedeContinuar(id)) return;
     giroEnVuelo.current = null;
+    setDisponibilidad({ estado: "buscando" });
     setGanador(nuevosFinalistas[ganadorIndice]);
     setFase("ganador");
     setOcupado(false);
@@ -481,8 +591,40 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
     }
   }
 
+  async function elegirFuncion() {
+    if (!ganador || ocupado) return;
+
+    setOcupado(true);
+    setErrorVeto("");
+    setErrorFuncion("");
+    try {
+      const resultado = await cerrarFuncion({
+        salaId,
+        tituloId: ganador._id as Id<"titulos">,
+      });
+      if (!montado.current) return;
+
+      setSiguienteDesbloqueado(resultado.siguiente);
+      setFase("función");
+      setOcupado(false);
+      if (resultado.primeraFuncion && !appEstaInstalada()) {
+        setInstalacionAbierta(true);
+      }
+    } catch {
+      if (!montado.current) return;
+      setErrorFuncion(
+        "La función no pudo guardarse. La ganadora sigue en pie.",
+      );
+      setFase("ganador");
+      setOcupado(false);
+    }
+  }
+
   const mostrandoCarretes =
     fase === "girando" || fase === "finalistas" || fase === "vetando";
+  const chipsDisponibles = chipsDe(disponibilidad);
+  const sinProveedoresEnMexico =
+    disponibilidad?.estado === "datos" && chipsDisponibles.length === 0;
 
   return (
     <>
@@ -542,6 +684,24 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
 
           {fase === "ganador" && ganador && (
             <div className="ganador">
+              <div className={`marco${ganador.posterPath ? "" : " punteado"}`}>
+                {ganador.posterPath ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
+                  <img
+                    src={`https://image.tmdb.org/t/p/w342${ganador.posterPath}`}
+                    alt=""
+                    width={342}
+                    height={513}
+                    decoding="async"
+                    loading="eager"
+                  />
+                ) : (
+                  <PosterCrudo titulo={ganador} />
+                )}
+              </div>
+              {!ganador.posterPath && (
+                <p className="fuente sin-poster">sin póster oficial</p>
+              )}
               <div className="ficha">
                 {ganador.saga && (
                   <p className="saga">
@@ -554,20 +714,77 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
                   {ganador.tipo === "serie" ? "Serie" : "Película"}
                   {ganador.anio ? ` · ${ganador.anio}` : ""}
                 </p>
+                {chipsDisponibles.length > 0 && (
+                  <>
+                    <div className="servicios">
+                      {chipsDisponibles.map(({ proveedor, prefijo }) => (
+                        <span
+                          className={`chip${prefijo ? " renta" : ""}`}
+                          key={`${prefijo ?? "suscripción"}-${proveedor.nombre}`}
+                        >
+                          <i
+                            className="punto"
+                            style={{ background: colorDeProveedor(proveedor.nombre) }}
+                          />
+                          {prefijo ? `${prefijo} · ` : ""}
+                          {proveedor.nombre}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="fuente">Disponibilidad · JustWatch</p>
+                  </>
+                )}
+                {disponibilidad?.estado === "buscando" && (
+                  <p className="fuente">buscando disponibilidad…</p>
+                )}
+                {sinProveedoresEnMexico && (
+                  <p className="fuente">sin disponibilidad en México</p>
+                )}
+                {(disponibilidad?.estado === "sin datos" ||
+                  disponibilidad?.estado === "sin tmdb") && (
+                  <p className="fuente">sin datos de disponibilidad</p>
+                )}
               </div>
               <div className="acciones">
                 <button
+                  className="btn-ver"
+                  type="button"
+                  disabled={ocupado}
+                  onClick={() => void elegirFuncion()}
+                >
+                  Esta vemos
+                </button>
+                <button
                   className="btn-veto"
                   type="button"
-                  disabled={Boolean(razonVeto)}
+                  disabled={ocupado || Boolean(razonVeto)}
                   onClick={() => void vetarGanador()}
                 >
                   Veto
                 </button>
               </div>
-              {(razonVeto || errorVeto) && (
-                <p className={errorVeto ? "razon-veto error" : "razon-veto"}>
-                  {errorVeto || razonVeto}
+              {(razonVeto || errorVeto || errorFuncion) && (
+                <p
+                  className={
+                    errorVeto || errorFuncion
+                      ? "razon-veto error"
+                      : "razon-veto"
+                  }
+                >
+                  {errorFuncion || errorVeto || razonVeto}
+                </p>
+              )}
+            </div>
+          )}
+
+          {fase === "función" && ganador && (
+            <div className="reposo funcion">
+              <div className="cifra" aria-hidden="true">🍿</div>
+              <p className="titulo-funcion">{ganador.nombre}</p>
+              <p className="disfruten">disfruten la función</p>
+              {siguienteDesbloqueado && (
+                <p className="desbloqueo">
+                  se desbloquea · {siguienteDesbloqueado}
                 </p>
               )}
             </div>
@@ -584,6 +801,12 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
           <p className="solo-lectores" role="status" aria-atomic="true">
             {fase === "ganador" && ganador
               ? `Ganó ${ganador.nombre}.`
+              : fase === "función" && ganador
+                ? `Eligieron ${ganador.nombre}.${
+                    siguienteDesbloqueado
+                      ? ` Se desbloquea ${siguienteDesbloqueado}.`
+                      : ""
+                  }`
               : fase === "vuelta vacía"
                 ? mensajeVacio
                 : ""}
@@ -617,12 +840,17 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
           <p className="etiqueta-entrada">{cartelera.anuncio}</p>
         )}
         <button
+          ref={palanca}
           className="btn-palanca"
           type="button"
           disabled={titulos === undefined || noche === undefined || ocupado}
           onClick={girar}
         >
-          {giros ? "Girar otra vez" : "Comenzar la función"}
+          {fase === "función"
+            ? "Empezar otra noche"
+            : giros
+              ? "Girar otra vez"
+              : "Comenzar la función"}
         </button>
         <div
           className={`panel-vetos${vetosDisponibles === 0 ? " agotado" : ""}`}
@@ -691,6 +919,33 @@ export default function SalaCartelera({ salaId }: { salaId: Id<"salas"> }) {
           Cerrar
         </button>
       </aside>
+
+      <HojaInferior
+        abierta={instalacionAbierta}
+        etiqueta="Instalar la sala"
+        devolverFocoA={palanca}
+        onCerrar={() => setInstalacionAbierta(false)}
+      >
+        <div className="cartel-instalacion">
+          <p className="etiqueta-entrada">Lleven la sala con ustedes</p>
+          <p className="codigo-instalacion">{codigo}</p>
+          <p>
+            La app instalada pedirá este código una vez: no hereda lo que
+            Safari guardó.
+          </p>
+          <p className="pasos-instalacion">
+            Compartir <span aria-hidden="true">→</span> Añadir a pantalla de
+            inicio
+          </p>
+          <button
+            className="btn-palanca"
+            type="button"
+            onClick={() => setInstalacionAbierta(false)}
+          >
+            Cerrar
+          </button>
+        </div>
+      </HojaInferior>
     </>
   );
 }

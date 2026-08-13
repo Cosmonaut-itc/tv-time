@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as altas_logica from "../altas_logica.js";
 import type * as cartelera from "../cartelera.js";
 import type * as catalogo_inicial from "../catalogo_inicial.js";
 import type * as codigo from "../codigo.js";
@@ -24,6 +25,8 @@ import type * as taquilla from "../taquilla.js";
 import type * as taquilla_logica from "../taquilla_logica.js";
 import type * as titulos from "../titulos.js";
 import type * as titulos_logica from "../titulos_logica.js";
+import type * as tmdb from "../tmdb.js";
+import type * as tmdb_logica from "../tmdb_logica.js";
 
 import type {
   ApiFromModules,
@@ -32,6 +35,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  altas_logica: typeof altas_logica;
   cartelera: typeof cartelera;
   catalogo_inicial: typeof catalogo_inicial;
   codigo: typeof codigo;
@@ -48,6 +52,8 @@ declare const fullApi: ApiFromModules<{
   taquilla_logica: typeof taquilla_logica;
   titulos: typeof titulos;
   titulos_logica: typeof titulos_logica;
+  tmdb: typeof tmdb;
+  tmdb_logica: typeof tmdb_logica;
 }>;
 
 /**

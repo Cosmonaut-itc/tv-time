@@ -17,6 +17,7 @@ import {
   prepararGiro,
   RITMOS,
 } from "./giro";
+import AltaTitulos from "./alta-titulos";
 import { nocheDe, nocheLocalEsMasReciente, proximoCorte } from "./noche";
 import HojaInferior from "./hoja-inferior";
 import ChipsDisponibilidad from "./chips-disponibilidad";
@@ -94,10 +95,16 @@ function tiraDe(
 export default function SalaCartelera({
   salaId,
   codigo,
+  butaca,
+  butacas,
+  onCambiarButaca,
   onCambiarCuenta,
 }: {
   salaId: Id<"salas">;
   codigo: string;
+  butaca: string;
+  butacas: readonly string[];
+  onCambiarButaca: (butaca: string) => void;
   onCambiarCuenta: (cuenta: CuentaDeSala | null) => void;
 }) {
   const titulos = useQuery(api.titulos.deSala, { salaId });
@@ -130,8 +137,10 @@ export default function SalaCartelera({
   } | null>(null);
   const [cajonAbierto, setCajonAbierto] = useState(false);
   const [catalogoAbierto, setCatalogoAbierto] = useState(false);
+  const [altaAbierta, setAltaAbierta] = useState(false);
   const botonAbrir = useRef<HTMLButtonElement>(null);
   const botonCatalogo = useRef<HTMLButtonElement>(null);
+  const disparadorAlta = useRef<HTMLElement>(null);
   const botonCerrar = useRef<HTMLButtonElement>(null);
   const escenario = useRef<HTMLElement>(null);
   const palanca = useRef<HTMLButtonElement>(null);
@@ -283,6 +292,11 @@ export default function SalaCartelera({
   function cerrarCajon() {
     botonAbrir.current?.focus();
     setCajonAbierto(false);
+  }
+
+  function abrirAlta(disparador: HTMLElement) {
+    disparadorAlta.current = disparador;
+    setAltaAbierta(true);
   }
 
   function cambiarFiltro(nuevo: FiltroCartelera) {
@@ -556,17 +570,16 @@ export default function SalaCartelera({
 
   const mostrandoCarretes =
     fase === "girando" || fase === "finalistas" || fase === "vetando";
-  if (titulos?.length === 0) {
-    return (
-      <MarquesinaApagada
-        rotulo="La sala espera su primera función"
-        linea="Agreguen su primera película."
-      />
-    );
-  }
-
   return (
     <>
+      {titulos?.length === 0 ? (
+        <MarquesinaApagada
+          rotulo="La sala espera su primera función"
+          linea="Agreguen su primera película."
+          onAgregar={abrirAlta}
+        />
+      ) : (
+        <>
       <section
         ref={escenario}
         className={`escenario${fase !== "reposo" ? " abierto" : ""}`}
@@ -855,6 +868,7 @@ export default function SalaCartelera({
           setCatalogoAbierto(false);
           botonCatalogo.current?.focus();
         }}
+        onAgregar={abrirAlta}
         salaId={salaId}
         titulos={titulos ?? []}
       />
@@ -885,6 +899,19 @@ export default function SalaCartelera({
           </button>
         </div>
       </HojaInferior>
+        </>
+      )}
+
+      <AltaTitulos
+        abierta={altaAbierta}
+        onCerrar={() => setAltaAbierta(false)}
+        devolverFocoA={disparadorAlta}
+        salaId={salaId}
+        butaca={butaca}
+        butacas={butacas}
+        onCambiarButaca={onCambiarButaca}
+        titulos={titulos ?? []}
+      />
     </>
   );
 }

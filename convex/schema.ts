@@ -63,8 +63,9 @@ export default defineSchema({
     // anteriores por `orden`.
     saga: v.optional(v.string()),
     orden: v.optional(v.number()),
-    // Autoría, no permisos: la butaca que lo agregó.
-    agregadoPor: v.string(),
+    // Autoría, no permisos: la butaca que lo agregó. La lista versionada se
+    // siembra sin autor porque no la agregó ninguna butaca desde la app.
+    agregadoPor: v.optional(v.string()),
     // El interruptor que sostiene el candado. Encenderlo desbloquea la
     // siguiente de la saga; apagarlo la devuelve a la cartelera y no borra
     // ninguna función. `visto` con funciones = lo vieron aquí; `visto` sin

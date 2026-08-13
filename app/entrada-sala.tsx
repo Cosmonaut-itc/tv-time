@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { FormEvent, MouseEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { codigoTieneFormatoValido, normalizarCodigo } from "@/convex/codigo";
+import { debeOlvidarCodigo } from "./entrada-sala-logica";
 import { nocheDe } from "./noche";
 
 const CLAVE_CODIGO = "cine.codigo";
@@ -75,7 +76,7 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
       try {
         const resultado = await entrar({ codigo: normalizado });
         if (resultado.estado !== "abierta") {
-          olvidar(CLAVE_CODIGO);
+          if (debeOlvidarCodigo(resultado.estado)) olvidar(CLAVE_CODIGO);
           setFase("taquilla");
           setMensaje(resultado.mensaje);
           return;
@@ -105,6 +106,8 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
     }
 
     const recordado = compartido ?? leerGuardado(CLAVE_CODIGO);
+    // El diferido deja que el cleanup de StrictMode cancele la primera pasada;
+    // así una sola carga de desarrollo no consume dos intentos del freno.
     const inicio = window.setTimeout(() => {
       if (recordado) void abrir(recordado);
       else setFase("taquilla");
@@ -117,11 +120,10 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
     void abrir(codigo);
   }
 
-  function elegirButaca(nombre: string, evento: MouseEvent<HTMLButtonElement>) {
-    const instante =
-      evento.timeStamp > 1_000_000_000_000
-        ? evento.timeStamp
-        : window.performance.timeOrigin + evento.timeStamp;
+  function elegirButaca(nombre: string) {
+    // Es el instante del toque; no participa en el resultado del render.
+    // eslint-disable-next-line react-hooks/purity
+    const instante = Date.now();
     guardar(CLAVE_BUTACA, JSON.stringify({ butaca: nombre, noche: nocheDe(instante) }));
     setButaca(nombre);
     setFase("sala");
@@ -178,7 +180,7 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
             <h2>ELIGE TU BUTACA</h2>
             <div className="butacas">
               {sala.butacas.map((nombre) => (
-                <button className="butaca" key={nombre} onClick={(evento) => elegirButaca(nombre, evento)}>
+                <button className="butaca" key={nombre} onClick={() => elegirButaca(nombre)}>
                   <span aria-hidden="true">●</span>
                   {nombre}
                 </button>

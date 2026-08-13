@@ -11,7 +11,9 @@
 import type * as catalogo_inicial from "../catalogo_inicial.js";
 import type * as codigo from "../codigo.js";
 import type * as siembra from "../siembra.js";
+import type * as siembra_catalogo from "../siembra_catalogo.js";
 import type * as taquilla from "../taquilla.js";
+import type * as taquilla_logica from "../taquilla_logica.js";
 
 import type {
   ApiFromModules,
@@ -23,7 +25,9 @@ declare const fullApi: ApiFromModules<{
   catalogo_inicial: typeof catalogo_inicial;
   codigo: typeof codigo;
   siembra: typeof siembra;
+  siembra_catalogo: typeof siembra_catalogo;
   taquilla: typeof taquilla;
+  taquilla_logica: typeof taquilla_logica;
 }>;
 
 /**

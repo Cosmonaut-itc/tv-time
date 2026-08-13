@@ -122,7 +122,3 @@ export const APARATOS = [
   { ancho: 414, alto: 896, dpr: 2, modelos: "XR · 11" },
   { ancho: 375, alto: 667, dpr: 2, modelos: "SE 2 · SE 3 · 8" },
 ] as const;
-
-export function rutaTelon(ancho: number, alto: number, dpr: number): string {
-  return `/telon/${ancho * dpr}x${alto * dpr}.jpg`;
-}

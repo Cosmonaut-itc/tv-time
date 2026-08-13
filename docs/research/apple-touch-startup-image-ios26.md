@@ -80,7 +80,6 @@ Consultas realizadas:
 
 ```sh
 curl -L 'https://api.github.com/repos/WebKit/WebKit/git/trees/main?recursive=1'
-curl -L 'https://api.github.com/repos/WebKit/WebKit/git/trees/<Source SHA>?recursive=1'
 xcodebuild -version
 xcrun simctl list runtimes
 xcrun simctl list devices available

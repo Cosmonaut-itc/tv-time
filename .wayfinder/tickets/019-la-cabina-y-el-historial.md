@@ -1,8 +1,8 @@
 # La cabina y el historial
 
 - **Tipo**: `wayfinder:task` (AFK, con aceptación HITL en el iPhone)
-- **Estado**: abierto
-- **Asignado**: —
+- **Estado**: cerrado
+- **Asignado**: sesión de Claude (orquestación) · `gpt-5.6-sol` (implementación y review)
 - **Bloqueado por**: [El ganador y la función](016-el-ganador-y-la-funcion.md)
 - **Mapa**: [La sala de cine](../map.md)
 
@@ -55,3 +55,56 @@ entonces; no antes.
 
 Al cerrar: desplegada, y el código rotado de verdad desde el iPhone,
 comprobando que el aparato que lo cambió se queda dentro.
+
+## Resolución
+
+**Lo decidido ya tiene pantalla.** Implementó `gpt-5.6-sol`·`high`, review
+adversarial del mismo modelo, veto del orquestador y aceptación en navegador a
+390×844. PR 8 de la rama acumuladora.
+
+### La cabina
+
+Abre sobre la sala con los tres ajustes del giro —duración, paro uno-por-uno o
+junto, y conteo del proyector—, el código en grande con qué mandarlo, la
+rotación con confirmación, el cambio de butaca de un toque y la salida discreta.
+
+**Los ajustes viven en `salas.ajustes` y viajan por Convex**: cambiarlos desde un
+aparato los cambia en el otro sin recargar. Eso es lo que hace que entrar desde
+la laptop se sienta igual que desde el celular, y por eso no se guardaron en el
+navegador.
+
+**El código nuevo lo genera Convex, nunca el navegador**, y `codigoActual`
+prueba la pertenencia antes de rotar: **conocer el `salaId` no basta para
+quedarse con la sala**. Es la respuesta construida a la objeción que la review de
+[La sala y su cartelera](014-la-sala-y-su-cartelera.md) había levantado y que
+entonces se rechazó por prematura. Con esto quedan de pie las tres defensas de
+[La taquilla](007-la-taquilla.md): el alfabeto, el freno y la rotación.
+
+Cuando el navegador **niega almacenamiento**, la cabina lo dice en voz alta en
+vez de rotar el código y perder la sala en silencio — que es la forma exacta en
+que esta pantalla podía convertirse en una trampa.
+
+### El historial
+
+Se ve como dos mitades, que es como las nombró
+[El idioma de la sala](004-el-idioma-de-la-sala.md): **las funciones** con su
+fecha, y **«ya lo habíamos visto»** sin ninguna. Cada mitad se vacía por
+separado y su confirmación dice qué desaparece **y qué le pasa a la cartelera**.
+
+Vaciar las funciones de un título visto **lo convierte en «ya lo habíamos
+visto»; no lo devuelve a la cartelera**. Es la consecuencia honesta del esquema:
+borrar el recuerdo de la noche no borra el hecho de haberla visto.
+
+### Lo que sigue en la niebla
+
+Calificaciones, rachas y *«hace un año vieron…»* siguen sin graduarse. El ticket
+decía que se verían al construir el historial; se construyó y **no se vio la
+forma**, así que se quedan en la niebla del mapa en lugar de inventarles una.
+
+### Lo que no se cumplió del criterio de cierre
+
+**El código nunca se ha rotado de verdad.** Producción sigue con el código
+original de la siembra. La rotación está construida, revisada, desplegada y
+ejercitada en navegador —incluida la comprobación de que el aparato que la
+dispara se queda dentro—, pero **no desde el iPhone del dueño**. Es la primera
+cosa que conviene probar el día que el código se comparta de más.

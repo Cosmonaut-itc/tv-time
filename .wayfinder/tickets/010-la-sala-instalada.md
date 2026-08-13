@@ -1,8 +1,8 @@
 # La sala instalada
 
 - **Tipo**: `wayfinder:task` (AFK para construirla y medirla, HITL para probarla en sus celulares)
-- **Estado**: abierto
-- **Asignado**: sesión de Claude (sala instalada)
+- **Estado**: cerrado
+- **Asignado**: sesión de Codex (telón web y validación física)
 - **Bloqueado por**: —
 - **Mapa**: [La sala de cine](../map.md)
 
@@ -35,7 +35,7 @@ La prueba física derribó la promesa anterior. En un **iPhone 17 Pro Max con iO
 
 Se conserva un solo PNG, `/telon/1320x2868-ios26-v1.png`, como mejora opcional y sin `media`; **no forma parte de la promesa visual**. La superficie controlable empieza cuando llega el HTML: [`app/telon-de-entrada.ts`](../../app/telon-de-entrada.ts) se renderiza en el servidor antes del contenido y el CSS abre ambas cortinas.
 
-En Simulator, Safari y el lanzamiento frío de la PWA mostraron el telón web cerrado y luego la apertura bilateral. Ese resultado sirve para validar la implementación web, pero no cierra el criterio del ticket: **el fallback nuevo aún no se ha verificado en ese iPhone real**.
+En Simulator, Safari y el lanzamiento frío de la PWA mostraron el telón web cerrado y luego la apertura bilateral. La preview exacta de `9910b77` se instaló después en el iPhone real y el usuario confirmó el mismo resultado: **el fallback web aparece y completa la salida del telón**. Esa comprobación HITL cierra el criterio; no se atribuye al PNG nativo.
 
 ### Cómo se invita a instalar
 
@@ -69,6 +69,7 @@ Se borró el `favicon.ico` del scaffold de Next: el arco es la única fuente.
 ### Verificado
 
 - **Servido y comprobado en local** (`next start`): robots, manifest, `theme-color #12080C`, un solo link `apple-touch-startup-image` y el telón antes del contenido en el HTML inicial.
+- **Preview Vercel de `9910b77`**: acceso compartible comprobado sin publicar producción; HTML con el telón antes del contenido, manifest `standalone`, PNG opcional y robots respondiendo 200.
 - **Simulator iPhone 17 Pro Max, iOS 26.5**: Safari muestra cerrado → apertura bilateral → abierto; el lanzamiento frío de la PWA muestra intervalo de iOS → telón web cerrado → apertura bilateral → abierto.
 - **iPhone real 17 Pro Max, iOS 26.6**: el video muestra negro → blanco → página; el PNG de `apple-touch-startup-image` no aparece.
-- **Pendiente para cerrar**: reinstalar o lanzar en frío la versión con el fallback web en ese iPhone real y observar telón cerrado → apertura bilateral → abierto. Hasta entonces, **Estado: abierto** y sin línea en el mapa.
+- **iPhone real 17 Pro Max, iOS 26.6, preview final de `9910b77` (12 de agosto de 2026)**: el usuario la comprobó directamente y confirmó telón web cerrado → apertura completa de cortinas y cenefa → contenido. La evidencia de esta última aceptación es HITL reportada por el usuario; no se recibió una segunda grabación para análisis de cuadros.

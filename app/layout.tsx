@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { enlacesTelon } from "./telon-arranque";
 import TelonDeEntrada from "./telon-de-entrada";
 import "./globals.css";
 
@@ -28,20 +27,14 @@ export const metadata: Metadata = {
     // la sala suba hasta el notch, esto pasa a "black-translucent" y las
     // pantallas empiezan a usar env(safe-area-inset-*).
     statusBarStyle: "black",
-    // El telón cerrado mientras la app arranca. Tiene que venir escrito en el
-    // HTML que sirve el servidor: iOS no ve los links que aparecen después por
-    // JavaScript —probado en un iPhone real, arranca en negro—, y lee esto en
-    // el momento de «Añadir a pantalla de inicio».
-    //
-    // El comodín va primero porque los específicos que vienen después lo
-    // ganan cuando su media query coincide, y así ningún iPhone fuera de la
-    // tabla se queda sin telón.
-    startupImage: enlacesTelon(),
+    // Mejora opcional: iOS 26.6 no mostró este PNG en el iPhone real probado.
+    // El telón web renderizado por el servidor es el fallback controlado.
+    startupImage: "/telon/1320x2868-ios26-v1.png",
   },
 };
 
 export const viewport: Viewport = {
-  // El terciopelo desde el primer cuadro: nada de blanco en ningún momento.
+  // El terciopelo como color de interfaz mientras la página web está activa.
   themeColor: "#12080C",
   colorScheme: "dark",
 };

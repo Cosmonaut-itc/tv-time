@@ -16,9 +16,9 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    // El terciopelo de la sala. Safari ignora background_color y arma su
-    // pantalla de arranque con la imagen que le inyecta el telón; Android sí
-    // lo respeta y de ahí saca su splash.
+    // El terciopelo de la sala como pista para los consumidores del manifest.
+    // No promete una pantalla de arranque nativa; el fallback controlado es el
+    // telón web renderizado por el servidor cuando llega el HTML.
     background_color: "#12080C",
     theme_color: "#12080C",
     icons: [

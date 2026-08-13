@@ -1,13 +1,10 @@
 /**
  * El telón cerrado, en SVG y a cualquier medida.
  *
- * Es la pantalla de arranque de la app instalada. Safari **ignora**
- * `background_color` del manifest y no arma una pantalla de arranque sola:
- * exige un `apple-touch-startup-image`, y se lo cree únicamente si venía
- * escrito en el HTML que le sirvió el servidor. Un link inyectado por
- * JavaScript no cuenta —se probó en un iPhone real y arrancó en negro—, así
- * que el telón se rasteriza antes (`pnpm graficos`) y los links los emite
- * `app/layout.tsx`.
+ * `pnpm graficos` lo rasteriza para los recursos visuales del proyecto. Uno
+ * de esos PNG queda anunciado como mejora opcional en `app/layout.tsx`, sin
+ * prometer que iOS lo usará: el iPhone real probado con iOS 26.6 no lo mostró.
+ * El fallback controlado es el telón web que el servidor renderiza en el HTML.
  *
  * Aquí no hay texto a propósito: `CINE` escrito exigiría una fuente instalada
  * en la máquina que rasteriza, y el mismo dibujo saldría distinto en una Mac y
@@ -103,14 +100,14 @@ export function telonSVG(ancho: number, alto: number): string {
 }
 
 /**
- * Los iPhones a los que se les fabrica telón.
+ * Medidas heredadas que `pnpm graficos` puede rasterizar para investigación.
  *
  * `ancho`/`alto` van en puntos CSS — los que evalúa la media query, **no** los
  * que reporta `screen` en Safari: en un 17 Pro Max, `screen` dice 414 × 896
  * (las medidas de un 11 Pro Max) mientras CSS ve los 440 × 956 de verdad. Ese
  * desacuerdo hizo fallar el primer intento.
  *
- * Agregar un iPhone nuevo es una línea aquí y volver a correr `pnpm graficos`.
+ * Esta matriz no declara compatibilidad de `apple-touch-startup-image`.
  */
 export const APARATOS = [
   { ancho: 440, alto: 956, dpr: 3, modelos: "17 Pro Max · 16 Pro Max" },

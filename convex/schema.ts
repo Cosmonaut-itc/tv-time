@@ -16,6 +16,14 @@ import { v } from "convex/values";
 const tipoTitulo = v.union(v.literal("pelicula"), v.literal("serie"));
 
 export default defineSchema({
+  // El freno vive en Convex para que recargar o cambiar de navegador no
+  // reponga intentos. La v1 tiene una sola taquilla y por eso una sola fila.
+  taquilla: defineTable({
+    fallosSeguidos: v.number(),
+    trabadaHasta: v.optional(v.number()),
+    actualizada: v.number(),
+  }),
+
   salas: defineTable({
     // Los 6 caracteres. Convex no tiene índices únicos: la unicidad la
     // defiende la mutación que crea la sala.
@@ -55,8 +63,9 @@ export default defineSchema({
     // anteriores por `orden`.
     saga: v.optional(v.string()),
     orden: v.optional(v.number()),
-    // Autoría, no permisos: la butaca que lo agregó.
-    agregadoPor: v.string(),
+    // Autoría, no permisos: la butaca que lo agregó. La lista versionada se
+    // siembra sin autor porque no la agregó ninguna butaca desde la app.
+    agregadoPor: v.optional(v.string()),
     // El interruptor que sostiene el candado. Encenderlo desbloquea la
     // siguiente de la saga; apagarlo la devuelve a la cartelera y no borra
     // ninguna función. `visto` con funciones = lo vieron aquí; `visto` sin

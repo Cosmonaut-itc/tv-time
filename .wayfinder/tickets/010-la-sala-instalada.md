@@ -29,13 +29,13 @@ Al cerrar, el ticket registra qué se verificó en qué dispositivo real.
 
 Un arco de latón sobre terciopelo con tres focos, sin letras. Se probaron tres bocetos a 60 px sobre fondos de pantalla reales antes de elegir — a ese tamaño sólo sobreviven dos formas gruesas, y las letras se convierten en manchas. Vive en **[`app/icon.svg`](../../app/icon.svg) como fuente única**: sirve de favicon tal cual y `pnpm iconos` lo rasteriza a los PNG que piden iOS y el manifest ([`scripts/generar-iconos.mjs`](../../scripts/generar-iconos.mjs)). El nombre bajo el icono es **«Cine»** — iOS corta como a 12 caracteres.
 
-### La pantalla de arranque: se dibuja sola en el aparato
+### La pantalla de arranque: el PNG es opcional, el fallback es web
 
-Aquí se cayó una suposición. **Safari ignora `background_color` del manifest y no arma pantalla de arranque solo**: exige un `apple-touch-startup-image` con la resolución exacta de esa pantalla, o abre en blanco. Lo normal es fabricar catorce PNG y volver a fabricarlos cada septiembre que sale un iPhone.
+La prueba física derribó la promesa anterior. En un **iPhone 17 Pro Max con iOS 26.6**, el video aportado por el usuario muestra la secuencia **negro → blanco → página**: el PNG anunciado mediante `apple-touch-startup-image` no apareció. La compatibilidad actual de ese mecanismo no está suficientemente documentada; el detalle y las hipótesis reproducibles quedan en [`docs/research/apple-touch-startup-image-ios26.md`](../../docs/research/apple-touch-startup-image-ios26.md).
 
-En vez de eso, [`app/telon-de-arranque.tsx`](../../app/telon-de-arranque.tsx) **dibuja el telón cerrado en un canvas del tamaño justo del aparato que está mirando** y lo inyecta como imagen de arranque antes de que nadie toque «Añadir a pantalla de inicio». Cero archivos en el repo, cualquier iPhone presente o futuro. Y como la web misma arranca con el telón cerrado, el paso de lo nativo a la web **no tiene costura**: las cortinas ya estaban cerradas.
+Se conserva un solo PNG, `/telon/1320x2868-ios26-v1.png`, como mejora opcional y sin `media`; **no forma parte de la promesa visual**. La superficie controlable empieza cuando llega el HTML: [`app/telon-de-entrada.ts`](../../app/telon-de-entrada.ts) se renderiza en el servidor antes del contenido y el CSS abre ambas cortinas.
 
-El telón es terciopelo con pliegues, una juntura central en sombra —eso es lo que dice «cerrado»—, una cenefa arriba y **CINE** en latón al pie. La penumbra muerde fuerte hacia los bordes hasta fundirse con el `#12080C` del `theme_color`: es una sala a oscuras, y no un rojo encendido en la cara a media noche.
+En Simulator, Safari y el lanzamiento frío de la PWA mostraron el telón web cerrado y luego la apertura bilateral. Ese resultado sirve para validar la implementación web, pero no cierra el criterio del ticket: **el fallback nuevo aún no se ha verificado en ese iPhone real**.
 
 ### Cómo se invita a instalar
 
@@ -43,12 +43,12 @@ El telón es terciopelo con pliegues, una juntura central en sombra —eso es lo
 
 ### La sala a oscuras, y por qué no se parece a la marquesina apagada
 
-Son dos estados opuestos que se iban a confundir, y **lo que los separa es el telón**:
+Son dos estados opuestos que se iban a confundir, y **la decisión de diseño es separarlos con el telón** cuando existan esas pantallas:
 
 - **La marquesina apagada** ([Cuando la cartelera se queda corta](009-cuando-la-cartelera-se-queda-corta.md)): la sala funciona, no tiene qué dar. Se dibuja **entera, con las luces apagadas y un botón que sirve**.
-- **La sala a oscuras** (sin red): la sala no puede ni encender. **El telón nunca se abre.** Con red, las cortinas se abren cuando responde Convex.
+- **La sala a oscuras** (sin red): la sala no puede ni encender. **El telón nunca se abre.**
 
-Sin red y con la app ya abierta, [`useOffline()`](https://nextjs.org/docs) de Next deja las navegaciones pendientes y reintenta al volver la red — sin service worker. Pero **abrir el icono sin red sí falla**, y ahí hace falta un service worker **mínimo, escrito a mano, que cachee sólo el cascarón y jamás el catálogo**: el catálogo desactualizado es peor que el catálogo ausente.
+El telón web construido ahora abre por tiempo de CSS; todavía no representa conectividad ni espera a Convex. El comportamiento sin red y un eventual service worker mínimo siguen pendientes: si se construye, cacheará sólo el cascarón y jamás el catálogo, porque un catálogo desactualizado es peor que uno ausente.
 
 ### Lo que quedó construido hoy
 
@@ -59,15 +59,16 @@ Sólo lo que no depende de pantallas que aún no existen:
 | [`app/manifest.ts`](../../app/manifest.ts) | `standalone`, vertical, `es-MX`, terciopelo en `theme_color` y `background_color`, los tres iconos |
 | [`app/icon.svg`](../../app/icon.svg) | el arco — fuente única, y favicon |
 | [`app/apple-icon.png`](../../app/apple-icon.png) + `public/icono/cine-{192,512,1024}.png` | rasterizados con `pnpm iconos` |
-| [`app/telon-de-arranque.tsx`](../../app/telon-de-arranque.tsx) | el telón dibujado en el aparato |
-| [`app/layout.tsx`](../../app/layout.tsx) | `appleWebApp`, `themeColor`, `colorScheme: dark` |
+| [`app/telon-de-entrada.ts`](../../app/telon-de-entrada.ts) + [`app/globals.css`](../../app/globals.css) | telón web server-rendered, espera breve y apertura bilateral |
+| [`app/layout.tsx`](../../app/layout.tsx) | telón antes del contenido, `appleWebApp`, un PNG opcional, `themeColor` y `colorScheme: dark` |
 
 Se borró el `favicon.ico` del scaffold de Next: el arco es la única fuente.
 
-**Pasa a [El corte de la v1](012-el-corte-de-la-v1.md)**, porque cada pieza necesita una pantalla que todavía no existe: el cartel de instalación (necesita la función cerrada), las cortinas que se abren (necesitan la sala), la pantalla de *sala a oscuras* y el service worker del cascarón.
+**Pasa a [El corte de la v1](012-el-corte-de-la-v1.md)** lo que necesita pantallas que todavía no existen: el cartel de instalación (necesita la función cerrada), la pantalla de *sala a oscuras* y el service worker del cascarón.
 
 ### Verificado
 
-- **Servido y comprobado en local** (`next start`): el `<head>` emite `apple-touch-icon` 180×180, `icon` SVG, `manifest`, `theme-color #12080C`, `apple-mobile-web-app-title: Cine` y `status-bar-style: black`; `/manifest.webmanifest` responde `application/manifest+json` y los tres PNG responden 200.
-- **En iPhone real**: <!-- pendiente: modelo, iOS, y qué se vio -->
-
+- **Servido y comprobado en local** (`next start`): robots, manifest, `theme-color #12080C`, un solo link `apple-touch-startup-image` y el telón antes del contenido en el HTML inicial.
+- **Simulator iPhone 17 Pro Max, iOS 26.5**: Safari muestra cerrado → apertura bilateral → abierto; el lanzamiento frío de la PWA muestra intervalo de iOS → telón web cerrado → apertura bilateral → abierto.
+- **iPhone real 17 Pro Max, iOS 26.6**: el video muestra negro → blanco → página; el PNG de `apple-touch-startup-image` no aparece.
+- **Pendiente para cerrar**: reinstalar o lanzar en frío la versión con el fallback web en ese iPhone real y observar telón cerrado → apertura bilateral → abierto. Hasta entonces, **Estado: abierto** y sin línea en el mapa.

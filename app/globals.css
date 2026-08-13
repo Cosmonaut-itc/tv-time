@@ -360,14 +360,15 @@ a {
   text-align: center;
 }
 
-/* La firma de la casa hereda el tono del pie de TMDB —misma tipografía de
-   datos, mismo color apagado, mismo margen— pero es su propia regla: la lección
-   de `.marco` fue que dos piezas compartiendo nombre acaban peleándose. */
+/* La firma de la casa comparte tipografía y margen con el pie de TMDB, pero no
+   su tono: la atribución tiene que quedar discreta por cláusula, la firma no.
+   Es su propia regla —la lección de `.marco` fue que dos piezas compartiendo
+   nombre acaban peleándose— y por eso puede subir de brillo sola. */
 .firma-casa {
   margin: -3px 20px 12px;
-  color: rgba(242, 229, 198, 0.32);
+  color: rgba(242, 229, 198, 0.66);
   font-family: var(--datos);
-  font-size: 9px;
+  font-size: 10.5px;
   letter-spacing: 0.08em;
   line-height: 1.45;
   text-align: center;

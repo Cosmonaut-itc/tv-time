@@ -98,7 +98,7 @@ body {
 
 @keyframes telon-salir-arriba {
   to {
-    transform: translateY(-101%);
+    transform: translateY(calc(-101% - 26px));
   }
 }
 

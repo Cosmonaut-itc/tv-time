@@ -3,14 +3,16 @@
 import { useMutation } from "convex/react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { codigoTieneFormatoValido, normalizarCodigo } from "@/convex/codigo";
 import { debeOlvidarCodigo } from "./entrada-sala-logica";
 import { nocheDe } from "./noche";
+import SalaCartelera from "./sala-cartelera";
 
 const CLAVE_CODIGO = "cine.codigo";
 const CLAVE_BUTACA = "cine.butaca";
 
-type SalaAbierta = { codigo: string; butacas: string[] };
+type SalaAbierta = { salaId: Id<"salas">; codigo: string; butacas: string[] };
 type Fase = "cargando" | "taquilla" | "butaca" | "sala";
 
 function leerGuardado(clave: string): string | null {
@@ -83,7 +85,11 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
         }
 
         guardar(CLAVE_CODIGO, resultado.codigo);
-        const abierta = { codigo: resultado.codigo, butacas: resultado.butacas };
+        const abierta = {
+          salaId: resultado.salaId,
+          codigo: resultado.codigo,
+          butacas: resultado.butacas,
+        };
         const recordada = butacaGuardadaDeEstaNoche(resultado.butacas);
         setSala(abierta);
         setButaca(recordada);
@@ -145,7 +151,9 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
         </div>
       </header>
 
-      <section className="entrada" aria-live="polite">
+      {fase === "sala" && sala && butaca ? (
+        <SalaCartelera salaId={sala.salaId} />
+      ) : <section className="entrada" aria-live="polite">
         {fase === "cargando" && <p className="estado-entrada">Abriendo la taquilla…</p>}
 
         {fase === "taquilla" && (
@@ -189,15 +197,7 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
           </div>
         )}
 
-        {fase === "sala" && sala && butaca && (
-          <div className="sala-lista">
-            <p className="etiqueta-entrada">Butaca de esta noche</p>
-            <h2>{butaca}</h2>
-            <p>La sala está lista.</p>
-            <p className="nota-entrada">La cartelera abre en la siguiente rebanada.</p>
-          </div>
-        )}
-      </section>
+      </section>}
       <p className="fuente-tmdb">
         Este producto usa TMDB y sus API, pero TMDB no lo respalda, certifica ni aprueba.
       </p>

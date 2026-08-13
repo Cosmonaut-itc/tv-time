@@ -10,7 +10,7 @@ function crearTaquilla() {
     ahora: () => Date.parse("2026-08-12T18:00:00.000Z"),
     buscarSala: async (codigo: string) =>
       codigo === CODIGO_CORRECTO
-        ? { codigo: CODIGO_CORRECTO, butacas: ["Félix", "Sofía"] }
+        ? { salaId: "sala-dev", codigo: CODIGO_CORRECTO, butacas: ["Félix", "Sofía"] }
         : null,
     leerFreno: async () => freno,
     guardarFreno: async (nuevo: FrenoTaquilla) => {
@@ -34,7 +34,12 @@ test("un código correcto entra y limpia el freno aunque cinco fallos hayan trab
   assert.ok(taquilla.leerFreno()?.trabadaHasta);
   assert.deepEqual(
     await entrarConFreno(taquilla.dependencias, { codigo: CODIGO_CORRECTO }),
-    { estado: "abierta", codigo: CODIGO_CORRECTO, butacas: ["Félix", "Sofía"] },
+    {
+      estado: "abierta",
+      salaId: "sala-dev",
+      codigo: CODIGO_CORRECTO,
+      butacas: ["Félix", "Sofía"],
+    },
   );
   assert.equal(taquilla.leerFreno(), null);
 });

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
-test("la siembra es interna y taquilla:entrar es la única función pública de Convex", async () => {
+test("la siembra es interna y la superficie pública sólo abre la sala y lee sus títulos por id", async () => {
   const siembra = await readFile("convex/siembra.ts", "utf8");
   assert.match(siembra, /export const sembrar = internalAction\s*\(/);
 
@@ -19,5 +19,12 @@ test("la siembra es interna y taquilla:entrar es la única función pública de 
     }
   }
 
-  assert.deepEqual(publicas, ["taquilla.ts:entrar:mutation"]);
+  assert.deepEqual(publicas, [
+    "taquilla.ts:entrar:mutation",
+    "titulos.ts:deSala:query",
+  ]);
+
+  const titulos = await readFile("convex/titulos.ts", "utf8");
+  assert.doesNotMatch(titulos, /codigo/);
+  assert.match(titulos, /args:\s*{\s*salaId:\s*v\.id\("salas"\)\s*}/);
 });

@@ -92,3 +92,13 @@ const comodin = await sharp(Buffer.from(telonSVG(1320, 2868)))
   .jpeg({ quality: 82, chromaSubsampling: "4:4:4" })
   .toBuffer();
 await escribir("public/telon/comodin.jpg", comodin, "sin media query");
+
+const candidatoIOS26 = await sharp(Buffer.from(telonSVG(1320, 2868)))
+  .flatten({ background: "#12080C" })
+  .png({ compressionLevel: 9, adaptiveFiltering: true })
+  .toBuffer();
+await escribir(
+  "public/telon/1320x2868-ios26-v1.png",
+  candidatoIOS26,
+  "1320×2868  candidato iOS 26"
+);

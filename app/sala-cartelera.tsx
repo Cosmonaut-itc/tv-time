@@ -29,6 +29,8 @@ import MuroCatalogo from "./muro-catalogo";
 import PosterCrudo from "./poster-crudo";
 import { ajusteOpticoDelNumero, type TintaDelNumero } from "./conteo-logica";
 import { calentarPosters, cuandoHayaCalma, urlDePoster } from "./posters";
+import { esLaSalaDeLaCasa } from "./firma-logica";
+import MascotaClaude from "./mascota-claude";
 
 const FILTROS: readonly { valor: FiltroCartelera; etiqueta: string }[] = [
   { valor: "pelicula", etiqueta: "Peli" },
@@ -713,6 +715,14 @@ export default function SalaCartelera({
       >
         <div className="telon izq" aria-hidden="true" />
         <div className="telon der" aria-hidden="true" />
+        {esLaSalaDeLaCasa(butacas) && (
+          <p className="firma-telon" aria-hidden={fase !== "reposo"}>
+            Hecho con amor
+            <br />
+            por Félix y Claude
+            <MascotaClaude />
+          </p>
+        )}
         <div className="pantalla">
           {fase === "reposo" && (
             <div className="reposo">

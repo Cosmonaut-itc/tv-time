@@ -15,7 +15,6 @@ import {
   type SalaDelLlavero,
 } from "./llavero-logica";
 import LogoTmdb from "./logo-tmdb";
-import MascotaClaude from "./mascota-claude";
 import { nocheDe } from "./noche";
 import SalaCartelera, { type CuentaDeSala } from "./sala-cartelera";
 
@@ -329,18 +328,10 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
         )}
 
       </section>}
-      {/* Dentro de la sala el pie es la firma de la casa; la atribución de TMDB
-          se queda en la taquilla, que es donde el dueño la quiso. Las dos piezas
-          de TMDB —texto y logo— siguen viajando juntas, porque la cláusula pide
-          las dos y no una: la frase dice exactamente que TMDB no respalda esto. */}
-      {fase === "sala" ? (
-        <div className="firma-casa">
-          <p>
-            Hecho con amor por Félix y Claude
-            <MascotaClaude />
-          </p>
-        </div>
-      ) : (
+      {/* La atribución de TMDB vive en la taquilla, que es donde el dueño la quiso.
+          Las dos piezas —texto y logo— siguen viajando juntas, porque la cláusula
+          pide las dos y no una: la frase dice exactamente que TMDB no respalda esto. */}
+      {fase !== "sala" && (
         <div className="fuente-tmdb">
           <LogoTmdb />
           <p>

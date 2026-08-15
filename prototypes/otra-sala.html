@@ -1,0 +1,650 @@
+<meta charset="utf-8">
+<title>Otra Sala</title>
+
+<style>
+  /* ───────────────────────────────────────────────
+     PROTOTIPO DESECHABLE — Otra sala
+     Ticket: .wayfinder/tickets/021-otra-sala.md
+     Sin backend: el código lo genera el mismo alfabeto
+     de 32 de convex/codigo.ts, aquí en el navegador.
+     En la app real lo genera Convex y nunca el cliente.
+     ─────────────────────────────────────────────── */
+
+  :root {
+    /* Sala siempre a oscuras: un solo tema, deliberado. */
+    --terciopelo:   #12080C;
+    --foso:         #0B0507;
+    --vino:         #4E1122;
+    --vino-claro:   #8E2438;
+    --laton:        #C9A227;
+    --laton-tenue:  #8A6F1C;
+    --crema:        #F2E5C6;
+    --crema-tenue:  #9A8E75;
+
+    --display: 'Copperplate', 'Copperplate Gothic Light', 'Futura', 'Century Gothic', 'Trebuchet MS', sans-serif;
+    --cuerpo:  'Optima', 'Avenir Next', 'Futura', 'Segoe UI', system-ui, sans-serif;
+    --datos:   'DIN Alternate', 'Avenir Next Condensed', ui-monospace, monospace;
+
+    --curva-telon: cubic-bezier(.66,0,.2,1);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--foso);
+    color: var(--crema);
+    font-family: var(--cuerpo);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--laton); outline-offset: 2px; }
+
+  .sala {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background:
+      radial-gradient(120% 55% at 50% 0%, #1E1014 0%, var(--terciopelo) 55%, var(--foso) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Marquesina ─────────────────────────────── */
+
+  .marquesina { padding: 14px 16px 10px; text-align: center; }
+
+  .focos { display: flex; justify-content: center; gap: 9px; margin-bottom: 9px; }
+  .focos i {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--laton);
+    box-shadow: 0 0 7px rgba(201,162,39,.85);
+    animation: titila 2.6s infinite;
+  }
+  .focos i:nth-child(2n) { animation-delay: .5s; }
+  .focos i:nth-child(3n) { animation-delay: 1.1s; }
+  @keyframes titila { 0%,100% { opacity: 1 } 45% { opacity: .3 } }
+
+  .cartel {
+    border: 1px solid var(--laton-tenue);
+    padding: 12px 10px 10px;
+    background: rgba(78,17,34,.2);
+  }
+  .cartel h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 21px;
+    font-weight: 400;
+    letter-spacing: .34em;
+    text-indent: .34em;
+    color: var(--laton);
+  }
+  .bitacora {
+    margin: 8px 0 0;
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 9.5px;
+    letter-spacing: .13em;
+  }
+  .bitacora b { color: var(--laton); font-weight: 400; }
+
+  /* ── Escenario ──────────────────────────────── */
+
+  .escenario {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 290px;
+    margin: 4px 12px 0;
+    border: 1px solid rgba(201,162,39,.22);
+    border-bottom: none;
+    background: #080407;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .reposo { text-align: center; padding: 16px; }
+  .reposo .cifra {
+    font-family: var(--display);
+    font-size: 54px;
+    color: var(--crema);
+    line-height: 1;
+  }
+  .reposo p {
+    margin: 10px 0 0;
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 10px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+  .escenario.apagada { filter: saturate(.35); }
+  .escenario.apagada .cifra { color: var(--crema-tenue); opacity: .5; }
+
+  /* ── Foso ───────────────────────────────────── */
+
+  .foso { padding: 12px; background: var(--foso); }
+  .btn-palanca {
+    width: 100%;
+    padding: 15px 10px;
+    background: linear-gradient(180deg, var(--vino), #340B17);
+    border: 1px solid var(--laton-tenue);
+    color: var(--laton);
+    font-family: var(--display);
+    font-size: 14px;
+    letter-spacing: .26em;
+    text-indent: .26em;
+  }
+  .btn-palanca:disabled { opacity: .42; cursor: not-allowed; }
+
+  .cornisa {
+    display: flex;
+    border-bottom: 1px solid rgba(201,162,39,.22);
+    background: rgba(11,5,7,.5);
+  }
+  .cornisa button {
+    flex: 1;
+    padding: 11px 4px;
+    border: none;
+    border-right: 1px solid rgba(201,162,39,.14);
+    background: none;
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 9px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .cornisa button:last-child { border-right: none; }
+  .cornisa button[aria-pressed="true"] { color: var(--laton); }
+
+  /* ── Velo y hojas ───────────────────────────── */
+
+  .velo {
+    position: fixed; inset: 0;
+    background: rgba(3,1,2,.72);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s ease; z-index: 40;
+  }
+  .velo.on { opacity: 1; pointer-events: auto; }
+
+  .hoja {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    max-width: 460px; margin: 0 auto;
+    background: linear-gradient(180deg, #1A0D12 0%, var(--terciopelo) 60%, var(--foso) 100%);
+    border: 1px solid var(--laton-tenue); border-bottom: none; border-top-width: 3px;
+    transform: translateY(102%);
+    transition: transform .38s var(--curva-telon);
+    z-index: 50;
+    box-shadow: 0 -14px 40px rgba(0,0,0,.7);
+    padding: 12px 14px 28px;
+    max-height: 88dvh;
+    overflow-y: auto;
+  }
+  .hoja.abierta { transform: none; }
+  .hoja.nueva-sala { z-index: 60; }
+  .hoja .asa { width: 54px; height: 3px; background: var(--laton-tenue); margin: 0 auto 12px; }
+
+  .contenido { display: flex; flex-direction: column; gap: 14px; }
+  .contenido h2 {
+    margin: -8px 0 0;
+    color: var(--laton);
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: .2em;
+  }
+
+  .etiqueta-entrada {
+    margin: 0;
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 9px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+  }
+
+  .contenido section {
+    padding: 12px;
+    border: 1px solid rgba(201,162,39,.26);
+    background: rgba(78,17,34,.12);
+  }
+  .contenido section > p:not(.etiqueta-entrada) {
+    margin: 0 0 8px;
+    color: var(--crema-tenue);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .controles { display: flex; flex-wrap: wrap; gap: 6px; }
+  .controles button {
+    min-height: 34px;
+    padding: 7px 9px;
+    border: 1px solid rgba(242,229,198,.2);
+    background: rgba(11,5,7,.36);
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 9.5px;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+  }
+  .controles button[aria-pressed="true"] {
+    border-color: var(--laton);
+    background: rgba(201,162,39,.11);
+    color: var(--laton);
+  }
+
+  .codigo { text-align: center; }
+  .codigo strong {
+    display: block;
+    margin: 5px 0 8px;
+    color: var(--laton);
+    font-family: var(--datos);
+    font-size: 33px;
+    font-weight: 400;
+    letter-spacing: .24em;
+    text-indent: .24em;
+  }
+
+  .opcion {
+    width: 100%;
+    min-height: 40px;
+    padding: 10px;
+    border: 1px solid rgba(242,229,198,.24);
+    background: rgba(11,5,7,.4);
+    color: var(--crema);
+    font-family: var(--datos);
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .opcion.laton { border-color: var(--laton); color: var(--laton); }
+  .opcion:disabled { opacity: .4; cursor: not-allowed; }
+
+  .aviso {
+    margin: 9px 0 0;
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 9.5px;
+    letter-spacing: .08em;
+    line-height: 1.55;
+  }
+
+  /* ── El llavero ─────────────────────────────── */
+
+  /* Cada sala es un boleto: el talón dorado a la izquierda dice cuál está
+     puesta, sin repetir la palabra «actual» en cada renglón. */
+  .llavero { display: flex; flex-direction: column; gap: 6px; }
+  .boleto {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid rgba(242,229,198,.18);
+    border-left: 3px solid rgba(242,229,198,.18);
+    background: rgba(11,5,7,.4);
+    text-align: left;
+  }
+  .boleto[aria-current="true"] {
+    border-color: rgba(201,162,39,.4);
+    border-left-color: var(--laton);
+    background: rgba(201,162,39,.08);
+  }
+  .boleto .nombre {
+    flex: 1;
+    color: var(--crema);
+    font-family: var(--cuerpo);
+    font-size: 13px;
+  }
+  .boleto[aria-current="true"] .nombre { color: var(--laton); }
+  .boleto .clave {
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 11px;
+    letter-spacing: .18em;
+  }
+  .boleto .cuenta {
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 9px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  /* ── El cajón de la sala nueva ──────────────── */
+
+  .campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+  .campo label {
+    color: var(--crema-tenue);
+    font-family: var(--datos);
+    font-size: 9px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+  }
+  .campo input {
+    padding: 10px;
+    border: 1px solid rgba(242,229,198,.24);
+    background: rgba(11,5,7,.5);
+    color: var(--crema);
+    font-family: var(--cuerpo);
+    font-size: 15px;
+  }
+  .campo input::placeholder { color: rgba(154,142,117,.55); }
+
+  .error {
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--vino-claro);
+    background: var(--vino);
+    color: var(--crema);
+    font-family: var(--datos);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .puertas { display: flex; flex-direction: column; gap: 8px; }
+
+  /* ── Andamio del prototipo ──────────────────── */
+
+  .andamio {
+    max-width: 460px;
+    margin: 0 auto;
+    padding: 16px 14px 40px;
+    border-top: 1px solid rgba(201,162,39,.2);
+    color: var(--crema-tenue);
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+  .andamio h3 {
+    margin: 0 0 8px;
+    color: var(--laton);
+    font-family: var(--datos);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+  }
+  .andamio ul { margin: 0; padding-left: 18px; }
+  .andamio li { margin-bottom: 6px; }
+  .andamio b { color: var(--crema); font-weight: 400; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .focos i { animation: none; }
+    .velo, .hoja { transition: none; }
+  }
+</style>
+
+<div class="sala">
+  <div class="cornisa">
+    <button type="button" id="btn-muro">Muro</button>
+    <button type="button" id="btn-historial">Historial</button>
+    <button type="button" id="btn-cabina" aria-pressed="false">Cabina</button>
+  </div>
+
+  <div class="marquesina">
+    <div class="focos"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="cartel">
+      <h1 id="nombre-sala">EL CINE</h1>
+      <p class="bitacora" id="bitacora"></p>
+    </div>
+  </div>
+
+  <section class="escenario" id="escenario">
+    <div class="reposo">
+      <div class="cifra" id="cifra">38</div>
+      <p id="pie-escenario">títulos compitiendo</p>
+    </div>
+  </section>
+
+  <div class="foso">
+    <button class="btn-palanca" type="button" id="palanca">GIRAR</button>
+  </div>
+</div>
+
+<div class="andamio">
+  <h3>Qué se está probando</h3>
+  <ul>
+    <li>La sala nueva nace <b>desde la cabina</b>, detrás del código: la taquilla sigue teniendo una sola pregunta.</li>
+    <li>Nace <b>vacía</b> — marquesina apagada y el cajón del alta esperando — y con <b>sus dos butacas escritas</b>.</li>
+    <li>Crear no expulsa: el código nuevo se enseña en grande y <b>el aparato decide</b> si se cambia o se queda.</li>
+    <li>El <b>llavero</b> recuerda las salas visitadas y se cambia entre ellas de un toque, sin teclear.</li>
+  </ul>
+</div>
+
+<div class="velo" id="velo"></div>
+
+<div class="hoja" id="hoja-cabina" role="dialog" aria-modal="true" aria-label="La cabina">
+  <div class="asa"></div>
+  <div class="contenido">
+    <p class="etiqueta-entrada">Preferencias de la sala</p>
+    <h2>LA CABINA</h2>
+
+    <section class="codigo">
+      <p class="etiqueta-entrada">Código para mandarlo por WhatsApp</p>
+      <strong id="codigo-actual">CWZ2AM</strong>
+      <p>Guárdenlo: el link se limpia y el navegador puede olvidarlo.</p>
+      <button class="opcion" type="button">Rotar el código</button>
+    </section>
+
+    <section>
+      <p class="etiqueta-entrada">Butaca de esta noche</p>
+      <div class="controles" id="butacas-actuales"></div>
+    </section>
+
+    <section>
+      <p class="etiqueta-entrada">Otras salas</p>
+      <p>Este aparato recuerda las salas donde ya entraste. Cambiar de sala no pide el código otra vez.</p>
+      <div class="llavero" id="llavero"></div>
+      <p class="aviso">Sólo en este aparato. Si el navegador olvida, se vuelve a entrar con el código.</p>
+      <button class="opcion laton" type="button" id="btn-abrir-nueva" style="margin-top:10px">Abrir una sala nueva</button>
+    </section>
+  </div>
+</div>
+
+<div class="hoja nueva-sala" id="hoja-nueva" role="dialog" aria-modal="true" aria-label="Abrir una sala nueva">
+  <div class="asa"></div>
+  <div class="contenido" id="contenido-nueva"></div>
+</div>
+
+<script>
+  /* El alfabeto es el de convex/codigo.ts: 32 caracteres sin ambigüedades.
+     Aquí el código se genera en el navegador porque no hay backend; en la app
+     lo genera Convex y el cliente nunca lo inventa. */
+  const ALFABETO = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  const codigoNuevo = () =>
+    Array.from({ length: 6 }, () => ALFABETO[Math.floor(Math.random() * ALFABETO.length)]).join("");
+
+  const salas = [
+    { codigo: "CWZ2AM", nombre: "EL CINE", butacas: ["Félix", "Sofía"], titulos: 38, butaca: "Félix" },
+  ];
+  let puesta = 0;
+  let paso = "formulario";
+  let recienCreada = null;
+  let error = "";
+
+  const $ = (id) => document.getElementById(id);
+  const velo = $("velo");
+  const hojaCabina = $("hoja-cabina");
+  const hojaNueva = $("hoja-nueva");
+
+  function salaPuesta() { return salas[puesta]; }
+
+  function pintarSala() {
+    const sala = salaPuesta();
+    $("nombre-sala").textContent = sala.nombre;
+    $("codigo-actual").textContent = sala.codigo;
+    $("bitacora").innerHTML = sala.titulos
+      ? `<b>${sala.titulos}</b> TÍTULOS · <b>${sala.titulos}</b> EN CARTELERA · 0 VISTAS`
+      : `SALA RECIÉN NACIDA · <b>0</b> TÍTULOS`;
+    $("cifra").textContent = sala.titulos || "0";
+    $("pie-escenario").textContent = sala.titulos ? "títulos compitiendo" : "agreguen el primero";
+    $("escenario").classList.toggle("apagada", sala.titulos === 0);
+    // La marquesina apagada de la sala recién nacida se dibuja entera, con las
+    // luces bajas y **un botón que sirve**: el de la sala vacía abre el alta.
+    $("palanca").textContent = sala.titulos ? "GIRAR" : "AGREGAR TÍTULOS";
+
+    const butacas = $("butacas-actuales");
+    butacas.innerHTML = "";
+    for (const nombre of sala.butacas) {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.textContent = nombre;
+      boton.setAttribute("aria-pressed", String(sala.butaca === nombre));
+      boton.onclick = () => { sala.butaca = nombre; pintarSala(); };
+      butacas.append(boton);
+    }
+
+    const llavero = $("llavero");
+    llavero.innerHTML = "";
+    salas.forEach((otra, indice) => {
+      const boleto = document.createElement("button");
+      boleto.type = "button";
+      boleto.className = "boleto";
+      boleto.setAttribute("aria-current", String(indice === puesta));
+      // La sala no tiene nombre en el esquema —la marquesina dice «EL CINE» en
+      // todas—, así que en el llavero cada una se reconoce por sus butacas.
+      boleto.innerHTML =
+        `<span class="nombre">${otra.butacas.join(" y ")}</span>` +
+        `<span class="cuenta">${otra.titulos ? otra.titulos + " títulos" : "vacía"}</span>` +
+        `<span class="clave">${otra.codigo}</span>`;
+      boleto.onclick = () => { puesta = indice; pintarSala(); };
+      llavero.append(boleto);
+    });
+  }
+
+  /* ── Las hojas ──────────────────────────────── */
+
+  function abrirCabina() {
+    hojaCabina.classList.add("abierta");
+    velo.classList.add("on");
+    $("btn-cabina").setAttribute("aria-pressed", "true");
+  }
+  function cerrarTodo() {
+    hojaCabina.classList.remove("abierta");
+    hojaNueva.classList.remove("abierta");
+    velo.classList.remove("on");
+    $("btn-cabina").setAttribute("aria-pressed", "false");
+  }
+
+  $("btn-cabina").onclick = () => {
+    hojaCabina.classList.contains("abierta") ? cerrarTodo() : abrirCabina();
+  };
+  velo.onclick = cerrarTodo;
+  document.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape") cerrarTodo();
+  });
+
+  /* ── El cajón de la sala nueva ──────────────── */
+
+  $("btn-abrir-nueva").onclick = () => {
+    paso = "formulario";
+    error = "";
+    recienCreada = null;
+    pintarNueva();
+    hojaNueva.classList.add("abierta");
+  };
+
+  function pintarNueva() {
+    const contenido = $("contenido-nueva");
+    contenido.innerHTML = "";
+
+    if (paso === "formulario") {
+      contenido.innerHTML = `
+        <p class="etiqueta-entrada">Detrás del código, nunca desde la taquilla</p>
+        <h2>OTRA SALA</h2>
+        <section>
+          <p>Nace vacía y con su propio código. La sala donde estás no se toca.</p>
+          <div class="campo">
+            <label for="butaca-1">Primera butaca</label>
+            <input id="butaca-1" type="text" maxlength="14" placeholder="Nombre" autocomplete="off">
+          </div>
+          <div class="campo">
+            <label for="butaca-2">Segunda butaca</label>
+            <input id="butaca-2" type="text" maxlength="14" placeholder="Nombre" autocomplete="off">
+          </div>
+          <p id="error-nueva"></p>
+          <button class="opcion laton" type="button" id="crear">Abrir la sala</button>
+          <p class="aviso">Las butacas son voces, no permisos: cada título recuerda quién lo agregó.</p>
+        </section>`;
+      if (error) {
+        const aviso = $("error-nueva");
+        aviso.className = "error";
+        aviso.textContent = error;
+      }
+      $("crear").onclick = crear;
+      $("butaca-1").focus();
+      return;
+    }
+
+    contenido.innerHTML = `
+      <p class="etiqueta-entrada">La sala existe</p>
+      <h2>SU CÓDIGO</h2>
+      <section class="codigo">
+        <p class="etiqueta-entrada">Apúntenlo o mándenlo ahora</p>
+        <strong>${recienCreada.codigo}</strong>
+        <p>Es la única llave de la sala nueva. Nadie puede recuperarla por ustedes.</p>
+        <button class="opcion" type="button" id="copiar">Copiar el código</button>
+      </section>
+      <section>
+        <p class="etiqueta-entrada">Butacas de la sala nueva</p>
+        <div class="controles">
+          <button type="button" aria-pressed="false">${recienCreada.butacas[0]}</button>
+          <button type="button" aria-pressed="false">${recienCreada.butacas[1]}</button>
+        </div>
+      </section>
+      <div class="puertas">
+        <button class="opcion laton" type="button" id="entrar">Entrar a la sala nueva</button>
+        <button class="opcion" type="button" id="quedarme">Quedarme con ${salaPuesta().butacas.join(" y ")}</button>
+      </div>
+      <p class="aviso">Quedarte aquí no la pierde: ya está en el llavero.</p>`;
+
+    $("copiar").onclick = (evento) => {
+      navigator.clipboard?.writeText(recienCreada.codigo);
+      evento.currentTarget.textContent = "Copiado";
+    };
+    $("entrar").onclick = () => {
+      puesta = salas.indexOf(recienCreada);
+      pintarSala();
+      hojaNueva.classList.remove("abierta");
+      cerrarTodo();
+    };
+    $("quedarme").onclick = () => {
+      pintarSala();
+      hojaNueva.classList.remove("abierta");
+    };
+  }
+
+  function crear() {
+    const uno = $("butaca-1").value.trim();
+    const dos = $("butaca-2").value.trim();
+    if (!uno || !dos) {
+      error = "Escriban los dos nombres: una sala no se abre a medias.";
+      pintarNueva();
+      return;
+    }
+    if (uno.toLocaleLowerCase("es") === dos.toLocaleLowerCase("es")) {
+      error = "Las dos butacas necesitan nombres distintos para tener dos voces.";
+      pintarNueva();
+      return;
+    }
+    error = "";
+    recienCreada = {
+      codigo: codigoNuevo(),
+      nombre: "EL CINE",
+      butacas: [uno, dos],
+      titulos: 0,
+      butaca: uno,
+    };
+    salas.push(recienCreada);
+    paso = "codigo";
+    pintarNueva();
+    pintarSala();
+  }
+
+  pintarSala();
+</script>

@@ -30,7 +30,7 @@
 - **Disponibilidad**: entra todo a la ruleta; el ganador muestra insignia de dónde verlo. Suscripciones que tienen: **Netflix, Prime Video, Disney+/Star+, HBO Max, Apple TV**.
 - **Después de ver**: botón *"ya la vimos"* → sale de la ruleta y entra al **historial de funciones** con su fecha; se puede regresar.
 - **Sincronía**: un solo celular compartido. El giro vive en el navegador; el backend guarda catálogo e historial.
-- **Multi-sala** en el modelo de datos, sin pantalla de "crear sala" en la v1.
+- **Multi-sala** en el modelo de datos, sin pantalla de "crear sala" en la v1. La v1 cumplió las dos mitades; la mitad que faltaba —la puerta por donde nace una sala— la retoma [Otra sala](tickets/021-otra-sala.md), **abierto**.
 - **Estética**: art déco años 30 — marquesina de focos, terciopelo vino, dorado latón, crema; cortinas que se abren, focos que titilan.
 
 ## Decisions so far
@@ -63,6 +63,7 @@
 - [El ritual del giro — prototipo jugable](https://claude.ai/code/artifact/60bbb8d9-0e17-4024-b8bd-99579b2a7101) · fuente en [`prototypes/ritual-del-giro.html`](../prototypes/ritual-del-giro.html)
 - [El alta de títulos — prototipo jugable](https://claude.ai/code/artifact/12bd87c8-73b7-4c30-a355-c94d1dae52ff) · fuente en [`prototypes/alta-de-titulos.html`](../prototypes/alta-de-titulos.html)
 - [El catálogo — tres formas sobre los 38 títulos reales](https://claude.ai/code/artifact/d26464fd-d94f-4751-b784-19a84bb24d02) · fuente en [`prototypes/catalogo.html`](../prototypes/catalogo.html) · las tres variantes siguen dentro, y la ganadora es *Un muro*
+- [Otra sala — prototipo jugable](https://claude.ai/code/artifact/45d9b1c3-e3da-49c7-a72b-f80d2a0bca1d) · fuente en [`prototypes/otra-sala.html`](../prototypes/otra-sala.html) · el nacimiento de una sala nueva y el llavero, para [Otra sala](tickets/021-otra-sala.md)
 - **La sala, en vivo y con sus 38 títulos dentro**: https://cine.felixddhs.dev · terreno en [Infraestructura viva](tickets/003-infraestructura-viva.md), construida en las ocho rebanadas de [El corte de la v1](tickets/012-el-corte-de-la-v1.md)
 
 ## Not yet specified

@@ -31,6 +31,7 @@ test("la siembra es interna y la superficie pública usa ids, nunca códigos", a
     "salas.ts:guardarAjustes:mutation",
     "taquilla.ts:entrar:mutation",
     "taquilla.ts:rotarCodigo:mutation",
+    "taquilla.ts:crearSala:mutation",
     "titulos.ts:deSala:query",
     "titulos.ts:altaEnLote:mutation",
     "titulos.ts:marcarVisto:mutation",

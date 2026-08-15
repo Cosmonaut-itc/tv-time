@@ -19,6 +19,7 @@ import {
 } from "./giro";
 import AltaTitulos from "./alta-titulos";
 import Cabina from "./cabina";
+import type { SalaDelLlavero } from "./llavero-logica";
 import Historial from "./historial";
 import { nocheDe, nocheLocalEsMasReciente, proximoCorte } from "./noche";
 import HojaInferior from "./hoja-inferior";
@@ -197,6 +198,9 @@ export default function SalaCartelera({
   onCambiarCuenta,
   onCambiarCodigo,
   onSalir,
+  llavero,
+  onCambiarDeSala,
+  onRecordarSala,
 }: {
   salaId: Id<"salas">;
   codigo: string;
@@ -206,6 +210,9 @@ export default function SalaCartelera({
   onCambiarCuenta: (cuenta: CuentaDeSala | null) => void;
   onCambiarCodigo: (codigo: string) => boolean;
   onSalir: () => void;
+  llavero: readonly SalaDelLlavero[];
+  onCambiarDeSala: (codigo: string) => void;
+  onRecordarSala: (sala: SalaDelLlavero) => boolean;
 }) {
   const titulos = useQuery(api.titulos.deSala, { salaId });
   const [momentoConsulta, setMomentoConsulta] = useState(() => Date.now());
@@ -685,9 +692,12 @@ export default function SalaCartelera({
 
   const mostrandoCarretes =
     fase === "girando" || fase === "finalistas" || fase === "vetando";
+  // Una sala recién nacida no tiene catálogo, cartelera ni historial que abrir,
+  // pero sí cabina: es su única puerta de vuelta al llavero y a su propio código.
+  const salaVacia = titulos?.length === 0;
   return (
     <>
-      {titulos?.length === 0 ? (
+      {salaVacia ? (
         <MarquesinaApagada
           rotulo="La sala espera su primera función"
           linea="Agreguen su primera película."
@@ -935,53 +945,6 @@ export default function SalaCartelera({
         <span>Giros <b>{giros}</b></span>
       </div>
 
-      <nav className="cornisa-controles" aria-label="Controles del mezzanine">
-        <button
-          ref={botonCatalogo}
-          className="cornisa-control"
-          type="button"
-          aria-label="Ver el catálogo"
-          aria-expanded={catalogoAbierto}
-          onClick={() => setCatalogoAbierto(true)}
-        >
-          ▦
-        </button>
-
-        <button
-          ref={botonHistorial}
-          className="cornisa-control"
-          type="button"
-          aria-label="Ver el historial"
-          aria-expanded={historialAbierto}
-          onClick={() => setHistorialAbierto(true)}
-        >
-          ◷
-        </button>
-
-        <button
-          ref={botonAbrir}
-          className="cornisa-control"
-          type="button"
-          aria-label="Ver la cartelera"
-          aria-expanded={cajonAbierto}
-          aria-controls="cartelera-cajon"
-          onClick={() => setCajonAbierto(true)}
-        >
-          ☰
-        </button>
-
-        <button
-          ref={botonCabina}
-          className="cornisa-control"
-          type="button"
-          aria-label="Abrir la cabina"
-          aria-expanded={cabinaAbierta}
-          onClick={() => setCabinaAbierta(true)}
-        >
-          ⚙
-        </button>
-      </nav>
-
       <aside
         className={`cabina${cajonAbierto ? " abierta" : ""}`}
         id="cartelera-cajon"
@@ -1052,6 +1015,57 @@ export default function SalaCartelera({
         </>
       )}
 
+      <nav className="cornisa-controles" aria-label="Controles del mezzanine">
+        {!salaVacia && (
+          <>
+            <button
+              ref={botonCatalogo}
+              className="cornisa-control"
+              type="button"
+              aria-label="Ver el catálogo"
+              aria-expanded={catalogoAbierto}
+              onClick={() => setCatalogoAbierto(true)}
+            >
+              ▦
+            </button>
+
+            <button
+              ref={botonHistorial}
+              className="cornisa-control"
+              type="button"
+              aria-label="Ver el historial"
+              aria-expanded={historialAbierto}
+              onClick={() => setHistorialAbierto(true)}
+            >
+              ◷
+            </button>
+
+            <button
+              ref={botonAbrir}
+              className="cornisa-control"
+              type="button"
+              aria-label="Ver la cartelera"
+              aria-expanded={cajonAbierto}
+              aria-controls="cartelera-cajon"
+              onClick={() => setCajonAbierto(true)}
+            >
+              ☰
+            </button>
+          </>
+        )}
+
+        <button
+          ref={botonCabina}
+          className="cornisa-control"
+          type="button"
+          aria-label="Abrir la cabina"
+          aria-expanded={cabinaAbierta}
+          onClick={() => setCabinaAbierta(true)}
+        >
+          ⚙
+        </button>
+      </nav>
+
       <AltaTitulos
         abierta={altaAbierta}
         onCerrar={() => setAltaAbierta(false)}
@@ -1074,6 +1088,9 @@ export default function SalaCartelera({
         onCambiarButaca={onCambiarButaca}
         onCambiarCodigo={onCambiarCodigo}
         onSalir={onSalir}
+        llavero={llavero}
+        onCambiarDeSala={onCambiarDeSala}
+        onRecordarSala={onRecordarSala}
       />
 
       <Historial

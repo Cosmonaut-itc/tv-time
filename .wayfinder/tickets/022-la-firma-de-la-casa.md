@@ -64,6 +64,23 @@ manda, como en el resto de la sala.
 **Fuera**: firmar la taquilla, un campo de «autor» en el esquema, y cualquier
 idea de personalizar la frase por sala. La firma no es un ajuste: es de la casa.
 
+### Lo que dejó la review adversarial
+
+**Se corrigió**: la firma se quedaba *encima* del conteo. El velo de la cuenta
+atrás cubre el escenario por debajo del telón, así que una firma en `z-index: 7`
+apagándose en 320 ms se leía sobre el primer número —y con movimiento reducido,
+sobre los tres, porque el apagado dura más que el conteo entero—. Ahora pierde la
+capa además de la opacidad: baja a `z-index: 1` en el mismo cuadro en que el
+telón se mueve, y el apagado suave se guarda para las noches sin conteo.
+
+**No se corrigió, y por qué.** Otra sala podría apropiarse de la firma si alguien
+bautiza sus butacas *Félix* y *Sofía*: es el precio de reconocer la casa por sus
+butacas y no por `salaId`, que es la decisión de arriba y no se revierte por un
+caso que sólo se alcanza a propósito. El pie de TMDB en `cargando` y en «elige tu
+butaca» no lo trajo este ticket y esas dos pantallas son la taquilla. Y la sala
+de la casa vacía no lleva firma porque la marquesina apagada ya ocupa ese centro
+con su invitación: dos textos en el mismo sitio es peor que ninguno.
+
 Al cerrar: desplegada, y **vista desde el iPhone sin tener que buscarla** — la
 frase legible en la sala de Félix y Sofía, ausente en una sala nueva, y el
 cangrejito sorprendiendo al menos una vez sin que nadie lo estuviera esperando.

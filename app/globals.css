@@ -360,32 +360,30 @@ a {
   text-align: center;
 }
 
-/* La firma de la casa comparte tipografía y margen con el pie de TMDB, pero no
-   su tono: la atribución tiene que quedar discreta por cláusula, la firma no.
-   Es su propia regla —la lección de `.marco` fue que dos piezas compartiendo
-   nombre acaban peleándose— y por eso puede subir de brillo sola. */
-.firma-casa {
-  margin: -3px 20px 12px;
-  color: rgba(242, 229, 198, 0.66);
-  font-family: var(--datos);
-  font-size: 10.5px;
-  letter-spacing: 0.08em;
-  line-height: 1.45;
-  text-align: center;
-}
-
-.firma-casa p {
-  margin: 0;
-  white-space: nowrap;
-}
-
 /* La mascota se mide en `em`, así que crece y se sienta con la frase en vez de
    depender de un tamaño fijo que se despegaría al cambiar la tipografía. */
 .mascota-claude {
   width: 1.2em;
   height: 0.9em;
+  overflow: visible;
   margin-left: 0.45em;
   vertical-align: -0.08em;
+}
+
+/* Un minuto de quietud por un saludo de segundo y medio: el gesto ocupa un
+   tramo cortísimo del ciclo a propósito, porque una mascota que se mueve todo
+   el tiempo deja de ser un hallazgo y se vuelve decorado. */
+.mascota-claude .pata-saluda {
+  transform-box: view-box;
+  transform-origin: 13.5px 9px;
+  animation: mascota-saluda 60s ease-in-out infinite;
+}
+
+@keyframes mascota-saluda {
+  0%, 0.4%, 2.6%, 100% { transform: rotate(0deg); }
+  1% { transform: rotate(-42deg); }
+  1.6% { transform: rotate(-8deg); }
+  2.2% { transform: rotate(-42deg); }
 }
 
 /* 92px contra los 21px de la marquesina: el logo de TMDB tiene que quedar
@@ -576,6 +574,45 @@ button:disabled {
 .telon.der {
   right: 0;
   transform: translateX(0);
+}
+
+/* La firma de la casa va bordada en el terciopelo, no al pie: en reposo el
+   telón es lo único que se ve, así que la frase se lee sin bajar la pantalla.
+   Se apaga en 320 ms —mucho antes de que el telón termine de abrir en 1.15 s—
+   porque la firma nunca debe competir con la función. */
+.firma-telon {
+  position: absolute;
+  z-index: 7;
+  top: 50%;
+  left: 50%;
+  width: min(232px, 74%);
+  margin: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  color: rgba(242, 229, 198, 0.5);
+  font-family: var(--display);
+  font-size: 19px;
+  line-height: 1.75;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  transition: opacity 320ms ease;
+}
+
+/* En cuanto la función arranca la firma pierde su capa además de su opacidad:
+   el conteo cubre el escenario con un velo casi opaco por debajo del telón, así
+   que una firma que siguiera arriba se leería encima del primer número mientras
+   se apaga. Bajarla a `z-index: 1` la manda detrás del velo y de los carretes en
+   el mismo cuadro, y el apagado suave sigue sirviendo para las noches sin
+   conteo, donde la pantalla no tapa nada. */
+.escenario.abierto .firma-telon {
+  z-index: 1;
+  opacity: 0;
+}
+
+.firma-telon .mascota-claude {
+  width: 1.4em;
+  height: 1.05em;
 }
 
 .escenario.abierto .telon.izq {
@@ -2080,6 +2117,17 @@ button:disabled {
   }
 
   .telon {
+    transition-duration: 0.01ms;
+  }
+
+  .mascota-claude .pata-saluda {
+    animation: none;
+  }
+
+  /* El telón abre de golpe aquí, y una cuenta atrás reducida dura menos que el
+     apagado de la firma: sin acortarlo, la frase sobreviviría a los tres
+     números enteros. */
+  .firma-telon {
     transition-duration: 0.01ms;
   }
 

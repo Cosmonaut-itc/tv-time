@@ -2,7 +2,7 @@
 
 - **Tipo**: `wayfinder:task` (AFK, con aceptación HITL en el iPhone)
 - **Estado**: abierto
-- **Asignado**: sin asignar
+- **Asignado**: sesión de Claude (orquestación) · `gpt-5.6-terra`·`medium` (implementación) · `gpt-5.6-sol`·`high` (review)
 - **Bloqueado por**: [La cabina y el historial](019-la-cabina-y-el-historial.md)
 - **Mapa**: [La sala de cine](../map.md)
 - **Prototipo**: [`prototypes/otra-sala.html`](../../prototypes/otra-sala.html) (enlace jugable en los *Assets* del mapa)
@@ -47,6 +47,14 @@ la pieza que le da voz a quien agrega un título.
 visitadas se guardan en el navegador y se cambia entre ellas desde la cabina, de
 un toque, sin volver a teclear. Hoy entrar a otra sala reemplaza la recordada;
 con dos salas vivas eso sería perder una para ver la otra.
+
+**Una sala se reconoce por sus dos butacas.** El prototipo lo destapó: `salas` no
+tiene campo `nombre`, así que dos salas se dibujaban idénticas en el llavero. El
+dueño lo resolvió sin inventar un campo —*«está bien que se identifique por
+nombre de las butacas»*—, y es la respuesta correcta por lo que ya dice este
+mismo ticket: las butacas se escriben al nacer justamente para no mentir sobre
+quién está adentro. *Félix y Sofía* dice más de una sala que cualquier nombre que
+alguien teclee una vez y no vuelva a leer.
 
 ### Lo que hay que decidir al construir
 

@@ -6,6 +6,13 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { codigoTieneFormatoValido, normalizarCodigo } from "@/convex/codigo";
 import { debeOlvidarCodigo } from "./entrada-sala-logica";
+import {
+  CLAVE_LLAVERO,
+  leerLlavero,
+  olvidarSala,
+  recordarSala,
+  type SalaDelLlavero,
+} from "./llavero-logica";
 import LogoTmdb from "./logo-tmdb";
 import MascotaClaude from "./mascota-claude";
 import { nocheDe } from "./noche";
@@ -43,13 +50,14 @@ function olvidar(clave: string): void {
   }
 }
 
-function butacaGuardadaDeEstaNoche(butacas: string[]): string | null {
+function butacaGuardadaDeEstaNoche(salaId: Id<"salas">, butacas: string[]): string | null {
   const guardada = leerGuardado(CLAVE_BUTACA);
   if (!guardada) return null;
   try {
-    const valor = JSON.parse(guardada) as { butaca?: unknown; noche?: unknown };
+    const valor = JSON.parse(guardada) as { butaca?: unknown; noche?: unknown; salaId?: unknown };
     return typeof valor.butaca === "string" &&
       valor.noche === nocheDe(Date.now()) &&
+      valor.salaId === salaId &&
       butacas.includes(valor.butaca)
       ? valor.butaca
       : null;
@@ -67,9 +75,20 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
   const [sala, setSala] = useState<SalaAbierta | null>(null);
   const [butaca, setButaca] = useState<string | null>(null);
   const [cuentaDeSala, setCuentaDeSala] = useState<CuentaDeSala | null>(null);
+  const [llavero, setLlavero] = useState<SalaDelLlavero[]>(() =>
+    typeof window === "undefined" ? [] : leerLlavero(leerGuardado(CLAVE_LLAVERO)),
+  );
+
+  const actualizarLlavero = useCallback((cambio: (actual: SalaDelLlavero[]) => SalaDelLlavero[]) => {
+    setLlavero((actual) => {
+      const actualizado = cambio(actual);
+      guardar(CLAVE_LLAVERO, JSON.stringify(actualizado));
+      return actualizado;
+    });
+  }, []);
 
   const abrir = useCallback(
-    async (codigoPorProbar: string) => {
+    async (codigoPorProbar: string, veniaDelLlavero = false) => {
       const normalizado = normalizarCodigo(codigoPorProbar);
       setCodigo(normalizado);
       if (!codigoTieneFormatoValido(normalizado)) {
@@ -84,6 +103,12 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
         const resultado = await entrar({ codigo: normalizado });
         if (resultado.estado !== "abierta") {
           if (debeOlvidarCodigo(resultado.estado)) olvidar(CLAVE_CODIGO);
+          if (veniaDelLlavero) {
+            actualizarLlavero((actual) => {
+              const recordada = actual.find((otra) => otra.codigo === normalizado);
+              return recordada ? olvidarSala(actual, recordada.salaId) : actual;
+            });
+          }
           setFase("taquilla");
           setMensaje(resultado.mensaje);
           return;
@@ -95,7 +120,13 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
           codigo: resultado.codigo,
           butacas: resultado.butacas,
         };
-        const recordada = butacaGuardadaDeEstaNoche(resultado.butacas);
+        const recordada = butacaGuardadaDeEstaNoche(resultado.salaId, resultado.butacas);
+        actualizarLlavero((actual) => recordarSala(actual, {
+          salaId: resultado.salaId,
+          codigo: resultado.codigo,
+          butacas: resultado.butacas,
+          titulos: actual.find((otra) => otra.salaId === resultado.salaId)?.titulos ?? 0,
+        }));
         setSala(abierta);
         setButaca(recordada);
         setFase(recordada ? "sala" : "butaca");
@@ -106,7 +137,7 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
         setEnviando(false);
       }
     },
-    [entrar],
+    [actualizarLlavero, entrar],
   );
 
   useEffect(() => {
@@ -135,20 +166,50 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
     // Es el instante del toque; no participa en el resultado del render.
     // eslint-disable-next-line react-hooks/purity
     const instante = Date.now();
-    guardar(CLAVE_BUTACA, JSON.stringify({ butaca: nombre, noche: nocheDe(instante) }));
+    if (!sala) return;
+    guardar(CLAVE_BUTACA, JSON.stringify({ butaca: nombre, noche: nocheDe(instante), salaId: sala.salaId }));
     setButaca(nombre);
     setFase("sala");
   }
 
   function cambiarCodigo(nuevoCodigo: string): boolean {
     const guardado = guardar(CLAVE_CODIGO, nuevoCodigo);
+    if (sala) {
+      actualizarLlavero((llaveroActual) => recordarSala(llaveroActual, {
+        ...sala,
+        codigo: nuevoCodigo,
+        titulos: llaveroActual.find((otra) => otra.salaId === sala.salaId)?.titulos ?? 0,
+      }));
+    }
     setSala((actual) => actual ? { ...actual, codigo: nuevoCodigo } : actual);
     return guardado;
+  }
+
+  const cambiarCuentaDeSala = useCallback((cuenta: CuentaDeSala | null) => {
+    setCuentaDeSala(cuenta);
+    if (!sala || !cuenta) return;
+    actualizarLlavero((actual) => recordarSala(actual, {
+      ...sala,
+      titulos: cuenta.titulos,
+    }));
+  }, [actualizarLlavero, sala]);
+
+  function cambiarDeSala(codigoDeSala: string) {
+    olvidar(CLAVE_BUTACA);
+    setButaca(null);
+    setCuentaDeSala(null);
+    setFase("cargando");
+    void abrir(codigoDeSala, true);
+  }
+
+  function recordarSalaNueva(salaNueva: SalaDelLlavero) {
+    actualizarLlavero((actual) => recordarSala(actual, salaNueva));
   }
 
   function salirDeLaSala() {
     olvidar(CLAVE_CODIGO);
     olvidar(CLAVE_BUTACA);
+    if (sala) actualizarLlavero((actual) => olvidarSala(actual, sala.salaId));
     setSala(null);
     setButaca(null);
     setCuentaDeSala(null);
@@ -188,9 +249,12 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
           butaca={butaca}
           butacas={sala.butacas}
           onCambiarButaca={elegirButaca}
-          onCambiarCuenta={setCuentaDeSala}
+          onCambiarCuenta={cambiarCuentaDeSala}
           onCambiarCodigo={cambiarCodigo}
           onSalir={salirDeLaSala}
+          llavero={llavero}
+          onCambiarDeSala={cambiarDeSala}
+          onRecordarSala={recordarSalaNueva}
         />
       ) : <section className="entrada" aria-live="polite">
         {fase === "cargando" && <p className="estado-entrada">Abriendo la taquilla…</p>}

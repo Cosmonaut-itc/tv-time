@@ -5,6 +5,7 @@ import { generarCodigo, normalizarCodigo } from "./codigo";
 import {
   elegirCodigoNuevo,
   entrarConFreno,
+  normalizarButacas,
   type FrenoTaquilla,
 } from "./taquilla_logica";
 
@@ -94,5 +95,53 @@ export const rotarCodigo = mutation({
 
     await ctx.db.patch(salaId, { codigo: nuevo });
     return { codigo: nuevo };
+  },
+});
+
+// La creación es pública, pero sólo quien conoce el código de una sala puede
+// abrir otra desde su cabina. Así la taquilla no se vuelve una fábrica de salas.
+export const crearSala = mutation({
+  args: {
+    salaId: v.id("salas"),
+    codigoActual: v.string(),
+    butacas: v.array(v.string()),
+  },
+  returns: v.object({
+    salaId: v.id("salas"),
+    codigo: v.string(),
+    butacas: v.array(v.string()),
+  }),
+  handler: async (ctx, { salaId, codigoActual, butacas }) => {
+    const sala = await ctx.db.get(salaId);
+    if (!sala || sala.codigo !== normalizarCodigo(codigoActual)) {
+      throw new Error(ERROR_PERTENENCIA);
+    }
+
+    const nombres = normalizarButacas(butacas);
+    if (!nombres) throw new Error("Las butacas no son válidas.");
+
+    const codigo = await elegirCodigoNuevo(
+      {
+        generarCodigo,
+        codigoEstaTomado: async (candidato) => {
+          const existente = await ctx.db
+            .query("salas")
+            .withIndex("por_codigo", (q) => q.eq("codigo", candidato))
+            .unique();
+          return existente !== null;
+        },
+      },
+      { codigoActual: sala.codigo },
+    );
+    if (!codigo) throw new Error("No fue posible generar un código de sala único.");
+
+    const nueva = await ctx.db.insert("salas", {
+      codigo,
+      butacas: nombres,
+      ajustes: { ritmo: "dramatico", paro: "uno", conteo: true },
+      creada: Date.now(),
+    });
+
+    return { salaId: nueva, codigo, butacas: nombres };
   },
 });

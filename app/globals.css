@@ -1531,6 +1531,103 @@ button:disabled {
   font-size: 9px;
 }
 
+.salas-cabina {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(201,162,39,.26);
+  background: rgba(78,17,34,.12);
+}
+
+.salas-cabina > .etiqueta-entrada { margin: 0; }
+.llavero { display: flex; flex-direction: column; gap: 6px; }
+.boleto-llavero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid rgba(242,229,198,.18);
+  border-left: 3px solid rgba(242,229,198,.18);
+  background: rgba(11,5,7,.4);
+  text-align: left;
+}
+.boleto-llavero[aria-current="true"] {
+  border-color: rgba(201,162,39,.4);
+  border-left-color: var(--laton);
+  background: rgba(201,162,39,.08);
+}
+.boleto-llavero .nombre {
+  flex: 1;
+  color: var(--crema);
+  font-family: var(--cuerpo);
+  font-size: 13px;
+}
+.boleto-llavero[aria-current="true"] .nombre { color: var(--laton); }
+.boleto-llavero .clave {
+  color: var(--crema-tenue);
+  font-family: var(--datos);
+  font-size: 11px;
+  letter-spacing: .18em;
+}
+.boleto-llavero .cuenta {
+  color: var(--crema-tenue);
+  font-family: var(--datos);
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.hoja.sala-nueva {
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+.sala-nueva section {
+  padding: 12px;
+  border: 1px solid rgba(201,162,39,.26);
+  background: rgba(78,17,34,.12);
+}
+.sala-nueva section > p:not(.etiqueta-entrada) {
+  margin: 0 0 8px;
+  color: var(--crema-tenue);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.sala-nueva .campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.sala-nueva .campo label {
+  color: var(--crema-tenue);
+  font-family: var(--datos);
+  font-size: 9px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+.sala-nueva .campo input {
+  padding: 10px;
+  border: 1px solid rgba(242,229,198,.24);
+  background: rgba(11,5,7,.5);
+  color: var(--crema);
+  font-family: var(--cuerpo);
+  font-size: 15px;
+}
+.sala-nueva .campo input::placeholder { color: var(--crema-tenue); }
+.error-sala-nueva {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--vino-claro);
+  background: var(--vino);
+  color: var(--crema);
+  font-family: var(--datos);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.puertas { display: flex; flex-direction: column; gap: 8px; }
+
 .historial-contenido section { display: flex; flex-direction: column; gap: 8px; }
 .historial-contenido h3 {
   margin: 0;

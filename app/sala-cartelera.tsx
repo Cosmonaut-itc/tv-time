@@ -19,6 +19,7 @@ import {
 } from "./giro";
 import AltaTitulos from "./alta-titulos";
 import Cabina from "./cabina";
+import type { SalaDelLlavero } from "./llavero-logica";
 import Historial from "./historial";
 import { nocheDe, nocheLocalEsMasReciente, proximoCorte } from "./noche";
 import HojaInferior from "./hoja-inferior";
@@ -197,6 +198,9 @@ export default function SalaCartelera({
   onCambiarCuenta,
   onCambiarCodigo,
   onSalir,
+  llavero,
+  onCambiarDeSala,
+  onRecordarSala,
 }: {
   salaId: Id<"salas">;
   codigo: string;
@@ -206,6 +210,9 @@ export default function SalaCartelera({
   onCambiarCuenta: (cuenta: CuentaDeSala | null) => void;
   onCambiarCodigo: (codigo: string) => boolean;
   onSalir: () => void;
+  llavero: readonly SalaDelLlavero[];
+  onCambiarDeSala: (codigo: string) => void;
+  onRecordarSala: (sala: SalaDelLlavero) => void;
 }) {
   const titulos = useQuery(api.titulos.deSala, { salaId });
   const [momentoConsulta, setMomentoConsulta] = useState(() => Date.now());
@@ -1074,6 +1081,9 @@ export default function SalaCartelera({
         onCambiarButaca={onCambiarButaca}
         onCambiarCodigo={onCambiarCodigo}
         onSalir={onSalir}
+        llavero={llavero}
+        onCambiarDeSala={onCambiarDeSala}
+        onRecordarSala={onRecordarSala}
       />
 
       <Historial

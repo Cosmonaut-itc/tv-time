@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   elegirCodigoNuevo,
   entrarConFreno,
+  normalizarButacas,
   type FrenoTaquilla,
 } from "../convex/taquilla_logica.ts";
 
@@ -91,4 +92,13 @@ test("la rotación se rinde sin candidato después de dieciséis intentos", asyn
 
   assert.equal(nuevo, null);
   assert.equal(intentos, 16);
+});
+
+test("las butacas se recortan y deben ser exactamente dos nombres distintos", () => {
+  assert.deepEqual(normalizarButacas([" Félix ", " Sofía  "]), ["Félix", "Sofía"]);
+  assert.equal(normalizarButacas(["Félix", " "]), null);
+  assert.equal(normalizarButacas(["A".repeat(15), "Sofía"]), null);
+  assert.equal(normalizarButacas(["Félix", "félix"]), null);
+  assert.equal(normalizarButacas(["Félix"]), null);
+  assert.equal(normalizarButacas(["Félix", "Sofía", "Claude"]), null);
 });

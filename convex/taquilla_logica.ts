@@ -4,6 +4,25 @@ const FALLOS_ANTES_DE_TRABAR = 5;
 const MINUTOS_TRABADA = 5;
 const VENTANA_DE_FALLOS = MINUTOS_TRABADA * 60_000;
 
+export const LARGO_MAXIMO_BUTACA = 14;
+
+export function normalizarButacas(butacas: readonly string[]): [string, string] | null {
+  if (butacas.length !== 2) return null;
+
+  const [primera, segunda] = butacas.map((butaca) => butaca.trim());
+  if (
+    !primera ||
+    !segunda ||
+    primera.length > LARGO_MAXIMO_BUTACA ||
+    segunda.length > LARGO_MAXIMO_BUTACA ||
+    primera.toLocaleLowerCase("es") === segunda.toLocaleLowerCase("es")
+  ) {
+    return null;
+  }
+
+  return [primera, segunda];
+}
+
 export type FrenoTaquilla = {
   fallosSeguidos: number;
   trabadaHasta?: number;

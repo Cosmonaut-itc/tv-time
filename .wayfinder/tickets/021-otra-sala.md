@@ -1,7 +1,7 @@
 # Otra sala
 
 - **Tipo**: `wayfinder:task` (AFK, con aceptación HITL en el iPhone)
-- **Estado**: abierto
+- **Estado**: abierto (construido; falta la aceptación en el iPhone)
 - **Asignado**: sesión de Claude (orquestación) · `gpt-5.6-terra`·`medium` (implementación) · `gpt-5.6-sol`·`high` (review)
 - **Bloqueado por**: [La cabina y el historial](019-la-cabina-y-el-historial.md)
 - **Mapa**: [La sala de cine](../map.md)
@@ -89,3 +89,57 @@ otra es su código.
 Al cerrar: desplegada, y **una sala nueva creada de verdad desde el iPhone**,
 con sus dos butacas escritas, un título dado de alta dentro, y el llavero
 volviendo a la sala original sin teclear el código.
+
+## Lo construido
+
+Implementó `gpt-5.6-terra`·`medium` —un escalón abajo del habitual, para gastar
+menos en Codex—, con la exploración del repo hecha desde la sesión de Claude y
+entregada como encargo cerrado; review adversarial de `gpt-5.6-sol`·`high`, veto
+del orquestador sobre el diff entero y prueba en navegador a 390×844.
+
+**La puerta está detrás del código.** `taquilla.crearSala` recibe `salaId` y
+`codigoActual` y **comprueba la pertenencia antes de escribir nada**: es la misma
+prueba que la rotación, por la misma razón —todo lo que no sea `internal*` en
+Convex lo puede llamar cualquiera—. El código nuevo lo genera el servidor con
+`elegirCodigoNuevo`, y `tests/superficie-convex.test.ts` sigue clavando la
+superficie pública, con la mutación que crea salas anotada en la lista.
+
+**La sala nueva nace vacía y no roba el aparato.** Se enseña su código en grande
+con qué copiarlo, y el aparato elige entre entrar o quedarse. Quien se queda no
+pierde nada: la sala ya está en el llavero.
+
+**El llavero identifica por butacas** —*Félix y Sofía*, *Ana y Bruno*—, tal como
+lo decidió el dueño, sin inventar un campo `nombre` en el esquema.
+
+**El freno de la taquilla sigue siendo una sola fila y ahora es un destino
+compartido**: cinco códigos fallados traban la puerta de todas las salas. Se
+asume a sabiendas, porque el freno defiende la puerta —no la sala— y contarlo por
+aparato lo volvería inútil justo contra quien tiene muchos aparatos. Con dos o
+tres salas de la misma casa, trabarse a sí mismos cinco minutos es el costo.
+
+### Lo que corrigió el review
+
+- La sala **recién nacida no tenía cornisa**: los controles vivían dentro de la
+  rama con títulos, así que la única sala sin títulos —la que este ticket crea—
+  se quedaba sin cabina, sin llavero y sin manera de leer su propio código. Lo
+  encontró el orquestador probando en el navegador, no el review.
+- El llavero **dice si de verdad se guardó**: si el navegador niega el
+  almacenamiento, la sala nueva ya no promete un llavero que no existe, y avisa
+  que el código hay que copiarlo ahora. Misma lección que la rotación en
+  [La cabina y el historial](019-la-cabina-y-el-historial.md).
+- **La poda nunca desaloja la sala puesta**, y `leerLlavero` exige el contrato
+  entero de cada llave —código, dos butacas con nombre, cuenta no negativa— y
+  descarta repetidas.
+- El servidor **limpia el formato invisible y normaliza a NFC** antes de comparar
+  las butacas: dos nombres que la pantalla dibuja idénticos ya no entran juntos.
+- El paso del código **recibe el foco** al aparecer y las butacas de la sala
+  nueva son texto, no botones sin acción.
+
+**Un límite aceptado**: el llavero guarda ocho salas y la novena desaloja a la
+más vieja sin avisar. Se deja así porque el código de cada sala se enseña en
+grande al nacer, con la advertencia de que es la única llave; y porque ocho salas
+en un producto para dos personas es un escenario que no existe.
+
+**Falta la aceptación**: desplegar y crear una sala de verdad desde el iPhone,
+con sus dos butacas, un título dado de alta dentro, y volver a la sala original
+desde el llavero sin teclear el código.

@@ -2,9 +2,10 @@
 
 - **Tipo**: `wayfinder:task` (AFK, con aceptación HITL en el iPhone)
 - **Estado**: abierto
-- **Asignado**: sesión de Claude (orquestación) · implementación y review por decidir
+- **Asignado**: sesión de Claude (orquestación) · `gpt-5.6-luna`·`low` (implementación) · `gpt-5.6-sol`·`high` (review)
 - **Bloqueado por**: [Otra sala](021-otra-sala.md)
 - **Mapa**: [La sala de cine](../map.md)
+- **Prototipo**: [`prototypes/firma-de-la-casa.html`](../../prototypes/firma-de-la-casa.html) (enlace jugable en los *Assets* del mapa)
 
 ## Question
 
@@ -34,6 +35,22 @@ una animación, que salude o que salte»*. Cada cierto tiempo, no siempre: una
 mascota que se mueve sin parar deja de ser un hallazgo y se vuelve ruido al lado
 de una frase que se lee una vez. Qué hace —saludar, saltar u otra— es la segunda
 decisión del dueño sobre el prototipo.
+
+### Las dos decisiones del dueño sobre el prototipo
+
+**La firma se borda en el telón.** Sobre el terciopelo del escenario en reposo,
+con la tipografía de la marquesina y en grande. Gana a las otras dos por lo mismo
+que las descarta: al pie sigue pidiendo bajar hasta el final —el problema que
+abrió este ticket—, y de subtítulo de la marquesina se lee, pero vuelve a ser una
+línea chica más entre el conteo y los focos. En el telón la frase es lo único que
+hay que ver mientras la sala está quieta, **y se va sola cuando el telón abre**:
+la firma no compite nunca con la función, que es la regla que hace que quepa
+tan grande sin estorbar.
+
+**El cangrejito saluda, cada minuto.** Levanta una patita y la ondea dos veces.
+Es el gesto que se lee a tamaño de texto y el que se siente dirigido a quien lo
+alcanzó a ver. Y cada minuto, no cada diez segundos: quien lo ve es porque se
+quedó mirando, que es exactamente lo que hace que sea un hallazgo y no decorado.
 
 ### Lo que ya está decidido al construir
 

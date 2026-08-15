@@ -65,6 +65,7 @@
 - [El alta de títulos — prototipo jugable](https://claude.ai/code/artifact/12bd87c8-73b7-4c30-a355-c94d1dae52ff) · fuente en [`prototypes/alta-de-titulos.html`](../prototypes/alta-de-titulos.html)
 - [El catálogo — tres formas sobre los 38 títulos reales](https://claude.ai/code/artifact/d26464fd-d94f-4751-b784-19a84bb24d02) · fuente en [`prototypes/catalogo.html`](../prototypes/catalogo.html) · las tres variantes siguen dentro, y la ganadora es *Un muro*
 - [Otra sala — prototipo jugable](https://claude.ai/code/artifact/45d9b1c3-e3da-49c7-a72b-f80d2a0bca1d) · fuente en [`prototypes/otra-sala.html`](../prototypes/otra-sala.html) · el nacimiento de una sala nueva y el llavero, para [Otra sala](tickets/021-otra-sala.md)
+- [La firma de la casa — prototipo jugable](https://claude.ai/code/artifact/46adb407-ec6d-4b2f-949c-3ff782cb171a) · fuente en [`prototypes/firma-de-la-casa.html`](../prototypes/firma-de-la-casa.html) · las tres posiciones de la firma y los tres gestos del cangrejito, para [La firma de la casa](tickets/022-la-firma-de-la-casa.md)
 - **La sala, en vivo y con sus 38 títulos dentro**: https://cine.felixddhs.dev · terreno en [Infraestructura viva](tickets/003-infraestructura-viva.md), construida en las ocho rebanadas de [El corte de la v1](tickets/012-el-corte-de-la-v1.md)
 
 ## Not yet specified

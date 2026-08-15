@@ -6,10 +6,18 @@ const VENTANA_DE_FALLOS = MINUTOS_TRABADA * 60_000;
 
 export const LARGO_MAXIMO_BUTACA = 14;
 
+// Un nombre de butaca se va a leer en una pantalla, así que tiene que verse.
+// `trim` no quita los caracteres de formato —el espacio de ancho cero entre
+// ellos—, y sin NFC «José» y «Jose» + acento combinante son dos cadenas
+// distintas que la sala dibujaría idénticas: dos butacas indistinguibles.
+export function limpiarNombreDeButaca(nombre: string): string {
+  return nombre.normalize("NFC").replace(/\p{Cf}/gu, "").trim();
+}
+
 export function normalizarButacas(butacas: readonly string[]): [string, string] | null {
   if (butacas.length !== 2) return null;
 
-  const [primera, segunda] = butacas.map((butaca) => butaca.trim());
+  const [primera, segunda] = butacas.map(limpiarNombreDeButaca);
   if (
     !primera ||
     !segunda ||

@@ -1087,7 +1087,10 @@ button:disabled {
   left: 50%;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* La sala vacía sólo lleva la cabina; las columnas se reparten solas para
+     que un control único no quede encogido en el primer cuarto. */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   width: min(100%, 460px);
   padding: calc(env(safe-area-inset-top, 0px) + 3px) 3px 3px;
   border-bottom: 1px solid var(--laton-tenue);
@@ -1579,6 +1582,17 @@ button:disabled {
   text-transform: uppercase;
 }
 
+/* El mismo llavero, ahora también fuera de la sala: la taquilla lo enseña
+   debajo del boleto para que salir de una sala no esconda a las demás. */
+.llavero-taquilla {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(100%, 320px);
+  margin: 18px auto 0;
+}
+.llavero-taquilla > .etiqueta-entrada { margin: 0; }
+
 .hoja.sala-nueva {
   max-height: 88dvh;
   overflow-y: auto;
@@ -1625,6 +1639,12 @@ button:disabled {
   font-family: var(--datos);
   font-size: 11px;
   line-height: 1.5;
+}
+.sala-nueva section > p.butacas-nuevas {
+  margin: 0;
+  color: var(--laton);
+  font-family: var(--cuerpo);
+  font-size: 15px;
 }
 .puertas { display: flex; flex-direction: column; gap: 8px; }
 

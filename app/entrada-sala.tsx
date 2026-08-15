@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { codigoTieneFormatoValido, normalizarCodigo } from "@/convex/codigo";
@@ -9,6 +9,7 @@ import { debeOlvidarCodigo } from "./entrada-sala-logica";
 import {
   CLAVE_LLAVERO,
   leerLlavero,
+  nombreDeSala,
   olvidarSala,
   recordarSala,
   type SalaDelLlavero,
@@ -78,14 +79,20 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
   const [llavero, setLlavero] = useState<SalaDelLlavero[]>(() =>
     typeof window === "undefined" ? [] : leerLlavero(leerGuardado(CLAVE_LLAVERO)),
   );
+  // El llavero se escribe en el navegador, y escribir es un efecto: hacerlo
+  // dentro del updater de `setLlavero` lo repetiría en cada render de prueba de
+  // React. La copia viva vive aquí y el guardado devuelve si de verdad ocurrió.
+  const llaveroVigente = useRef(llavero);
 
-  const actualizarLlavero = useCallback((cambio: (actual: SalaDelLlavero[]) => SalaDelLlavero[]) => {
-    setLlavero((actual) => {
-      const actualizado = cambio(actual);
-      guardar(CLAVE_LLAVERO, JSON.stringify(actualizado));
-      return actualizado;
-    });
-  }, []);
+  const actualizarLlavero = useCallback(
+    (cambio: (actual: SalaDelLlavero[]) => SalaDelLlavero[]): boolean => {
+      const actualizado = cambio(llaveroVigente.current);
+      llaveroVigente.current = actualizado;
+      setLlavero(actualizado);
+      return guardar(CLAVE_LLAVERO, JSON.stringify(actualizado));
+    },
+    [],
+  );
 
   const abrir = useCallback(
     async (codigoPorProbar: string, veniaDelLlavero = false) => {
@@ -202,8 +209,10 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
     void abrir(codigoDeSala, true);
   }
 
-  function recordarSalaNueva(salaNueva: SalaDelLlavero) {
-    actualizarLlavero((actual) => recordarSala(actual, salaNueva));
+  // La única sala que se guarda sin entrar en ella: por eso hay que decirle al
+  // llavero cuál es la sala puesta, para que la poda no se lleve justo esa.
+  function recordarSalaNueva(salaNueva: SalaDelLlavero): boolean {
+    return actualizarLlavero((actual) => recordarSala(actual, salaNueva, sala?.salaId));
   }
 
   function salirDeLaSala() {
@@ -283,6 +292,25 @@ export default function EntradaSala({ codigoCompartido }: { codigoCompartido?: s
             </button>
             {mensaje && <p className="mensaje-taquilla" id="mensaje-taquilla">{mensaje}</p>}
           </form>
+        )}
+
+        {/* La taquilla es una sola puerta con una sola pregunta, pero quien ya
+            estuvo adentro no debería tener que acordarse del código: el llavero
+            del aparato también se enseña aquí, no sólo dentro de la cabina. */}
+        {fase === "taquilla" && llavero.length > 0 && (
+          <section className="llavero-taquilla" aria-label="Salas de este aparato">
+            <p className="etiqueta-entrada">Salas de este aparato</p>
+            <div className="llavero">
+              {llavero.map((recordada) => (
+                <button className="boleto-llavero" type="button" key={recordada.salaId}
+                  disabled={enviando} onClick={() => cambiarDeSala(recordada.codigo)}>
+                  <span className="nombre">{nombreDeSala(recordada.butacas)}</span>
+                  <span className="cuenta">{recordada.titulos ? `${recordada.titulos} títulos` : "vacía"}</span>
+                  <span className="clave">{recordada.codigo}</span>
+                </button>
+              ))}
+            </div>
+          </section>
         )}
 
         {fase === "butaca" && sala && (

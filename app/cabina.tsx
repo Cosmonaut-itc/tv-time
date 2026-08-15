@@ -3,7 +3,8 @@
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { limpiarNombreDeButaca } from "@/convex/taquilla_logica";
 import { advertenciaTrasGuardarCodigo } from "./cabina-logica";
 import HojaInferior from "./hoja-inferior";
 import { nombreDeSala, type SalaDelLlavero } from "./llavero-logica";
@@ -37,7 +38,7 @@ export default function Cabina({
   onSalir: () => void;
   llavero: readonly SalaDelLlavero[];
   onCambiarDeSala: (codigo: string) => void;
-  onRecordarSala: (sala: SalaDelLlavero) => void;
+  onRecordarSala: (sala: SalaDelLlavero) => boolean;
 }) {
   const ajustes = useQuery(api.salas.ajustesDeSala, { salaId });
   const guardarAjustes = useMutation(api.salas.guardarAjustes);
@@ -52,9 +53,17 @@ export default function Cabina({
   const [segundaButaca, setSegundaButaca] = useState("");
   const [errorSalaNueva, setErrorSalaNueva] = useState("");
   const [salaNueva, setSalaNueva] = useState<SalaDelLlavero | null>(null);
+  const [salaNuevaEnLlavero, setSalaNuevaEnLlavero] = useState(true);
   const disparadorRotacion = useRef<HTMLButtonElement>(null);
   const disparadorSalaNueva = useRef<HTMLButtonElement>(null);
+  const tituloSalaNueva = useRef<HTMLHeadingElement>(null);
   const crearSala = useMutation(api.taquilla.crearSala);
+
+  // El paso cambia debajo del dedo y el foco se quedaría en un botón que ya no
+  // está: quien no ve la pantalla se enteraría del código sólo por accidente.
+  useEffect(() => {
+    if (pasoSalaNueva === "codigo") tituloSalaNueva.current?.focus();
+  }, [pasoSalaNueva]);
 
   async function cambiarAjustes(cambio: Partial<Ajustes>) {
     if (!ajustes || ocupado) return;
@@ -95,6 +104,7 @@ export default function Cabina({
     setSegundaButaca("");
     setErrorSalaNueva("");
     setSalaNueva(null);
+    setSalaNuevaEnLlavero(true);
     setSalaNuevaAbierta(true);
   }
 
@@ -103,8 +113,10 @@ export default function Cabina({
   }
 
   async function crearLaSala() {
-    const primera = primeraButaca.trim();
-    const segunda = segundaButaca.trim();
+    // La misma limpieza que hace la mutación, para que el aparato no vea pasar
+    // un nombre que el servidor va a rechazar sin poder explicar por qué.
+    const primera = limpiarNombreDeButaca(primeraButaca);
+    const segunda = limpiarNombreDeButaca(segundaButaca);
     if (!primera || !segunda) {
       setErrorSalaNueva("Escriban los dos nombres: una sala no se abre a medias.");
       return;
@@ -120,7 +132,7 @@ export default function Cabina({
       const creada = await crearSala({ salaId, codigoActual: codigo, butacas: [primera, segunda] });
       const nueva = { ...creada, titulos: 0 };
       setSalaNueva(nueva);
-      onRecordarSala(nueva);
+      setSalaNuevaEnLlavero(onRecordarSala(nueva));
       setPasoSalaNueva("codigo");
     } catch {
       setErrorSalaNueva("No pudimos abrir la sala nueva. Intenta de nuevo.");
@@ -247,7 +259,7 @@ export default function Cabina({
           </section>
         </> : salaNueva && <>
           <p className="etiqueta-entrada">La sala existe</p>
-          <h2>SU CÓDIGO</h2>
+          <h2 ref={tituloSalaNueva} tabIndex={-1}>SU CÓDIGO</h2>
           <section className="codigo-cabina">
             <p className="etiqueta-entrada">Apúntenlo o mándenlo ahora</p>
             <strong>{salaNueva.codigo}</strong>
@@ -259,9 +271,7 @@ export default function Cabina({
           </section>
           <section>
             <p className="etiqueta-entrada">Butacas de la sala nueva</p>
-            <div className="controles-cabina">
-              {salaNueva.butacas.map((nombre) => <button type="button" key={nombre}>{nombre}</button>)}
-            </div>
+            <p className="butacas-nuevas">{nombreDeSala(salaNueva.butacas)}</p>
           </section>
           <div className="puertas">
             <button className="opcion laton" type="button" onClick={() => {
@@ -273,7 +283,14 @@ export default function Cabina({
               Quedarme con {nombreDeSala(butacas)}
             </button>
           </div>
-          <p className="aviso-cabina">Quedarte aquí no la pierde: ya está en el llavero.</p>
+          {salaNuevaEnLlavero ? (
+            <p className="aviso-cabina">Quedarte aquí no la pierde: ya está en el llavero.</p>
+          ) : (
+            <p className="alerta-codigo-cabina" role="alert">
+              Este aparato no pudo guardar el llavero, así que la sala nueva no queda
+              anotada en ningún lado: copien el código antes de cerrar.
+            </p>
+          )}
         </>}
       </div>
     </HojaInferior>

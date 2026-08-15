@@ -102,3 +102,22 @@ test("las butacas se recortan y deben ser exactamente dos nombres distintos", ()
   assert.equal(normalizarButacas(["Félix"]), null);
   assert.equal(normalizarButacas(["Félix", "Sofía", "Claude"]), null);
 });
+
+// Escritos con escapes a propósito: en el archivo se verían como nada.
+const ANCHO_CERO = "\u200B";
+const UNIDOR = "\u200D";
+const SOFIA_DESCOMPUESTA = "Sofi\u0301a";
+
+test("una butaca invisible o escrita con acentos sueltos no pasa la taquilla", () => {
+  // Sólo caracteres de formato: se vería como una butaca sin nombre.
+  assert.equal(normalizarButacas([`${ANCHO_CERO}${UNIDOR}`, "Sofía"]), null);
+  // «Sofía» con el acento suelto contra «Sofía» compuesta: la pantalla las
+  // dibuja igual, así que la sala tendría dos butacas indistinguibles.
+  assert.equal(normalizarButacas([SOFIA_DESCOMPUESTA, "Sofía"]), null);
+  assert.deepEqual(normalizarButacas([SOFIA_DESCOMPUESTA, "Félix"]), ["Sofía", "Félix"]);
+  // El nombre limpio cabe aunque el carácter invisible lo desborde.
+  assert.deepEqual(
+    normalizarButacas([`${"A".repeat(14)}${ANCHO_CERO}`, "Sofía"]),
+    ["A".repeat(14), "Sofía"],
+  );
+});

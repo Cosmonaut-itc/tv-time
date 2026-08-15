@@ -138,10 +138,24 @@ el alto, volvería el bug del `<svg>` que este mismo ticket documenta.
 **El número del conteo salía corrido.** No estaba mal centrado: estaba centrado
 por su **caja de línea** y no por su tinta. Copperplate —la tipografía de la
 sala— casi no tiene descendente, así que la caja sobra por arriba y el número
-aterrizaba una veintena de píxeles debajo del aro del proyector. Se recorta la
-caja a la tinta con `text-box-trim`, y entonces el centrado del conteo centra el
-glifo. Medido en Chromium con una tipografía simulada de descendente casi nulo:
-**9.5 px de desfase antes, 0 px después**.
+aterrizaba una veintena de píxeles debajo del aro del proyector.
+
+El primer arreglo recortó la caja con `text-box-trim: trim-both` y
+`text-box-edge: cap alphabetic`, y **el iPhone lo reprobó a medias**: quedó la
+mitad del desfase. La razón es que `cap` recorta a la altura de mayúscula que la
+tipografía **declara**, y las cifras de Copperplate no llegan a ella — la
+métrica se incumple por los dos lados, no sólo por el descendente. Ninguna
+métrica declarada sirve de referencia si la tipografía miente sobre sí misma.
+
+Así que el corrimiento se **mide**, no se deduce: un `inline-block` vacío dentro
+del número marca la línea base —su borde de abajo se posa sobre ella— y
+`measureText` da la tinta real del glifo que el aparato acabó de escoger. La
+cuenta vive en [`app/conteo-logica.ts`](../../app/conteo-logica.ts) y se aplica
+en `top` desde un `useLayoutEffect`, antes de que la pantalla lo enseñe.
+Verificado en Chromium **escaneando los píxeles claros de la captura**, no las
+métricas con que se calcula: `2`, `1` y `3` pasan de ~9 px de desfase a 0, y una
+`x` —un glifo muy por debajo de la altura de mayúscula, que es justo el caso de
+las cifras de Copperplate— pasa de 18 px a 0. A 120 px de tipo, igual.
 
 De paso, el póster dibujado dejó de cortar a media letra —«CÓMO ENTRENAR A TU
 DRAGÓ»—: parte por palabra en dos renglones y admite lo que no cabe con puntos

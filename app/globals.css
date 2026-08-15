@@ -840,18 +840,26 @@ button:disabled {
   color: var(--crema);
 }
 
-/* Centrar la caja de la línea no centra el número. La tipografía de la sala
-   —Copperplate y sus suplentes— casi no tiene descendente, así que la caja
-   sobra por arriba y el número aterrizaba una veintena de píxeles debajo del
-   aro. Se recorta la caja a la tinta —de la línea base a la cofia— y entonces
-   el `place-items: center` del conteo centra el glifo, no el interlineado. */
+/* Centrar la caja de la línea no centra el número: la caja la dicta la métrica
+   de la tipografía, y Copperplate la incumple por los dos lados —casi no tiene
+   descendente y sus cifras no llegan a la altura de mayúscula que declara—, así
+   que el número aterrizaba debajo del aro. `text-box-trim` no alcanza porque
+   recorta a esa altura declarada, no a la tinta. El corrimiento lo pone
+   `NumeroDelConteo` en `top`, midiendo el glifo ya pintado. */
 .conteo span {
   animation: pulso 0.55s ease both;
   display: block;
+  position: relative;
   line-height: 1;
-  text-box-trim: trim-both;
-  text-box-edge: cap alphabetic;
   font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Ancla de medición: un `inline-block` vacío se posa con su borde de abajo
+   justo sobre la línea base del renglón. No pinta nada ni mueve la caja. */
+.conteo .linea-base {
+  display: inline-block;
+  width: 0;
+  height: 0;
 }
 
 .conteo .aro {

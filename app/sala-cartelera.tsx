@@ -3,7 +3,7 @@
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   derivarCartelera,
   VETOS_POR_NOCHE,
@@ -26,6 +26,7 @@ import ChipsDisponibilidad from "./chips-disponibilidad";
 import MarquesinaApagada from "./marquesina-apagada";
 import MuroCatalogo from "./muro-catalogo";
 import PosterCrudo from "./poster-crudo";
+import { ajusteOpticoDelNumero, type TintaDelNumero } from "./conteo-logica";
 import { calentarPosters, cuandoHayaCalma, urlDePoster } from "./posters";
 
 const FILTROS: readonly { valor: FiltroCartelera; etiqueta: string }[] = [
@@ -83,6 +84,58 @@ function mismaCelda(anterior: PropiedadesDeCelda, siguiente: PropiedadesDeCelda)
 }
 
 const CeldaDeCartelera = memo(CeldaDeCarteleraBase, mismaCelda);
+
+/** Mide el glifo tal como el aparato acabó de pintarlo. */
+function tintaDelNumero(
+  caja: HTMLElement,
+  ancla: HTMLElement,
+  texto: string,
+): TintaDelNumero | null {
+  const contexto = document.createElement("canvas").getContext("2d");
+  if (!contexto) return null;
+  const estilo = window.getComputedStyle(caja);
+  contexto.font = `${estilo.fontStyle} ${estilo.fontWeight} ${estilo.fontSize} ${estilo.fontFamily}`;
+  const medida = contexto.measureText(texto);
+  const tintaArriba = medida.actualBoundingBoxAscent;
+  const tintaAbajo = medida.actualBoundingBoxDescent;
+  if (!Number.isFinite(tintaArriba) || !Number.isFinite(tintaAbajo)) return null;
+  const cajaMedida = caja.getBoundingClientRect();
+  return {
+    alto: cajaMedida.height,
+    // El ancla es un `inline-block` vacío: su borde de abajo se posa justo
+    // sobre la línea base del renglón, así que no hace falta creerle a la
+    // métrica de la tipografía para saber dónde cae.
+    lineaBase: ancla.getBoundingClientRect().bottom - cajaMedida.top,
+    tintaArriba,
+    tintaAbajo,
+  };
+}
+
+/**
+ * El número del conteo se centra por su tinta, no por su caja: la caja depende
+ * de la métrica de la tipografía y Copperplate la incumple por los dos lados
+ * —casi no tiene descendente y sus cifras no alcanzan la altura de mayúscula
+ * que declara—, así que el número aterrizaba debajo del aro. Se mide el glifo
+ * ya pintado y se corre lo que sobre, antes de que la pantalla lo enseñe.
+ */
+function NumeroDelConteo({ numero }: { numero: number }) {
+  const caja = useRef<HTMLSpanElement>(null);
+  const ancla = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    if (!caja.current || !ancla.current) return;
+    const tinta = tintaDelNumero(caja.current, ancla.current, String(numero));
+    if (!tinta) return;
+    caja.current.style.top = `${ajusteOpticoDelNumero(tinta).toFixed(2)}px`;
+  }, [numero]);
+
+  return (
+    <span ref={caja}>
+      {numero}
+      <i className="linea-base" ref={ancla} aria-hidden="true" />
+    </span>
+  );
+}
 
 /**
  * El carrete no puede parar sobre un hueco: el póster dibujado va **debajo**
@@ -657,7 +710,7 @@ export default function SalaCartelera({
               <div className="aro" />
               <div className="cruz-h" />
               <div className="cruz-v" />
-              <span key={numeroConteo}>{numeroConteo}</span>
+              <NumeroDelConteo key={numeroConteo} numero={numeroConteo} />
             </div>
           )}
 

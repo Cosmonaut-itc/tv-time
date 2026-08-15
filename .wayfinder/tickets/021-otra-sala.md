@@ -1,7 +1,7 @@
 # Otra sala
 
 - **Tipo**: `wayfinder:task` (AFK, con aceptación HITL en el iPhone)
-- **Estado**: abierto (construido; falta la aceptación en el iPhone)
+- **Estado**: cerrado
 - **Asignado**: sesión de Claude (orquestación) · `gpt-5.6-terra`·`medium` (implementación) · `gpt-5.6-sol`·`high` (review)
 - **Bloqueado por**: [La cabina y el historial](019-la-cabina-y-el-historial.md)
 - **Mapa**: [La sala de cine](../map.md)
@@ -140,6 +140,6 @@ más vieja sin avisar. Se deja así porque el código de cada sala se enseña en
 grande al nacer, con la advertencia de que es la única llave; y porque ocho salas
 en un producto para dos personas es un escenario que no existe.
 
-**Falta la aceptación**: desplegar y crear una sala de verdad desde el iPhone,
-con sus dos butacas, un título dado de alta dentro, y volver a la sala original
-desde el llavero sin teclear el código.
+**Aceptado en el iPhone**: desplegado a producción, sala nueva creada de verdad
+con sus dos butacas, título dado de alta dentro y vuelta a la sala original desde
+el llavero sin teclear el código. *«Sí funcionó todo perfecto»*.

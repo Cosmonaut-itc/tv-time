@@ -1,0 +1,361 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La firma de la casa</title>
+
+<style>
+  /* ───────────────────────────────────────────────
+     PROTOTIPO DESECHABLE — La firma de la casa
+     Ticket: .wayfinder/tickets/022-la-firma-de-la-casa.md
+     Sin backend. Dos decisiones del dueño:
+       1. dónde queda la firma para leerse sin bajar tanto
+       2. qué hace el cangrejito cada cierto tiempo
+     La barra de abajo es del prototipo: en la sala no existe.
+     ─────────────────────────────────────────────── */
+
+  :root {
+    --terciopelo:   #12080C;
+    --foso:         #0B0507;
+    --vino:         #4E1122;
+    --vino-claro:   #8E2438;
+    --laton:        #C9A227;
+    --laton-tenue:  #8A6F1C;
+    --crema:        #F2E5C6;
+    --crema-tenue:  #9A8E75;
+    --naranja:      #D97757;
+
+    --display: 'Copperplate', 'Copperplate Gothic Light', 'Futura', 'Century Gothic', 'Trebuchet MS', sans-serif;
+    --cuerpo:  'Optima', 'Avenir Next', 'Futura', 'Segoe UI', system-ui, sans-serif;
+    --datos:   'DIN Alternate', 'Avenir Next Condensed', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--foso);
+    color: var(--crema);
+    font-family: var(--cuerpo);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    padding-bottom: 118px;   /* deja ver el pie por encima del banco */
+  }
+
+  .aparato {
+    width: min(430px, 100vw);
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ── Cornisa ───────────────────────────────── */
+
+  .cornisa {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    width: min(430px, 100vw);
+    padding: 3px;
+    background: linear-gradient(#4e1122f2, #2a0a14e6 70%, #12080cd9);
+    border-bottom: 1px solid var(--laton-tenue);
+  }
+
+  .cornisa span {
+    padding: 9px 0;
+    color: var(--laton);
+    text-align: center;
+    font-size: 15px;
+    border-right: 1px solid rgba(138, 111, 28, .45);
+  }
+  .cornisa span:last-child { border-right: 0; }
+
+  /* ── Marquesina ────────────────────────────── */
+
+  .marquesina {
+    padding: 52px 16px 0;
+    text-align: center;
+  }
+
+  .rotulo {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 30px;
+    letter-spacing: .34em;
+    color: rgba(201, 162, 39, .22);
+  }
+
+  .conteo {
+    margin: 6px 12px 0;
+    padding: 9px 6px;
+    border: 1px solid var(--laton-tenue);
+    font-family: var(--datos);
+    font-size: 11px;
+    letter-spacing: .16em;
+    color: var(--crema-tenue);
+  }
+  .conteo b { color: var(--laton); font-weight: 400; }
+
+  .focos {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 0 4px;
+  }
+  .focos i {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--laton-tenue);
+  }
+  .focos i:nth-child(3n) { background: var(--crema); box-shadow: 0 0 8px rgba(242,229,198,.8); }
+
+  /* ── Escenario ─────────────────────────────── */
+
+  .escenario {
+    margin: 10px 12px 0;
+    height: 58vh;
+    min-height: 330px;
+    border: 1px solid var(--laton-tenue);
+    background: var(--terciopelo);
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+  }
+
+  .telon {
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg,
+        #3d0d1b 0 4%, var(--vino) 6% 10%, var(--vino-claro) 12% 14%, var(--vino) 16% 20%);
+    opacity: .95;
+  }
+
+  .palanca {
+    margin: 14px 12px 0;
+    padding: 15px;
+    text-align: center;
+    font-family: var(--display);
+    font-size: 15px;
+    letter-spacing: .18em;
+    color: #2a1c04;
+    background: linear-gradient(#e2c23f, #a8830f);
+    border: 0;
+    width: calc(100% - 24px);
+  }
+
+  .bitacora {
+    margin: 14px 12px 0;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--datos);
+    font-size: 9.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(242, 229, 198, .4);
+  }
+  .bitacora b { color: var(--laton); font-weight: 400; }
+
+  /* ── Las tres firmas ───────────────────────── */
+
+  /* Ninguna se ve hasta que el banco de abajo elige una. */
+  .firma { display: none; }
+  body[data-sitio="pie"]        .firma-pie,
+  body[data-sitio="marquesina"] .firma-marquesina,
+  body[data-sitio="telon"]      .firma-telon { display: block; }
+
+  /* A — donde vive hoy, al final del todo, con más tinta y más cuerpo. */
+  .firma-pie {
+    margin: 20px 20px 14px;
+    text-align: center;
+    font-family: var(--datos);
+    font-size: 12.5px;
+    letter-spacing: .08em;
+    color: rgba(242, 229, 198, .82);
+  }
+
+  /* B — subtítulo de la marquesina, donde estuvo el de TMDB. */
+  .firma-marquesina {
+    margin: 9px 0 0;
+    font-family: var(--datos);
+    font-size: 11px;
+    letter-spacing: .1em;
+    color: rgba(242, 229, 198, .62);
+  }
+
+  /* C — bordada en el telón: enorme, y se va cuando empieza la función. */
+  .firma-telon {
+    position: relative;
+    z-index: 1;
+    max-width: 232px;
+    text-align: center;
+    font-family: var(--display);
+    font-size: 19px;
+    line-height: 1.75;
+    letter-spacing: .12em;
+    color: rgba(242, 229, 198, .5);
+    text-shadow: 0 1px 0 rgba(0,0,0,.6);
+  }
+
+  .firma p { margin: 0; }
+
+  /* ── La mascota ────────────────────────────── */
+
+  .mascota {
+    width: 1.25em;
+    height: .95em;
+    margin-left: .45em;
+    vertical-align: -.09em;
+    overflow: visible;
+  }
+  .firma-telon .mascota { width: 1.4em; height: 1.05em; }
+
+  .mascota .pata-saluda { transform-box: view-box; transform-origin: 13.5px 9px; }
+
+  /* Cada gesto ocupa un tramo corto del ciclo y el resto es quietud: un
+     easter egg que no para de moverse deja de ser un hallazgo. */
+  body[data-gesto="saludo"] .mascota .pata-saluda { animation: saludo 9s ease-in-out infinite; }
+  body[data-gesto="salto"]  .mascota              { animation: salto  9s ease-in-out infinite; }
+  body[data-gesto="paso"]   .mascota              { animation: paso   9s ease-in-out infinite; }
+
+  @keyframes saludo {
+    0%, 2%, 14%, 100% { transform: rotate(0deg); }
+    5%  { transform: rotate(-42deg); }
+    8%  { transform: rotate(-8deg); }
+    11% { transform: rotate(-42deg); }
+  }
+
+  @keyframes salto {
+    0%, 3%, 16%, 100% { transform: translateY(0) scaleY(1); }
+    5%  { transform: translateY(.06em) scaleY(.82); }
+    9%  { transform: translateY(-.5em) scaleY(1.1); }
+    13% { transform: translateY(.04em) scaleY(.92); }
+  }
+
+  @keyframes paso {
+    0%, 3%, 18%, 100% { transform: translateX(0) rotate(0deg); }
+    7%  { transform: translateX(.42em) rotate(6deg); }
+    12% { transform: translateX(-.3em) rotate(-6deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mascota, .mascota * { animation: none !important; }
+  }
+
+  /* ── Banco de decisiones (no existe en la sala) ── */
+
+  .banco {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(11, 5, 7, .96);
+    border-top: 1px solid var(--laton-tenue);
+  }
+
+  .fila { display: flex; align-items: center; gap: 6px; }
+
+  .fila > p {
+    margin: 0;
+    width: 62px;
+    flex: none;
+    font-family: var(--datos);
+    font-size: 8.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--crema-tenue);
+  }
+
+  .fila button {
+    flex: 1;
+    padding: 9px 2px;
+    font-family: var(--datos);
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--crema-tenue);
+    background: transparent;
+    border: 1px solid rgba(138, 111, 28, .5);
+  }
+
+  .fila button[aria-pressed="true"] {
+    color: #2a1c04;
+    background: var(--laton);
+    border-color: var(--laton);
+  }
+</style>
+
+<nav class="cornisa" aria-hidden="true"><span>▦</span><span>◷</span><span>☰</span><span>⚙</span></nav>
+
+<div class="aparato">
+  <header class="marquesina">
+    <p class="rotulo">EL CINE</p>
+    <p class="conteo"><b>48</b> TÍTULOS · <b>48</b> EN CARTELERA · <b>0</b> VISTAS</p>
+
+    <div class="firma firma-marquesina">
+      <p>Hecho con amor por Félix y Claude<svg class="mascota" viewBox="0 0 16 12" shape-rendering="crispEdges" aria-hidden="true"><g fill="#D97757"><rect x="1" y="0" width="14" height="2"/><rect x="1" y="2" width="2" height="3"/><rect x="4" y="2" width="8" height="3"/><rect x="13" y="2" width="2" height="3"/><rect x="0" y="5" width="16" height="3"/><rect x="1" y="8" width="14" height="1"/><rect x="2" y="9" width="1" height="3"/><rect x="4" y="9" width="1" height="3"/><rect x="11" y="9" width="1" height="3"/><rect class="pata-saluda" x="13" y="9" width="1" height="3"/></g></svg></p>
+    </div>
+
+    <div class="focos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </header>
+
+  <section class="escenario">
+    <div class="telon"></div>
+    <div class="firma firma-telon">
+      <p>Hecho con amor<br>por Félix y Claude<svg class="mascota" viewBox="0 0 16 12" shape-rendering="crispEdges" aria-hidden="true"><g fill="#D97757"><rect x="1" y="0" width="14" height="2"/><rect x="1" y="2" width="2" height="3"/><rect x="4" y="2" width="8" height="3"/><rect x="13" y="2" width="2" height="3"/><rect x="0" y="5" width="16" height="3"/><rect x="1" y="8" width="14" height="1"/><rect x="2" y="9" width="1" height="3"/><rect x="4" y="9" width="1" height="3"/><rect x="11" y="9" width="1" height="3"/><rect class="pata-saluda" x="13" y="9" width="1" height="3"/></g></svg></p>
+    </div>
+  </section>
+
+  <button class="palanca" type="button">COMENZAR LA FUNCIÓN</button>
+
+  <div class="bitacora">
+    <span>Estado <b>reposo</b></span>
+    <span>En cartelera <b>22</b></span>
+    <span>Giros <b>0</b></span>
+  </div>
+
+  <div class="firma firma-pie">
+    <p>Hecho con amor por Félix y Claude<svg class="mascota" viewBox="0 0 16 12" shape-rendering="crispEdges" aria-hidden="true"><g fill="#D97757"><rect x="1" y="0" width="14" height="2"/><rect x="1" y="2" width="2" height="3"/><rect x="4" y="2" width="8" height="3"/><rect x="13" y="2" width="2" height="3"/><rect x="0" y="5" width="16" height="3"/><rect x="1" y="8" width="14" height="1"/><rect x="2" y="9" width="1" height="3"/><rect x="4" y="9" width="1" height="3"/><rect x="11" y="9" width="1" height="3"/><rect class="pata-saluda" x="13" y="9" width="1" height="3"/></g></svg></p>
+  </div>
+</div>
+
+<nav class="banco" aria-label="Decisiones del prototipo">
+  <div class="fila" data-eje="sitio">
+    <p>La firma</p>
+    <button type="button" data-valor="pie" aria-pressed="true">Al pie</button>
+    <button type="button" data-valor="marquesina" aria-pressed="false">Marquesina</button>
+    <button type="button" data-valor="telon" aria-pressed="false">En el telón</button>
+  </div>
+  <div class="fila" data-eje="gesto">
+    <p>El cangrejo</p>
+    <button type="button" data-valor="saludo" aria-pressed="true">Saluda</button>
+    <button type="button" data-valor="salto" aria-pressed="false">Salta</button>
+    <button type="button" data-valor="paso" aria-pressed="false">Camina</button>
+  </div>
+</nav>
+
+<script>
+  // Los dos ejes viven en `body` y los pone el guion, no el marcado: así el
+  // mismo archivo se abre suelto o embebido, donde el `<body>` es ajeno.
+  document.body.dataset.sitio = 'pie';
+  document.body.dataset.gesto = 'saludo';
+
+  // El ciclo real será mucho más largo que estos 9 s: aquí se acorta para no
+  // hacer esperar a quien está decidiendo.
+  document.querySelectorAll('.banco .fila').forEach((fila) => {
+    fila.addEventListener('click', (evento) => {
+      const boton = evento.target.closest('button');
+      if (!boton) return;
+      fila.querySelectorAll('button').forEach((otro) => {
+        otro.setAttribute('aria-pressed', String(otro === boton));
+      });
+      document.body.dataset[fila.dataset.eje] = boton.dataset.valor;
+    });
+  });
+</script>

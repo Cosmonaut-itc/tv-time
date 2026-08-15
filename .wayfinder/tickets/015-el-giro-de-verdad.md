@@ -157,6 +157,30 @@ métricas con que se calcula: `2`, `1` y `3` pasan de ~9 px de desfase a 0, y un
 `x` —un glifo muy por debajo de la altura de mayúscula, que es justo el caso de
 las cifras de Copperplate— pasa de 18 px a 0. A 120 px de tipo, igual.
 
+**Y aun así el número seguía corrido en la sala.** Medido en la sala misma y no
+en un banco aparte, el desfase bajó de 24.2 px a 13.6 px: la mitad que quedaba no
+era tipográfica. El conteo colgaba de `.pantalla`, que **no tiene alto propio**
+—el escenario sólo declara `min-height`, así que su `height: 100%` no resuelve— y
+se encoge a su contenido; durante el conteo no hay contenido en flujo, porque el
+velo es absoluto, así que la pantalla medía **32 px**. Dentro de esa franja el
+velo no tapaba el escenario, la cruz vertical era un tick de 32 px, el aro de
+130 px se desbordaba y el número —desbordado también— se colocaba al inicio de la
+franja en vez de a su centro.
+
+Ahora el conteo cuelga del **escenario**, no de la pantalla: `inset: 0` es el
+escenario entero, `place-items: center` vuelve a centrar de verdad y el velo
+cubre los 430 px. Estirar la pantalla arreglaba lo mismo y se descartó a
+propósito: volvería resoluble el `height: 100%` del carrete, le pisaría el
+`aspect-ratio` y deformaría el giro, que es lo único que el dueño dijo que ya
+funcionaba bien.
+
+La medición del glifo también estaba deformada: corre dentro de `pulso`, que
+arranca en `scale(1.6)`, y `getBoundingClientRect` devuelve la caja ya escalada,
+así que el corrimiento salía cinco veces mayor. Se divide por la escala real
+—`offsetHeight` no sabe de transformaciones— antes de aplicarlo. Con las dos
+correcciones, `3`, `2` y `1` quedan a **≤ 0.07 px** del centro del aro, medido en
+la sala a 390×844.
+
 De paso, el póster dibujado dejó de cortar a media letra —«CÓMO ENTRENAR A TU
 DRAGÓ»—: parte por palabra en dos renglones y admite lo que no cabe con puntos
 suspensivos ([`app/poster-crudo-logica.ts`](../../app/poster-crudo-logica.ts)).

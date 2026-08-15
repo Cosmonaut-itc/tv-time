@@ -100,12 +100,20 @@ function tintaDelNumero(
   const tintaAbajo = medida.actualBoundingBoxDescent;
   if (!Number.isFinite(tintaArriba) || !Number.isFinite(tintaAbajo)) return null;
   const cajaMedida = caja.getBoundingClientRect();
+  // El número se mide mientras `pulso` corre, y `pulso` arranca en
+  // `scale(1.6)`: los rectángulos vienen agrandados y el corrimiento salía
+  // cinco veces mayor de lo que hacía falta. `offsetHeight` no sabe de
+  // transformaciones, así que sirve de regla para volver a la escala real —y
+  // las distancias, al ser restas, se corrigen con el mismo factor. La tinta
+  // del canvas nunca estuvo deformada: el canvas no ve el CSS.
+  const escala = caja.offsetHeight > 0 ? cajaMedida.height / caja.offsetHeight : 1;
+  if (!Number.isFinite(escala) || escala <= 0) return null;
   return {
-    alto: cajaMedida.height,
+    alto: caja.offsetHeight,
     // El ancla es un `inline-block` vacío: su borde de abajo se posa justo
     // sobre la línea base del renglón, así que no hace falta creerle a la
     // métrica de la tipografía para saber dónde cae.
-    lineaBase: ancla.getBoundingClientRect().bottom - cajaMedida.top,
+    lineaBase: (ancla.getBoundingClientRect().bottom - cajaMedida.top) / escala,
     tintaArriba,
     tintaAbajo,
   };
@@ -705,15 +713,6 @@ export default function SalaCartelera({
             </div>
           )}
 
-          {fase === "conteo" && (
-            <div className="conteo" aria-hidden="true">
-              <div className="aro" />
-              <div className="cruz-h" />
-              <div className="cruz-v" />
-              <NumeroDelConteo key={numeroConteo} numero={numeroConteo} />
-            </div>
-          )}
-
           {mostrandoCarretes && (
             <div className="carretes" aria-hidden="true">
               {finalistas.map((finalista, indice) => (
@@ -846,6 +845,26 @@ export default function SalaCartelera({
                 : ""}
           </p>
         </div>
+        {/* El conteo cuelga del escenario y no de la pantalla, aunque caiga
+            encima de ella. `.pantalla` no tiene alto propio —el escenario sólo
+            declara `min-height`, así que su `height: 100%` no resuelve— y se
+            encoge a su contenido; durante el conteo no hay contenido en flujo,
+            así que medía 32 px. Dentro de esa franja el velo no tapaba el
+            escenario, la cruz vertical era un tick, el aro de 130 px se
+            desbordaba y el número, desbordado también, aterrizaba debajo del
+            aro en vez de al centro. Colgado del escenario, `inset: 0` es el
+            escenario entero y `place-items: center` vuelve a centrar de verdad.
+            Estirar la pantalla arreglaría lo mismo, pero volvería resoluble el
+            `height: 100%` del carrete y le pisaría el `aspect-ratio`: el giro
+            se deformaría. */}
+        {fase === "conteo" && (
+          <div className="conteo" aria-hidden="true">
+            <div className="aro" />
+            <div className="cruz-h" />
+            <div className="cruz-v" />
+            <NumeroDelConteo key={numeroConteo} numero={numeroConteo} />
+          </div>
+        )}
         {selloVisible && (
           <div className="sello" aria-hidden="true">
             Vetada

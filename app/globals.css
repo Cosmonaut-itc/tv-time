@@ -629,6 +629,7 @@ button:disabled {
 /* line-height 0 + svg en block: sin esto cada celda arrastra el
    descender del inline y la tira aterriza corrida. */
 .carrete .celda {
+  position: relative;
   flex: none;
   width: 100%;
   aspect-ratio: 2 / 3;
@@ -641,11 +642,22 @@ button:disabled {
   height: 100%;
 }
 
+/* La foto va encima del póster dibujado y sólo se revela cuando cargó: así el
+   carrete nunca para sobre un hueco, aunque la red vaya lenta. Va absoluta
+   para no tocar el alto de la celda, que es lo que mide el giro. */
 .carrete .celda img {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.carrete .celda img.revelada {
+  opacity: 1;
 }
 
 .carrete .vidrio {
@@ -828,9 +840,18 @@ button:disabled {
   color: var(--crema);
 }
 
+/* Centrar la caja de la línea no centra el número. La tipografía de la sala
+   —Copperplate y sus suplentes— casi no tiene descendente, así que la caja
+   sobra por arriba y el número aterrizaba una veintena de píxeles debajo del
+   aro. Se recorta la caja a la tinta —de la línea base a la cofia— y entonces
+   el `place-items: center` del conteo centra el glifo, no el interlineado. */
 .conteo span {
   animation: pulso 0.55s ease both;
   display: block;
+  line-height: 1;
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 .conteo .aro {

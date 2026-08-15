@@ -119,3 +119,34 @@ producción sigue con **cero funciones**. Los ~13 s están medidos, no juzgados.
 Queda para la primera noche de verdad, y si estorba se ajusta desde el cajón de
 [La cabina y el historial](019-la-cabina-y-el-historial.md), que es justo donde
 vive el control del ritmo.
+
+### Lo que la primera noche corrigió
+
+El dueño giró en el iPhone y volvió con dos defectos de la pantalla, los dos de
+esta rebanada.
+
+**Los pósters vuelven al carrete.** La review los había quitado porque el giro
+arrancaba sin esperar las imágenes y en una red lenta paraba sobre huecos; la
+sala quedó girando tarjetas dibujadas aunque el catálogo tuviera foto. El hueco
+ya no depende de la red: el póster dibujado va **debajo** como suelo y la foto se
+funde encima sólo cuando cargó, así que lo peor que puede pasar es que el carrete
+pare sobre el dibujo. Y para que ni eso se vea, la cartelera se **calienta
+mientras la sala está quieta** ([`app/posters.ts`](../../app/posters.ts)), de modo
+que el giro monta desde caché. La foto va **absoluta** sobre la celda: si tocara
+el alto, volvería el bug del `<svg>` que este mismo ticket documenta.
+
+**El número del conteo salía corrido.** No estaba mal centrado: estaba centrado
+por su **caja de línea** y no por su tinta. Copperplate —la tipografía de la
+sala— casi no tiene descendente, así que la caja sobra por arriba y el número
+aterrizaba una veintena de píxeles debajo del aro del proyector. Se recorta la
+caja a la tinta con `text-box-trim`, y entonces el centrado del conteo centra el
+glifo. Medido en Chromium con una tipografía simulada de descendente casi nulo:
+**9.5 px de desfase antes, 0 px después**.
+
+De paso, el póster dibujado dejó de cortar a media letra —«CÓMO ENTRENAR A TU
+DRAGÓ»—: parte por palabra en dos renglones y admite lo que no cabe con puntos
+suspensivos ([`app/poster-crudo-logica.ts`](../../app/poster-crudo-logica.ts)).
+
+**Lo que esto le cuesta al ritual**: el carrete ya no hace *cero* peticiones a
+`image.tmdb.org` — las hace **antes**, en el ocio, y no durante el giro. La
+medición vieja de esta rebanada queda anotada, no vigente.

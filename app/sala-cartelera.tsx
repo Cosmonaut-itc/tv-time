@@ -26,6 +26,7 @@ import ChipsDisponibilidad from "./chips-disponibilidad";
 import MarquesinaApagada from "./marquesina-apagada";
 import MuroCatalogo from "./muro-catalogo";
 import PosterCrudo from "./poster-crudo";
+import { calentarPosters, cuandoHayaCalma, urlDePoster } from "./posters";
 
 const FILTROS: readonly { valor: FiltroCartelera; etiqueta: string }[] = [
   { valor: "pelicula", etiqueta: "Peli" },
@@ -82,6 +83,38 @@ function mismaCelda(anterior: PropiedadesDeCelda, siguiente: PropiedadesDeCelda)
 }
 
 const CeldaDeCartelera = memo(CeldaDeCarteleraBase, mismaCelda);
+
+/**
+ * El carrete no puede parar sobre un hueco: el póster dibujado va **debajo**
+ * como suelo y la foto de TMDB se funde encima sólo cuando ya cargó. Si la red
+ * tarda o el título no tiene foto, lo que se ve es el dibujo, nunca un vacío.
+ */
+function PosterDelCarrete({ titulo }: { titulo: TituloDeSala }) {
+  return (
+    <>
+      <PosterCrudo titulo={titulo} />
+      {titulo.posterPath && (
+        // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
+        <img
+          src={urlDePoster(titulo.posterPath, "w185")}
+          alt=""
+          width={185}
+          height={278}
+          decoding="async"
+          loading="eager"
+          // La foto de caché puede llegar entera antes de que React escuche:
+          // se revela desde el ref y desde onLoad, lo que ocurra primero.
+          ref={(imagen) => {
+            if (imagen?.complete && imagen.naturalWidth > 0) {
+              imagen.classList.add("revelada");
+            }
+          }}
+          onLoad={(evento) => evento.currentTarget.classList.add("revelada")}
+        />
+      )}
+    </>
+  );
+}
 
 function tiraDe(
   candidatos: readonly TituloDeSala[],
@@ -259,6 +292,17 @@ export default function SalaCartelera({
     }, Math.max(0, proximoCorte(ahora) - ahora));
     return () => window.clearTimeout(temporizador);
   }, [momentoConsulta]);
+
+  // El carrete no espera a la red: mientras la sala está quieta se van
+  // calentando los pósters de la cartelera, así el giro los monta desde caché.
+  useEffect(() => {
+    if (ocupado) return;
+    const rutas = cartelera.candidatos
+      .map(({ posterPath }) => posterPath)
+      .filter((ruta): ruta is string => Boolean(ruta));
+    if (rutas.length === 0) return;
+    return cuandoHayaCalma(() => calentarPosters(rutas, "w185"));
+  }, [cartelera.candidatos, ocupado]);
 
   useEffect(() => {
     if (cajonAbierto) botonCerrar.current?.focus();
@@ -634,7 +678,7 @@ export default function SalaCartelera({
                   >
                     {tirasDelGiro[indice]?.map((titulo, vuelta) => (
                         <div className="celda" key={`${vuelta}-${titulo._id}`}>
-                          <PosterCrudo titulo={titulo} />
+                          <PosterDelCarrete titulo={titulo} />
                         </div>
                       ))}
                   </div>
@@ -650,7 +694,7 @@ export default function SalaCartelera({
                 {ganador.posterPath ? (
                   // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
                   <img
-                    src={`https://image.tmdb.org/t/p/w342${ganador.posterPath}`}
+                    src={urlDePoster(ganador.posterPath, "w342")}
                     alt=""
                     width={342}
                     height={513}

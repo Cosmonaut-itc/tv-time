@@ -10,13 +10,17 @@ import { tira3D } from "../app/tres/logica.ts";
 import type { TituloDeSala } from "../app/cartelera.ts";
 
 function instalarLienzo(t: TestContext) {
+  const trazos: { metodo: "fillRect" | "strokeRect"; argumentos: number[]; fillStyle: unknown }[] = [];
   const anterior = Object.getOwnPropertyDescriptor(globalThis, "document");
   Object.defineProperty(globalThis, "document", { configurable: true, value: {
     createElement() {
       return { width: 0, height: 0, getContext() {
         return {
+          fillStyle: "", shadowColor: "", shadowBlur: 0, shadowOffsetX: 0, shadowOffsetY: 0,
           save() {}, restore() {}, scale() {}, translate() {}, rotate() {},
-          fillRect() {}, strokeRect() {}, beginPath() {}, arc() {}, stroke() {}, moveTo() {}, lineTo() {}, fillText() {},
+          fillRect(...argumentos: number[]) { trazos.push({ metodo: "fillRect", argumentos, fillStyle: this.fillStyle }); },
+          strokeRect(...argumentos: number[]) { trazos.push({ metodo: "strokeRect", argumentos, fillStyle: this.fillStyle }); },
+          beginPath() {}, arc() {}, stroke() {}, moveTo() {}, lineTo() {}, fillText() {},
           createRadialGradient() { return { addColorStop() {} }; },
           measureText() { return { width: 12, actualBoundingBoxAscent: 110, actualBoundingBoxDescent: 3 }; },
         };
@@ -27,6 +31,7 @@ function instalarLienzo(t: TestContext) {
     if (anterior) Object.defineProperty(globalThis, "document", anterior);
     else Reflect.deleteProperty(globalThis, "document");
   });
+  return trazos;
 }
 
 const titulo: TituloDeSala = { _id: "uno", tipo: "pelicula", nombre: "Soul", visto: false };
@@ -174,6 +179,25 @@ test("destruir libera geometrías, materiales y texturas, incluidos números fue
   assert.ok(Math.abs(caja.scale.x - ganador.poseMeta().escala) < 1e-8);
 });
 
+test("el sello se estampa en mezcla normal sobre una placa oscura", (t) => {
+  const trazos = instalarLienzo(t);
+  const ganador = crearGanador(new THREE.Group());
+  t.after(() => ganador.destruir());
+  const sello = ganador.grupo.children[0].children[1].children[2] as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  assert.equal(sello.material.blending, THREE.NormalBlending);
+  const placa = trazos.findIndex((trazo) => trazo.metodo === "fillRect" &&
+    typeof trazo.fillStyle === "string" && trazo.fillStyle.startsWith("rgba(") &&
+    JSON.stringify(trazo.argumentos) === JSON.stringify([14, 14, 484, 228]));
+  const marco = trazos.findIndex((trazo) => trazo.metodo === "strokeRect" &&
+    JSON.stringify(trazo.argumentos) === JSON.stringify([14, 14, 484, 228]));
+  assert.ok(placa >= 0 && marco > placa, "la placa oscura se dibuja antes del marco exterior");
+  assert.equal(trazos[placa].fillStyle, "rgba(14, 6, 9, 0.58)");
+  ganador.mostrar(0, titulo, 0);
+  ganador.sellar(0, true);
+  ganador.update(1, 1 / 60);
+  assert.equal(sello.material.opacity, 0.94);
+});
+
 test("apagar el sello lo oculta inmediatamente y no vuelve a animarse", (t) => {
   instalarLienzo(t);
   const ganador = crearGanador(new THREE.Group());
@@ -183,7 +207,7 @@ test("apagar el sello lo oculta inmediatamente y no vuelve a animarse", (t) => {
   ganador.update(1, 1 / 60);
   const sello = ganador.grupo.children[0].children[1].children[2] as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   assert.equal(sello.visible, true);
-  assert.equal(sello.material.opacity, 1);
+  assert.equal(sello.material.opacity, 0.94);
   ganador.sellar(1, false);
   assert.equal(sello.visible, false);
   assert.equal(sello.material.opacity, 0);

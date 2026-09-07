@@ -81,6 +81,16 @@ butaca» no lo trajo este ticket y esas dos pantallas son la taquilla. Y la sala
 de la casa vacía no lleva firma porque la marquesina apagada ya ocupa ese centro
 con su invitación: dos textos en el mismo sitio es peor que ninguno.
 
+### Tras el puerto a tres dimensiones
+
+[El cine en tres dimensiones](023-el-cine-en-tres-dimensiones.md) sustituyó el
+telón CSS por uno de three.js, y la firma no vive dentro del telón sino al lado:
+es hermana de `.telon`, no hija, así que la regla que esconde el telón CSS en 3D
+no la alcanza. Verificado en la sala de la casa con el escenario 3D encendido: la
+firma se lee sobre el terciopelo (`z-index: 7` sobre el lienzo en `0`, opacidad
+`1`), y al comenzar la función pierde la capa y la tinta igual que antes
+(`z-index: 1`, opacidad `0`). No hizo falta cambiar nada.
+
 Al cerrar: desplegada, y **vista desde el iPhone sin tener que buscarla** — la
 frase legible en la sala de Félix y Sofía, ausente en una sala nueva, y el
 cangrejito sorprendiendo al menos una vez sin que nadie lo estuviera esperando.

@@ -112,10 +112,13 @@ r3f. Con Fast Refresh el 3D cae a CSS hasta recargar, porque `destruir()` pierde
 el contexto del canvas que React reutiliza: está documentado en el efecto y no
 ocurre en producción.
 
-**Límite conocido**: el sello «VETADA» se mezcla en aditivo, igual que en el
-prototipo aprobado, y sobre pósters claros (Forrest Gump, Amélie) el texto se
-lava y sólo se lee el marco; sobre pósters oscuros se lee entero. Si estorba,
-es un `NormalBlending` con opacidad en `crearGanador`.
+**El sello «VETADA» se estampa en mezcla normal** (corrección posterior al
+cierre, pedida por el dueño): en el prototipo y en el primer despliegue se
+mezclaba en aditivo, y sobre pósters claros (Forrest Gump, Amélie) el texto se
+lavaba y sólo se leía el marco. Ahora la textura lleva una placa oscura
+translúcida dentro del marco y una sombra corta bajo la tinta rosa, con
+opacidad final 0.94, y se lee igual sobre cualquier póster; verificado en
+navegador vetando Amélie. La entrada (0.42 s, escala 2.4→1) no cambió.
 
 Al cerrar: desplegada, y **vista desde el iPhone**: el telón de terciopelo
 abriendo y recogiéndose con sus cuerdas, los tambores girando a ritmo

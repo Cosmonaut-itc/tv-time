@@ -1,0 +1,3571 @@
+<title>El cine en tres dimensiones</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&display=swap">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   El cine · prototipo 3D
+   La paleta, las tipografías y la curva son las de la app; no se reinventan.
+   El bloque «CSS de hoy» está copiado del globals.css real para que el
+   comparador enfrente la escena 3D contra la sala verdadera, no una imitación.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --terciopelo: #12080c;
+  --foso: #0b0507;
+  --vino: #4e1122;
+  --vino-claro: #8e2438;
+  --laton: #c9a227;
+  --laton-tenue: #8a6f1c;
+  --crema: #f2e5c6;
+  --crema-tenue: #9a8e75;
+  --sombra: rgba(0, 0, 0, 0.55);
+  --display: "Copperplate", "Copperplate Gothic Light", "Futura",
+    "Century Gothic", "Trebuchet MS", "Cinzel", sans-serif;
+  --cuerpo: "Optima", "Avenir Next", "Futura", "Segoe UI", system-ui,
+    sans-serif;
+  --datos: "DIN Alternate", "Avenir Next Condensed", ui-monospace, monospace;
+  --curva-telon: cubic-bezier(0.66, 0, 0.2, 1);
+  --brillo-firma: 0.5;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--crema);
+  background: var(--terciopelo);
+  font-family: var(--cuerpo);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+* { box-sizing: border-box; }
+
+button {
+  border-radius: 2px;
+  font-family: var(--datos);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 0.12s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+button:active { transform: translateY(1px); }
+button:focus-visible { outline: 2px solid var(--laton); outline-offset: 3px; }
+button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── La sala: la misma columna de la app ─────────────────────────── */
+
+.sala {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  max-width: 460px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: radial-gradient(
+    120% 55% at 50% 0%,
+    #1e1014 0%,
+    var(--terciopelo) 55%,
+    var(--foso) 100%
+  );
+}
+
+/* El tablero abraza marquesina y escenario: es el rectángulo exacto que
+   cubre el único lienzo WebGL de la página, dividido en dos franjas con
+   `setScissor` (bombillas arriba, sala abajo). */
+.tablero {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.lienzo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+}
+.tablero.tresd .lienzo { visibility: visible; }
+
+/* ── Marquesina ──────────────────────────────────────────────────── */
+
+.marquesina {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  padding: 14px 16px 12px;
+  text-align: center;
+}
+
+.focos {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  padding: 6px 0;
+}
+
+.foco {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--laton-tenue);
+  box-shadow: 0 0 0 rgba(201, 162, 39, 0);
+}
+
+.foco.on {
+  background: #ffe9a8;
+  box-shadow:
+    0 0 7px 2px rgba(255, 214, 120, 0.75),
+    0 0 18px 6px rgba(201, 162, 39, 0.28);
+}
+
+.tablero.tresd .focos { visibility: hidden; }
+
+.rotulo {
+  padding: 12px 10px 10px;
+  border: 1px solid var(--laton-tenue);
+  border-right-width: 3px;
+  border-left-width: 3px;
+  background: linear-gradient(
+    180deg,
+    rgba(78, 17, 34, 0.55),
+    rgba(18, 8, 12, 0.2)
+  );
+}
+
+.rotulo h1 {
+  margin: 0;
+  color: var(--laton);
+  font-family: var(--display);
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  text-shadow:
+    0 1px 0 #3a2a08,
+    0 0 22px rgba(201, 162, 39, 0.35);
+}
+
+.rotulo .abanico {
+  display: block;
+  width: 96px;
+  height: 8px;
+  margin: 7px auto 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0 6%,
+    var(--laton-tenue) 6% 8%,
+    transparent 8% 22%,
+    var(--laton-tenue) 22% 24%,
+    transparent 24% 42%,
+    var(--laton) 42% 58%,
+    transparent 58% 76%,
+    var(--laton-tenue) 76% 78%,
+    transparent 78% 92%,
+    var(--laton-tenue) 92% 94%,
+    transparent 94%
+  );
+}
+
+.fecha {
+  margin: 9px 0 0;
+  color: var(--crema-tenue);
+  font-family: var(--datos);
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.fecha b { color: var(--laton); font-weight: 400; }
+
+/* ── Escenario y telón (CSS real de la app) ──────────────────────── */
+
+.escenario {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto;
+  min-height: min(58vh, 520px);
+  margin: 4px 12px 0;
+  border: 1px solid rgba(201, 162, 39, 0.22);
+  border-bottom: none;
+  background: #080407;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* En 3D el escenario deja de pintar su fondo: el lienzo que está debajo es
+   quien lo pinta, y el marco de latón del recuadro sigue siendo DOM. */
+.tablero.tresd .escenario { background: transparent; }
+.tablero.tresd .telon,
+.tablero.tresd .pantalla,
+.tablero.tresd .conteo,
+.tablero.tresd .sello { display: none; }
+
+.telon {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 52%;
+  z-index: 6;
+  background: repeating-linear-gradient(
+    90deg,
+    #3c0c1a 0,
+    #6b1a2e 11px,
+    #8e2438 20px,
+    #6b1a2e 29px,
+    #3c0c1a 40px
+  );
+  box-shadow: inset 0 22px 40px rgba(0, 0, 0, 0.55), 0 0 30px rgba(0, 0, 0, 0.6);
+  transition: transform 1.15s cubic-bezier(0.66, 0, 0.2, 1);
+}
+
+.telon::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 26px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent);
+}
+
+.telon.izq { left: 0; transform: translateX(0); }
+.telon.der { right: 0; transform: translateX(0); }
+
+.escenario.abierto .telon.izq { transform: translateX(-101%); }
+.escenario.abierto .telon.der { transform: translateX(101%); }
+
+/* La firma va bordada en el terciopelo, no al pie: en reposo el telón es lo
+   único que se ve. Es DOM en las dos versiones —se lee y se selecciona— y su
+   resplandor sigue el pulso de las bombillas de la marquesina. */
+.firma-telon {
+  position: absolute;
+  z-index: 7;
+  top: 50%;
+  left: 50%;
+  width: min(232px, 74%);
+  margin: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  color: rgba(242, 229, 198, 0.5);
+  font-family: var(--display);
+  font-size: 19px;
+  line-height: 1.75;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.6),
+    0 0 calc(6px + 14px * var(--brillo-firma))
+      rgba(201, 162, 39, calc(0.1 + 0.3 * var(--brillo-firma)));
+  transition: opacity 320ms ease;
+}
+
+.escenario.abierto .firma-telon { z-index: 1; opacity: 0; }
+
+.firma-telon .mascota-claude {
+  width: 1.4em;
+  height: 1.05em;
+  vertical-align: -0.1em;
+}
+
+.pantalla {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reposo {
+  max-width: 300px;
+  color: var(--crema-tenue);
+  font-family: var(--datos);
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  line-height: 1.9;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── Carretes ────────────────────────────────────────────────────── */
+
+/* Ventana y celda comparten proporción; 22 px = dos huecos y seis bordes. */
+
+.carretes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.carrete {
+  position: relative;
+  box-sizing: content-box;
+  height: auto;
+  width: calc((100% - 22px) / 3);
+  max-width: calc((100% - 16px) / 3);
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  background: #050204;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.9);
+}
+
+.carrete .tira {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+/* line-height 0 + imagen en block: sin esto cada celda arrastra el
+   descender del inline y la tira aterriza corrida. */
+.carrete .celda {
+  position: relative;
+  flex: none;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  line-height: 0;
+}
+
+.carrete .celda img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.carrete .celda img.revelada { opacity: 1; }
+
+.carrete .vidrio {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.75) 0%,
+    transparent 24%,
+    transparent 76%,
+    rgba(0, 0, 0, 0.75) 100%
+  );
+}
+
+.carrete.elegido {
+  border-color: var(--laton);
+  box-shadow: 0 0 0 1px var(--laton), 0 0 22px rgba(201, 162, 39, 0.45);
+}
+
+.carrete.descartado { opacity: 0.28; filter: saturate(0.3); }
+
+/* ── Ganador ─────────────────────────────────────────────────────── */
+
+@keyframes entra {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.ganador {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: entra 0.5s ease both;
+}
+
+.marco-laton {
+  position: relative;
+  width: 172px;
+  padding: 7px;
+  background: linear-gradient(145deg, var(--laton) 0%, #6E5410 42%, var(--laton) 58%, #4A390B 100%);
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px),
+                     calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+}
+.marco-laton > img { display: block; width: 100%; height: auto; }
+.marco-laton.punteado { border: 2px dashed var(--laton); }
+
+.ficha { text-align: center; }
+
+.ficha h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.13em;
+  color: var(--crema);
+  text-wrap: balance;
+  line-height: 1.25;
+}
+
+.ficha .meta {
+  margin: 6px 0 0;
+  font-family: var(--datos);
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--crema-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.saga {
+  margin: 0 0 3px;
+  font-family: var(--datos);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--laton);
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.btn-ver {
+  flex: 2;
+  min-height: 44px;
+  padding: 13px 10px;
+  font-size: 12px;
+  border: none;
+  color: #2A1B04;
+  background: linear-gradient(180deg, #E8C65A, var(--laton) 55%, #8A6F1C);
+  box-shadow: 0 2px 0 #5A470F, 0 6px 16px rgba(0,0,0,.5);
+}
+
+.btn-veto {
+  flex: 1;
+  min-height: 44px;
+  padding: 13px 6px;
+  font-size: 11px;
+  background: transparent;
+  color: var(--vino-claro);
+  border: 1px solid rgba(142, 36, 56, 0.75);
+}
+
+.razon-veto {
+  max-width: 300px;
+  margin: 0;
+  color: var(--crema-tenue);
+  font-family: var(--datos);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ── Conteo de proyector ─────────────────────────────────────────── */
+
+.conteo {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 2, 4, 0.92);
+  font-family: var(--display);
+  font-size: 78px;
+  color: var(--crema);
+}
+
+/* Centrar la caja de la línea no centra el número: la caja la dicta la
+   métrica de la tipografía y Copperplate la incumple por los dos lados. El
+   corrimiento lo pone `ajusteOpticoDelNumero`, midiendo el glifo ya pintado. */
+.conteo span {
+  animation: pulso 0.55s ease both;
+  display: block;
+  position: relative;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.conteo .linea-base { display: inline-block; width: 0; height: 0; }
+
+.conteo .aro {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border: 1px solid rgba(242, 229, 198, 0.35);
+  border-radius: 50%;
+}
+
+.conteo .cruz-h,
+.conteo .cruz-v { position: absolute; background: rgba(242, 229, 198, 0.22); }
+.conteo .cruz-h { width: 100%; height: 1px; }
+.conteo .cruz-v { height: 100%; width: 1px; }
+
+@keyframes pulso {
+  from { opacity: 0; transform: scale(1.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── Sello de veto ───────────────────────────────────────────────── */
+
+.sello {
+  position: absolute;
+  z-index: 7;
+  top: 50%;
+  left: 50%;
+  font-family: var(--display);
+  font-size: 38px;
+  letter-spacing: 0.16em;
+  color: #c9566c;
+  border: 4px solid #c9566c;
+  padding: 8px 18px;
+  text-transform: uppercase;
+  animation: sellar 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+@keyframes sellar {
+  from { opacity: 0; transform: translate(-50%, -50%) rotate(-16deg) scale(2.4); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+/* ── Capa DOM sobre el lienzo (ficha y botones del ganador en 3D) ── */
+
+.capa-3d {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 4;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 34px 16px 16px;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(8, 4, 7, 0.94) 46%, rgba(8, 4, 7, 0));
+}
+.capa-3d.viva { display: flex; }
+.tablero:not(.tresd) .capa-3d { display: none; }
+.capa-3d .ficha,
+.capa-3d .acciones,
+.capa-3d .razon-veto { pointer-events: auto; }
+
+/* ── Foso ────────────────────────────────────────────────────────── */
+
+.foso {
+  flex: none;
+  margin: 0 12px 12px;
+  padding: 12px;
+  border: 1px solid rgba(201, 162, 39, 0.22);
+  border-top: 1px dashed rgba(201, 162, 39, 0.3);
+  background: linear-gradient(180deg, rgba(78, 17, 34, 0.28), rgba(11, 5, 7, 0.9));
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.filtros { display: flex; gap: 6px; }
+
+.filtro {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 4px;
+  font-size: 10px;
+  background: transparent;
+  color: var(--crema-tenue);
+  border: 1px solid rgba(242, 229, 198, 0.18);
+}
+
+.filtro[aria-pressed="true"] {
+  color: var(--laton);
+  border-color: var(--laton);
+  background: rgba(201, 162, 39, 0.1);
+}
+
+.filtro.senalada { box-shadow: 0 0 0 2px var(--laton), 0 0 20px rgba(201, 162, 39, 0.45); }
+
+.etiqueta-entrada {
+  margin: 0;
+  font-family: var(--datos);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--crema-tenue);
+}
+
+.btn-palanca {
+  width: 100%;
+  min-height: 52px;
+  padding: 16px 12px;
+  font-size: 13px;
+  border: none;
+  color: #2a1b04;
+  background: linear-gradient(180deg, #e8c65a, var(--laton) 55%, #8a6f1c);
+  box-shadow: 0 3px 0 #5a470f, 0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+.panel-vetos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid rgba(242, 229, 198, 0.14);
+  background: rgba(142, 36, 56, 0.12);
+}
+
+.panel-vetos.agotado { opacity: 0.45; }
+
+.panel-vetos .etiqueta {
+  font-family: var(--datos);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--crema-tenue);
+}
+
+.panel-vetos .fichas { display: flex; gap: 5px; }
+
+.panel-vetos .ficha-veto {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid var(--vino-claro);
+  background: var(--vino-claro);
+  transition: background 0.3s ease;
+}
+
+.panel-vetos .ficha-veto.usada { background: transparent; }
+
+.bitacora {
+  margin: 0 12px 12px;
+  font-family: var(--datos);
+  font-size: 9.5px;
+  line-height: 1.7;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(242, 229, 198, 0.4);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bitacora b { color: var(--laton); font-weight: 400; }
+
+/* ── Cabina del prototipo ────────────────────────────────────────── */
+
+.cabina-prototipo {
+  flex: none;
+  margin: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 11px 12px 12px;
+  border: 1px dashed rgba(201, 162, 39, 0.32);
+  background: rgba(11, 5, 7, 0.66);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.cabina-prototipo > legend,
+.cabina-prototipo .titulo {
+  font-family: var(--datos);
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--laton);
+}
+
+.mando {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.mando > .nombre {
+  font-family: var(--datos);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--crema-tenue);
+}
+
+.grupo { display: flex; gap: 5px; }
+
+.opcion {
+  flex: 1;
+  min-height: 44px;
+  padding: 5px 4px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  background: transparent;
+  color: var(--crema-tenue);
+  border: 1px solid rgba(242, 229, 198, 0.16);
+}
+
+.opcion[aria-pressed="true"] {
+  color: var(--laton);
+  border-color: var(--laton);
+  background: rgba(201, 162, 39, 0.1);
+}
+
+.nota-cabina {
+  margin: 0;
+  font-family: var(--datos);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  line-height: 1.6;
+  color: rgba(242, 229, 198, 0.34);
+  text-transform: uppercase;
+}
+
+/* ── Movimiento reducido: la sala cae a la versión CSS y ésta acorta
+      sus animaciones igual que en la app. ──────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .telon { transition-duration: 0.01ms; }
+  .firma-telon { transition-duration: 0.01ms; }
+  .carrete .tira { transition-duration: 0.01ms !important; }
+  .ganador,
+  .conteo span,
+  .sello { animation: none; }
+}
+</style>
+
+<div class="sala">
+  <div class="tablero" id="tablero">
+    <canvas class="lienzo" id="lienzo" aria-hidden="true"></canvas>
+
+    <div class="marquesina">
+      <div class="focos" id="focos-arriba"></div>
+      <div class="rotulo">
+        <h1>El cine</h1>
+        <span class="abanico" aria-hidden="true"></span>
+        <p class="fecha">Función privada · <b>Butaca de Félix</b></p>
+      </div>
+      <div class="focos" id="focos-abajo"></div>
+    </div>
+
+    <section class="escenario" id="escenario" aria-label="Escenario">
+      <div class="telon izq" aria-hidden="true"></div>
+      <div class="telon der" aria-hidden="true"></div>
+      <p class="firma-telon" id="firma">
+        Hecho con amor<br>por Félix y Claude
+        <svg class="mascota-claude" viewBox="0 0 16 12" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+          <g fill="#D97757">
+            <rect x="1" y="0" width="14" height="2"></rect>
+            <rect x="1" y="2" width="2" height="3"></rect>
+            <rect x="4" y="2" width="8" height="3"></rect>
+            <rect x="13" y="2" width="2" height="3"></rect>
+            <rect x="0" y="5" width="16" height="3"></rect>
+            <rect x="1" y="8" width="14" height="1"></rect>
+            <rect x="2" y="9" width="1" height="3"></rect>
+            <rect x="4" y="9" width="1" height="3"></rect>
+            <rect x="11" y="9" width="1" height="3"></rect>
+            <rect x="13" y="9" width="1" height="3"></rect>
+          </g>
+        </svg>
+      </p>
+      <div class="pantalla" id="pantalla"></div>
+      <div class="capa-3d" id="capa3d"></div>
+      <p class="solo-lectores" id="aviso" role="status" aria-atomic="true"></p>
+    </section>
+  </div>
+
+  <div class="foso">
+    <div class="filtros" role="group" aria-label="Qué puede girar" id="filtros"></div>
+    <p class="etiqueta-entrada" id="anuncio">Dos actos: primero los finalistas, luego la elección</p>
+    <button class="btn-palanca" type="button" id="palanca">Comenzar la función</button>
+    <div class="panel-vetos" id="panel-vetos">
+      <span class="etiqueta">Vetos de la noche</span>
+      <span class="fichas" id="fichas-veto"></span>
+    </div>
+  </div>
+
+  <div class="bitacora">
+    <span>Estado <b id="bit-fase">reposo</b></span>
+    <span>En cartelera <b id="bit-cartelera">12</b></span>
+    <span>Giros <b id="bit-giros">0</b></span>
+  </div>
+
+  <div class="cabina-prototipo">
+    <span class="titulo">Cabina del prototipo</span>
+    <div class="mando">
+      <span class="nombre">Ritmo</span>
+      <div class="grupo" role="group" aria-label="Ritmo" id="mando-ritmo"></div>
+    </div>
+    <div class="mando">
+      <span class="nombre">Paro</span>
+      <div class="grupo" role="group" aria-label="Paro de los tambores" id="mando-paro"></div>
+    </div>
+    <div class="mando">
+      <span class="nombre">Conteo</span>
+      <div class="grupo" role="group" aria-label="Conteo del proyector" id="mando-conteo"></div>
+    </div>
+    <div class="mando">
+      <span class="nombre">Escenario</span>
+      <div class="grupo" role="group" aria-label="Comparador de escenario" id="mando-version"></div>
+    </div>
+    <p class="nota-cabina" id="nota-cabina">Cargando el escenario en tres dimensiones…</p>
+  </div>
+</div>
+
+<script type="module">
+/* ═══════════════════════════════════════════════════════════════════════
+   El cine · prototipo 3D
+   ───────────────────────────────────────────────────────────────────────
+   Frontera pensada para react-three-fiber: cada `crearX(grupo)` es el
+   cuerpo de un componente R3F —recibe el `THREE.Group` que sería su `<group>`
+   y devuelve `{ grupo, update(t, dt), ...setters }`. Ningún módulo visual
+   guarda estado del giro: la máquina de fases vive en `Sala3D`, igual que
+   `FaseDelGiro` vive hoy en `sala-cartelera.tsx`.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Vocabulario y datos de la sala ──────────────────────────────── */
+
+const RITMOS = { rapido: 1200, normal: 2100, dramatico: 3400 };
+const VETOS_POR_NOCHE = 2;
+
+const PALETAS = {
+  duna:     ['#3A2A10', '#8A5A18', '#E8C877'],
+  anillo:   ['#0E1A12', '#1E3A24', '#B99A48'],
+  estrella: ['#0A0A16', '#1A1A38', '#D8D8F0'],
+  dragon:   ['#101E28', '#1E3E52', '#6ECBD6'],
+  telarana: ['#2A0A18', '#5A123A', '#FF6FA8'],
+  pasillo:  ['#0E1214', '#1E2A2E', '#8FE0D8'],
+  faro:     ['#160A20', '#38124E', '#C08CFF'],
+  ojo:      ['#1E0A18', '#4A1038', '#F2A0C8'],
+  ola:      ['#0A1220', '#12305A', '#8FC4F0'],
+  arbol:    ['#0C1410', '#1A3020', '#9ED07A'],
+  pluma:    ['#141410', '#2E3020', '#E8DCA8'],
+  chispa:   ['#160E1E', '#2E1848', '#7FE0C0'],
+  torre:    ['#141008', '#302614', '#D8B040'],
+  mano:     ['#1A1014', '#3A1C24', '#C9A227'],
+};
+
+/* 16 títulos de la sala real. Cuatro quedan fuera de la cartelera de esta
+   noche: dos vistos y uno con el candado de saga puesto. */
+const CATALOGO = [
+  { n: 'Star Wars: Una Nueva Esperanza', a: 1977, t: 'pelicula', m: 'estrella', saga: 'Star Wars', o: 1, s: 'Disney+' },
+  { n: 'Star Wars: El Imperio Contraataca', a: 1980, t: 'pelicula', m: 'estrella', saga: 'Star Wars', o: 2, s: 'Disney+' },
+  { n: 'El Señor de los Anillos: La Comunidad del Anillo', a: 2001, t: 'pelicula', m: 'anillo', saga: 'Tierra Media', o: 1, s: 'HBO Max' },
+  { n: 'Duna', a: 2021, t: 'pelicula', m: 'duna', saga: 'Duna', o: 1, s: 'HBO Max' },
+  { n: 'Cómo Entrenar a tu Dragón', a: 2010, t: 'pelicula', m: 'dragon', saga: 'Dragones', o: 1, s: 'Netflix' },
+  { n: 'Spider-Man: Un Nuevo Universo', a: 2018, t: 'pelicula', m: 'telarana', saga: 'Spider-Verse', o: 1, s: 'Netflix' },
+  { n: "Widow's Bay", a: 2026, t: 'serie', m: 'faro', s: 'Apple TV' },
+  { n: 'Sheep Detectives', a: null, t: 'pelicula', m: 'mano', s: null, aMano: true },
+  { n: 'Soul', a: 2020, t: 'pelicula', m: 'chispa', s: 'Disney+' },
+  { n: 'Andor', a: 2022, t: 'serie', m: 'estrella', s: 'Disney+' },
+  { n: 'Severance', a: 2022, t: 'serie', m: 'pasillo', s: 'Apple TV', visto: true },
+  { n: 'Forrest Gump', a: 1994, t: 'pelicula', m: 'pluma', s: 'Netflix', visto: true },
+  { n: 'Eterno Resplandor de una Mente sin Recuerdos', a: 2004, t: 'pelicula', m: 'ola', s: 'Prime Video' },
+  { n: 'Pobres Criaturas', a: 2023, t: 'pelicula', m: 'ojo', s: 'HBO Max' },
+  { n: 'La Gran Apuesta', a: 2015, t: 'pelicula', m: 'torre', s: 'Prime Video', visto: true },
+  { n: 'Un Monstruo Viene a Verme', a: 2016, t: 'pelicula', m: 'arbol', s: 'Netflix' },
+].map((c, i) => ({
+  id: 't' + (i + 1),
+  nombre: c.n, anio: c.a, tipo: c.t, motivo: c.m, servicio: c.s || null,
+  saga: c.saga || null, orden: c.o || 0, aMano: !!c.aMano, visto: !!c.visto,
+}));
+
+/* El candado: una película de saga sólo compite si las anteriores ya se
+   vieron. Es lo que deja «El Imperio Contraataca» fuera de la cartelera. */
+function bloqueadaPor(titulo) {
+  if (!titulo.saga) return null;
+  return CATALOGO.find((otro) =>
+    otro.saga === titulo.saga && otro.orden < titulo.orden && !otro.visto) || null;
+}
+
+const FILTROS = [
+  { valor: 'pelicula', etiqueta: 'Peli' },
+  { valor: 'serie', etiqueta: 'Serie' },
+  { valor: 'loQueSea', etiqueta: 'Lo que sea' },
+];
+
+function derivarCartelera(filtro, vetados) {
+  const vivos = CATALOGO.filter((t) => !t.visto && !bloqueadaPor(t) && !vetados.has(t.id));
+  const cuentas = {
+    pelicula: vivos.filter((t) => t.tipo === 'pelicula').length,
+    serie: vivos.filter((t) => t.tipo === 'serie').length,
+    loQueSea: vivos.length,
+  };
+  const candidatos = vivos.filter((t) => filtro === 'loQueSea' || t.tipo === filtro);
+  return { candidatos, cuentas, saltaPrimerActo: candidatos.length <= 3 };
+}
+
+/* ── Utilidades ──────────────────────────────────────────────────── */
+
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)');
+const reducido = () => movimientoReducido.matches;
+const $ = (id) => document.getElementById(id);
+
+/* La curva de los carretes de la app, resuelta por Newton para poder usarla
+   también en la escena 3D: las dos versiones frenan idéntico. */
+function curvaBezier(x1, y1, x2, y2) {
+  const A = (a, b) => 1 - 3 * b + 3 * a;
+  const B = (a, b) => 3 * b - 6 * a;
+  const C = (a) => 3 * a;
+  const calc = (t, a, b) => ((A(a, b) * t + B(a, b)) * t + C(a)) * t;
+  const pend = (t, a, b) => 3 * A(a, b) * t * t + 2 * B(a, b) * t + C(a);
+  return (x) => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 6; i += 1) {
+      const d = pend(t, x1, x2);
+      if (Math.abs(d) < 1e-6) break;
+      t -= (calc(t, x1, x2) - x) / d;
+    }
+    return calc(t, y1, y2);
+  };
+}
+
+const CURVA_CARRETE = curvaBezier(0.12, 0.72, 0.16, 1);   // freno de los carretes
+const CURVA_TELON = curvaBezier(0.66, 0, 0.2, 1);          // la curva de la casa
+const CURVA_SELLO = curvaBezier(0.2, 1.6, 0.4, 1);         // el golpe del sello
+
+function barajar(lista) {
+  const b = [...lista];
+  for (let i = b.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+}
+
+const elegirFinalistas = (candidatos, salta) =>
+  salta ? [...candidatos] : barajar(candidatos).slice(0, 3);
+
+const elegirIndiceGanador = (cantidad) => Math.floor(Math.random() * cantidad);
+
+/* Tira de 15 celdas que termina en el finalista: el carrete para justo
+   sobre la última, nunca sobre un hueco. */
+function tiraDe(candidatos, finalista) {
+  const relleno = Array.from({ length: 14 }, () =>
+    candidatos[Math.floor(Math.random() * candidatos.length)]);
+  return [...relleno, finalista];
+}
+
+/* ── Pósters de glifos, dibujados en canvas ──────────────────────── */
+
+/* El mismo lenguaje que el catálogo de la app: fondo en degradado, un glifo
+   por motivo y la cinta con título y año. Todo procedural: ni una imagen. */
+function textoEspaciado(c, texto, x, y, espaciado) {
+  const anchos = [...texto].map((ch) => c.measureText(ch).width);
+  const total = anchos.reduce((a, b) => a + b, 0) + espaciado * (texto.length - 1);
+  let cursor = x - total / 2;
+  [...texto].forEach((ch, i) => {
+    c.fillText(ch, cursor, y);
+    cursor += anchos[i] + espaciado;
+  });
+}
+
+function dibujarMotivo(c, m, ac, f2) {
+  c.save();
+  c.strokeStyle = ac; c.fillStyle = ac; c.lineCap = 'round'; c.lineJoin = 'round';
+  const trazo = (op, w) => { c.globalAlpha = op; c.lineWidth = w; c.stroke(); };
+  const relleno = (op) => { c.globalAlpha = op; c.fill(); };
+
+  if (m === 'duna') {
+    c.beginPath(); c.moveTo(0, 300); c.quadraticCurveTo(75, 262, 150, 300);
+    c.quadraticCurveTo(225, 338, 300, 300); c.lineTo(300, 450); c.lineTo(0, 450); c.closePath(); relleno(0.28);
+    c.beginPath(); c.moveTo(0, 344); c.quadraticCurveTo(90, 300, 150, 344);
+    c.quadraticCurveTo(210, 388, 300, 336); c.lineTo(300, 450); c.lineTo(0, 450); c.closePath(); relleno(0.4);
+    c.beginPath(); c.arc(150, 152, 52, 0, 6.2832); relleno(0.9);
+  } else if (m === 'anillo') {
+    c.beginPath(); c.arc(150, 200, 76, 0, 6.2832); trazo(0.9, 9);
+    c.beginPath(); c.arc(150, 200, 98, 0, 6.2832); trazo(0.4, 2);
+    c.beginPath(); c.moveTo(0, 380); c.lineTo(90, 250); c.lineTo(150, 320);
+    c.lineTo(210, 230); c.lineTo(300, 380); c.closePath(); relleno(0.2);
+  } else if (m === 'estrella') {
+    c.beginPath(); c.moveTo(150, 96); c.lineTo(166, 176); c.lineTo(246, 192); c.lineTo(166, 208);
+    c.lineTo(150, 288); c.lineTo(134, 208); c.lineTo(54, 192); c.lineTo(134, 176); c.closePath(); relleno(0.92);
+    c.beginPath(); c.arc(150, 192, 120, 0, 6.2832); trazo(0.3, 1.5);
+  } else if (m === 'dragon') {
+    c.beginPath(); c.moveTo(36, 250); c.quadraticCurveTo(150, 130, 264, 250);
+    c.quadraticCurveTo(210, 214, 150, 240); c.quadraticCurveTo(90, 214, 36, 250); c.closePath(); relleno(0.85);
+    c.beginPath(); c.moveTo(150, 240); c.lineTo(150, 320);
+    c.moveTo(110, 290); c.lineTo(150, 320); c.lineTo(190, 290); trazo(0.7, 4);
+  } else if (m === 'telarana') {
+    [40, 74, 108, 142].forEach((r) => { c.beginPath(); c.arc(150, 200, r, 0, 6.2832); trazo(0.55, 1.6); });
+    [0, 45, 90, 135].forEach((g) => {
+      const r = g * Math.PI / 180, x = Math.cos(r) * 150, y = Math.sin(r) * 150;
+      c.beginPath(); c.moveTo(150 - x, 200 - y); c.lineTo(150 + x, 200 + y); trazo(0.45, 1.4);
+    });
+  } else if (m === 'pasillo') {
+    c.beginPath(); c.moveTo(0, 60); c.lineTo(104, 176); c.lineTo(104, 300); c.lineTo(0, 400); c.closePath(); relleno(0.16);
+    c.beginPath(); c.moveTo(300, 60); c.lineTo(196, 176); c.lineTo(196, 300); c.lineTo(300, 400); c.closePath(); relleno(0.16);
+    c.beginPath(); c.rect(104, 176, 92, 124); relleno(0.9);
+  } else if (m === 'faro') {
+    c.beginPath(); c.moveTo(132, 132); c.lineTo(168, 132); c.lineTo(180, 322); c.lineTo(120, 322); c.closePath(); relleno(0.9);
+    c.globalAlpha = 1; c.fillStyle = f2; c.fillRect(126, 112, 48, 24); c.fillStyle = ac;
+    c.beginPath(); c.moveTo(126, 124); c.lineTo(18, 78); c.lineTo(18, 170); c.closePath(); relleno(0.28);
+    c.beginPath(); c.moveTo(174, 124); c.lineTo(282, 78); c.lineTo(282, 170); c.closePath(); relleno(0.28);
+  } else if (m === 'ojo') {
+    c.beginPath(); c.moveTo(40, 200); c.quadraticCurveTo(150, 108, 260, 200);
+    c.quadraticCurveTo(150, 292, 40, 200); c.closePath(); trazo(0.85, 4);
+    c.beginPath(); c.arc(150, 200, 42, 0, 6.2832); relleno(0.8);
+    c.globalAlpha = 0.65; c.fillStyle = '#000';
+    c.beginPath(); c.arc(150, 200, 16, 0, 6.2832); c.fill(); c.fillStyle = ac;
+  } else if (m === 'ola') {
+    [0, 1, 2, 3].forEach((i) => {
+      const y = 170 + i * 44;
+      c.beginPath(); c.moveTo(0, y); c.quadraticCurveTo(75, y - 30, 150, y);
+      c.quadraticCurveTo(225, y + 30, 300, y); trazo(0.7 - i * 0.13, 3);
+    });
+    c.beginPath(); c.arc(150, 112, 34, 0, 6.2832); relleno(0.35);
+  } else if (m === 'arbol') {
+    c.beginPath(); c.moveTo(144, 330); c.lineTo(144, 210);
+    c.moveTo(144, 250); c.lineTo(96, 208); c.moveTo(144, 232); c.lineTo(196, 190); trazo(0.85, 7);
+    c.beginPath(); c.arc(144, 168, 58, 0, 6.2832); relleno(0.55);
+    c.beginPath(); c.arc(96, 200, 30, 0, 6.2832); relleno(0.35);
+  } else if (m === 'pluma') {
+    c.beginPath(); c.moveTo(96, 320); c.quadraticCurveTo(150, 200, 204, 128);
+    c.quadraticCurveTo(216, 220, 150, 288); c.quadraticCurveTo(120, 314, 96, 320); c.closePath(); relleno(0.8);
+    c.strokeStyle = f2;
+    c.beginPath(); c.moveTo(96, 320); c.quadraticCurveTo(150, 232, 204, 128); trazo(0.9, 2);
+    c.strokeStyle = ac;
+  } else if (m === 'chispa') {
+    c.beginPath(); c.arc(150, 200, 30, 0, 6.2832); relleno(0.95);
+    [0, 60, 120, 180, 240, 300].forEach((g) => {
+      const r = g * Math.PI / 180;
+      c.beginPath();
+      c.moveTo(150 + Math.cos(r) * 46, 200 + Math.sin(r) * 46);
+      c.lineTo(150 + Math.cos(r) * 112, 200 + Math.sin(r) * 112); trazo(0.5, 3);
+    });
+  } else if (m === 'torre') {
+    [[52, 240], [100, 180], [148, 268], [196, 140], [244, 300]].forEach(([x, y]) => {
+      c.beginPath(); c.rect(x, y, 34, 360 - y); relleno(0.55);
+    });
+    c.beginPath(); c.moveTo(40, 120); c.lineTo(120, 176); c.lineTo(180, 140); c.lineTo(268, 96); trazo(0.9, 3);
+  } else {
+    c.beginPath(); c.moveTo(150, 96); c.lineTo(214, 200); c.lineTo(150, 304); c.lineTo(86, 200); c.closePath(); trazo(0.8, 3);
+    c.beginPath(); c.moveTo(150, 140); c.lineTo(188, 200); c.lineTo(150, 260); c.lineTo(112, 200); c.closePath(); relleno(0.7);
+  }
+  c.restore();
+}
+
+const PILA_DISPLAY = '"Copperplate","Copperplate Gothic Light","Futura","Century Gothic","Trebuchet MS","Cinzel",sans-serif';
+const PILA_DATOS = '"DIN Alternate","Avenir Next Condensed",ui-monospace,monospace';
+
+function pintarPoster(c, titulo, ancho, alto, conRotulo) {
+  const [f1, f2, ac] = PALETAS[titulo.motivo] || PALETAS.mano;
+  c.save();
+  c.scale(ancho / 300, alto / 450);
+  const grad = c.createLinearGradient(0, 0, 0, 450);
+  grad.addColorStop(0, f2); grad.addColorStop(1, f1);
+  c.fillStyle = grad; c.fillRect(0, 0, 300, 450);
+  dibujarMotivo(c, titulo.motivo, ac, f2);
+  c.save();
+  c.globalAlpha = 0.35; c.strokeStyle = ac; c.lineWidth = 1;
+  if (titulo.aMano) c.setLineDash([10, 7]);
+  c.strokeRect(10, 10, 280, 430);
+  c.restore();
+  if (conRotulo !== false) {
+    c.globalAlpha = 0.62; c.fillStyle = '#000'; c.fillRect(0, 368, 300, 82);
+    c.globalAlpha = 1;
+    const nom = titulo.nombre.length > 22 ? titulo.nombre.slice(0, 20) + '…' : titulo.nombre;
+    c.fillStyle = '#F2E5C6'; c.font = `400 18px ${PILA_DISPLAY}`; c.textBaseline = 'alphabetic';
+    textoEspaciado(c, nom.toUpperCase(), 150, 404, 1.2);
+    c.fillStyle = '#9A8E75'; c.font = `400 12px ${PILA_DATOS}`;
+    textoEspaciado(c, String(titulo.anio || '—'), 150, 426, 3);
+  }
+  c.restore();
+}
+
+const cachePoster = new Map();
+function lienzoPoster(titulo) {
+  if (cachePoster.has(titulo.id)) return cachePoster.get(titulo.id);
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 384;
+  pintarPoster(c.getContext('2d'), titulo, 256, 384, true);
+  cachePoster.set(titulo.id, c);
+  return c;
+}
+
+const cacheURL = new Map();
+function urlPoster(titulo) {
+  if (!cacheURL.has(titulo.id)) cacheURL.set(titulo.id, lienzoPoster(titulo).toDataURL('image/png'));
+  return cacheURL.get(titulo.id);
+}
+
+/* ── Estado de la sala (una sola fuente, las dos versiones la leen) ── */
+
+const estado = {
+  fase: 'reposo',            // reposo | conteo | girando | finalistas | ganador | vetando | funcion
+  filtro: 'loQueSea',
+  vetados: new Set(),
+  finalistas: [],
+  candidatos: [],
+  ganador: null,
+  elegido: null,
+  numeroConteo: 3,
+  giros: 0,
+  ocupado: false,
+  ajustes: { ritmo: 'normal', paro: 'uno', conteo: true },
+  version: '3d',             // 3d | css
+  hay3D: false,
+  motivoSinTresD: '',
+};
+
+let secuenciaGiro = 0;
+let giroEnVuelo = null;
+const puedeSeguir = (id) => secuenciaGiro === id;
+
+/* ── La versión CSS de hoy, con el CSS real ──────────────────────── */
+
+const escenarioEl = $('escenario');
+const pantallaEl = $('pantalla');
+const tableroEl = $('tablero');
+
+/* Cuánto hay que correr el número para que su tinta quede al centro de su
+   caja. Copiada de `conteo-logica.ts`: la métrica declarada no sirve —
+   Copperplate no llega a la altura de mayúscula que dice tener. */
+function ajusteOpticoDelNumero({ alto, lineaBase, tintaArriba, tintaAbajo }) {
+  const centroDeLaTinta = lineaBase - (tintaArriba - tintaAbajo) / 2;
+  return alto / 2 - centroDeLaTinta;
+}
+
+function centrarNumeroCSS(caja, ancla) {
+  const rCaja = caja.getBoundingClientRect();
+  const rAncla = ancla.getBoundingClientRect();
+  const medidor = document.createElement('canvas').getContext('2d');
+  const estilo = getComputedStyle(caja);
+  medidor.font = `${estilo.fontWeight} ${estilo.fontSize} ${estilo.fontFamily}`;
+  const m = medidor.measureText(caja.firstChild.textContent.trim());
+  return ajusteOpticoDelNumero({
+    alto: rCaja.height,
+    lineaBase: rAncla.bottom - rCaja.top,
+    tintaArriba: m.actualBoundingBoxAscent,
+    tintaAbajo: m.actualBoundingBoxDescent,
+  });
+}
+
+const escenarioCSS = {
+  tiras: [],
+  telon(abierto) { escenarioEl.classList.toggle('abierto', abierto); },
+  limpiar() {
+    pantallaEl.innerHTML = '';
+    escenarioEl.querySelector('.conteo')?.remove();
+    escenarioEl.querySelector('.sello')?.remove();
+  },
+  reposo(texto) {
+    this.limpiar();
+    pantallaEl.innerHTML = `<p class="reposo">${texto}</p>`;
+  },
+  conteo(numero) {
+    escenarioEl.querySelector('.conteo')?.remove();
+    if (numero === null) return;
+    const caja = document.createElement('div');
+    caja.className = 'conteo';
+    caja.setAttribute('aria-hidden', 'true');
+    caja.innerHTML = `<div class="aro"></div><div class="cruz-h"></div><div class="cruz-v"></div>
+      <span>${numero}<i class="linea-base" aria-hidden="true"></i></span>`;
+    escenarioEl.appendChild(caja);
+    this.centrarConteo();
+  },
+  centrarConteo() {
+    if (tableroEl.classList.contains('tresd')) return;
+    const span = escenarioEl.querySelector('.conteo span');
+    if (!span) return;
+    const ancla = span.querySelector('.linea-base');
+    span.style.top = `${centrarNumeroCSS(span, ancla).toFixed(2)}px`;
+  },
+  montarCarretes(tirasPorCarrete) {
+    this.limpiar();
+    const marco = document.createElement('div');
+    marco.className = 'carretes';
+    marco.innerHTML = tirasPorCarrete.map((tira) => `
+      <div class="carrete">
+        <div class="tira">${tira.map((t) => `
+          <div class="celda"><img class="revelada" src="${urlPoster(t)}" alt=""></div>`).join('')}</div>
+        <div class="vidrio"></div>
+      </div>`).join('');
+    pantallaEl.appendChild(marco);
+    this.tiras = [...marco.querySelectorAll('.tira')];
+  },
+  girarTiras(base, paroJuntos, corto) {
+    this.tiras.forEach((tira, indice) => {
+      const duracion = corto ? 30 : base + (paroJuntos ? 0 : indice * base * 0.45);
+      tira.style.transition = `transform ${duracion}ms cubic-bezier(.12,.72,.16,1)`;
+      tira.style.transform = 'translateY(-93.3333333333%)';
+    });
+  },
+  terminarTiras() {
+    pantallaEl.querySelectorAll('.tira').forEach((tira) => {
+      tira.style.transition = 'none';
+      tira.style.transform = tira.children.length > 1 ? 'translateY(-93.3333333333%)' : 'translateY(0)';
+    });
+  },
+  elegido(indice) {
+    const carretes = [...pantallaEl.querySelectorAll('.carrete')];
+    carretes.forEach((c, i) => {
+      c.classList.toggle('elegido', i === indice);
+      c.classList.toggle('descartado', indice !== null && i !== indice);
+    });
+  },
+  ganador(titulo) {
+    this.limpiar();
+    pantallaEl.innerHTML = fichaGanador(titulo, 'css');
+  },
+  sello() {
+    escenarioEl.querySelector('.sello')?.remove();
+    const s = document.createElement('div');
+    s.className = 'sello';
+    s.setAttribute('aria-hidden', 'true');
+    s.textContent = 'Vetada';
+    escenarioEl.appendChild(s);
+  },
+  focos(paso, modo) {
+    document.querySelectorAll('.foco').forEach((luz, indice) => {
+      const encendida = modo === 'fiesta'
+        ? paso % 2 === 0
+        : (indice + paso) % (modo === 'girando' ? 3 : 4) === 0;
+      luz.classList.toggle('on', encendida);
+    });
+  },
+};
+
+function fichaGanador(titulo, donde) {
+  const marco = donde === 'css'
+    ? `<div class="marco-laton${titulo.aMano ? ' punteado' : ''}">
+         <img src="${urlPoster(titulo)}" alt="Póster de ${titulo.nombre}"></div>`
+    : '';
+  const vetosLibres = VETOS_POR_NOCHE - estado.vetados.size;
+  return `<div class="ganador">
+    ${marco}
+    <div class="ficha">
+      ${titulo.saga ? `<p class="saga">${titulo.saga} · ${titulo.orden}</p>` : ''}
+      <h2>${titulo.nombre}</h2>
+      <p class="meta">${titulo.tipo === 'serie' ? 'Serie' : 'Película'} · ${titulo.anio || 'sin año'}${titulo.servicio ? ' · ' + titulo.servicio : ''}</p>
+    </div>
+    <div class="acciones">
+      <button class="btn-ver" type="button" data-accion="funcion">Esta vemos</button>
+      <button class="btn-veto" type="button" data-accion="veto" ${vetosLibres ? '' : 'disabled'}>Veto</button>
+    </div>
+    <p class="razon-veto">${vetosLibres
+      ? `Quedan ${vetosLibres} de ${VETOS_POR_NOCHE} vetos esta noche`
+      : 'Se acabaron los vetos de la noche'}</p>
+  </div>`;
+}
+
+/* ── El escenario activo: 3D si está listo, si no el CSS de hoy ───── */
+
+let sala3D = null;
+let tresDPendiente = null;
+const escenario3D = () => (estado.version === '3d' && estado.hay3D && sala3D) ? sala3D : null;
+
+function pintarFicha3D(titulo) {
+  /* En el escenario CSS la ficha la pinta la pantalla; aquí sólo cuando manda el 3D. */
+  const capa = $('capa3d');
+  const vivo = escenario3D() ? titulo : null;
+  capa.innerHTML = vivo ? fichaGanador(vivo, '3d') : '';
+  capa.classList.toggle('viva', !!vivo);
+}
+
+/* Un solo puente: lo que la máquina de fases le pide al escenario, se lo
+   pide a los dos, y cada uno lo resuelve con sus medios. */
+const escena = {
+  telon(abierto) {
+    escenarioCSS.telon(abierto);
+    escenario3D()?.telon(abierto);
+  },
+  reposo(texto) {
+    escenarioCSS.reposo(texto);
+    pintarFicha3D(null);
+    escenario3D()?.reposo();
+  },
+  conteo(numero) {
+    escenarioCSS.conteo(numero);
+    escenario3D()?.conteo(numero);
+  },
+  montarCarretes(tiras, finalistas) {
+    escenarioCSS.montarCarretes(tiras);
+    pintarFicha3D(null);
+    /* Sin primer acto (duelo o finalista único) los tambores no giran: el
+       finalista tiene que estar ya de frente. */
+    const quietos = tiras.every((t) => t.length === 1);
+    escenario3D()?.montarTambores(finalistas, quietos);
+  },
+  girarTiras(base, paroJuntos, corto) {
+    escenarioCSS.girarTiras(base, paroJuntos, corto);
+    escenario3D()?.girarTambores(base, paroJuntos, corto);
+  },
+  elegido(indice) {
+    escenarioCSS.elegido(indice);
+    escenario3D()?.elegido(indice);
+  },
+  ganador(titulo) {
+    escenarioCSS.ganador(titulo);
+    pintarFicha3D(titulo);
+    escenario3D()?.ganador(titulo);
+  },
+  sello() {
+    escenarioCSS.sello();
+    escenario3D()?.sello();
+  },
+  limpiar() {
+    escenarioCSS.limpiar();
+    pintarFicha3D(null);
+    escenario3D()?.limpiar();
+  },
+};
+
+/* ── Máquina de fases del giro (la misma que `ejecutarGiro`) ─────── */
+
+function fijarFase(fase) {
+  estado.fase = fase;
+  $('bit-fase').textContent = fase;
+  sala3D?.setFase(fase);
+  if (tresDPendiente && !estado.ocupado && ['reposo', 'ganador', 'funcion'].includes(fase)) {
+    const THREE = tresDPendiente;
+    tresDPendiente = null;
+    if (reducido()) sinTresD('el aparato pide movimiento reducido');
+    else {
+      try { arrancarSala3D(THREE); }
+      catch { sinTresD('no arrancó la sala 3D'); }
+    }
+  }
+}
+
+function refrescarFoso() {
+  const { cuentas, candidatos, saltaPrimerActo } = derivarCartelera(estado.filtro, estado.vetados);
+  $('bit-cartelera').textContent = candidatos.length;
+  $('bit-giros').textContent = estado.giros;
+  [...$('filtros').children].forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.valor === estado.filtro));
+    b.textContent = `${FILTROS.find((f) => f.valor === b.dataset.valor).etiqueta} ${cuentas[b.dataset.valor]}`;
+    b.disabled = estado.ocupado;
+  });
+  [...$('mando-version').children].forEach((b) => {
+    b.disabled = estado.ocupado || (b.dataset.valor === '3d' && !estado.hay3D);
+  });
+  document.querySelectorAll('.btn-ver, .btn-veto').forEach((b) => {
+    b.disabled = estado.ocupado || (b.classList.contains('btn-veto') && estado.vetados.size >= VETOS_POR_NOCHE);
+  });
+  const libres = VETOS_POR_NOCHE - estado.vetados.size;
+  $('panel-vetos').classList.toggle('agotado', libres === 0);
+  [...$('fichas-veto').children].forEach((f, i) => f.classList.toggle('usada', i >= libres));
+  $('palanca').disabled = estado.ocupado;
+  $('palanca').textContent = estado.fase === 'funcion'
+    ? 'Poner otra función'
+    : estado.giros ? 'Girar otra vez' : 'Comenzar la función';
+  $('anuncio').textContent = candidatos.length === 0
+    ? 'No queda nada que girar con este filtro'
+    : saltaPrimerActo
+      ? (candidatos.length === 1 ? 'Un solo título: el giro es puro trámite' : `Duelo directo entre ${candidatos.length}`)
+      : 'Dos actos: primero los finalistas, luego la elección';
+  return { candidatos, saltaPrimerActo, cuentas };
+}
+
+function textoDeReposo() {
+  const { candidatos } = derivarCartelera(estado.filtro, estado.vetados);
+  if (estado.fase === 'funcion' && estado.ganador) return `Esta noche · ${estado.ganador.nombre}`;
+  return candidatos.length
+    ? 'Baja la palanca y que el azar decida'
+    : 'Nada que girar · cambia el filtro';
+}
+
+async function ejecutarGiro(candidatos, saltaPrimerActo) {
+  const id = (secuenciaGiro += 1);
+  estado.candidatos = candidatos;
+  const corto = reducido();
+  const finalistas = elegirFinalistas(candidatos, saltaPrimerActo);
+  const primerActo = candidatos.length > 0 && !saltaPrimerActo;
+  giroEnVuelo = { id, finalistas };
+
+  estado.ocupado = true;
+  estado.ganador = null;
+  estado.elegido = null;
+  estado.giros += 1;
+  refrescarFoso();
+
+  fijarFase('reposo');
+  escena.reposo(textoDeReposo());
+  escena.telon(false);
+  /* La espera de la casa entre cerrar y volver a abrir (`sala-cartelera.tsx`).
+     El telón no termina de cerrar en 520 ms —tarda 1.15 s— y no hace falta:
+     la curva arranca desde donde va y el cierre parcial se lee como un
+     parpadeo del terciopelo, igual que en la app. */
+  await esperar(corto ? 20 : 520);
+  if (!puedeSeguir(id)) return;
+
+  escena.telon(true);
+
+  if (estado.ajustes.conteo) {
+    fijarFase('conteo');
+    for (const numero of [3, 2, 1]) {
+      estado.numeroConteo = numero;
+      escena.conteo(numero);
+      await esperar(corto ? 90 : 480);
+      if (!puedeSeguir(id)) return;
+    }
+    escena.conteo(null);
+  } else {
+    await esperar(corto ? 20 : 520);
+    if (!puedeSeguir(id)) return;
+  }
+
+  if (candidatos.length === 0) {
+    estado.ocupado = false;
+    fijarFase('reposo');
+    escena.reposo('Vuelta vacía · no hay títulos que girar');
+    giroEnVuelo = null;
+    refrescarFoso();
+    return;
+  }
+
+  estado.finalistas = finalistas;
+  escena.montarCarretes(
+    finalistas.map((f) => (primerActo ? tiraDe(candidatos, f) : [f])),
+    finalistas,
+  );
+  fijarFase(primerActo ? 'girando' : 'finalistas');
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  if (!puedeSeguir(id)) return;
+  await esperar(corto ? 20 : 380);
+  if (!puedeSeguir(id)) return;
+
+  const base = RITMOS[estado.ajustes.ritmo];
+  if (primerActo) {
+    const paroJuntos = estado.ajustes.paro === 'juntos';
+    escena.girarTiras(base, paroJuntos, corto);
+    await esperar(corto ? 60 : base * (paroJuntos ? 1 : 1.9) + 260);
+    if (!puedeSeguir(id)) return;
+    fijarFase('finalistas');
+  }
+
+  /* Acto 2: la luz del proyector salta entre los tambores con esperas
+     crecientes y se posa en el ganador. */
+  const ganadorIndice = elegirIndiceGanador(finalistas.length);
+  if (!corto) {
+    const saltos = 9 + ganadorIndice;
+    for (let salto = 0; salto <= saltos; salto += 1) {
+      const donde = finalistas.length === 1 && salto % 2 === 1 ? null : salto % finalistas.length;
+      estado.elegido = donde;
+      escena.elegido(donde);
+      await esperar((110 + salto * 42) * (base / RITMOS.dramatico));
+      if (!puedeSeguir(id)) return;
+    }
+  }
+  estado.elegido = ganadorIndice;
+  escena.elegido(ganadorIndice);
+  await esperar(corto ? 40 : 700);
+  if (!puedeSeguir(id)) return;
+
+  giroEnVuelo = null;
+  estado.ganador = finalistas[ganadorIndice];
+  estado.ocupado = false;
+  fijarFase('ganador');
+  escena.ganador(estado.ganador);
+  refrescarFoso();
+  $('aviso').textContent = `Ganó ${estado.ganador.nombre}.`;
+}
+
+function girar() {
+  if (estado.ocupado) return;
+  const { candidatos, saltaPrimerActo } = derivarCartelera(estado.filtro, estado.vetados);
+  void ejecutarGiro(candidatos, saltaPrimerActo);
+}
+
+async function vetar() {
+  if (estado.ocupado || !estado.ganador) return;
+  if (estado.vetados.size >= VETOS_POR_NOCHE) return;
+  const vetada = estado.ganador;
+  const id = (secuenciaGiro += 1);
+  estado.ocupado = true;
+  fijarFase('vetando');
+  refrescarFoso();
+  escena.sello();
+  await esperar(reducido() ? 40 : 820);
+  if (!puedeSeguir(id)) return;
+  estado.vetados.add(vetada.id);
+  estado.ganador = null;
+  estado.ocupado = false;
+  $('aviso').textContent = `Vetada ${vetada.nombre}. Sale de la cartelera de la noche.`;
+  refrescarFoso();
+  const { candidatos, saltaPrimerActo } = derivarCartelera(estado.filtro, estado.vetados);
+  void ejecutarGiro(candidatos, saltaPrimerActo);
+}
+
+function ponerFuncion() {
+  if (estado.ocupado || !estado.ganador) return;
+  secuenciaGiro += 1;
+  giroEnVuelo = null;
+  fijarFase('funcion');
+  escena.limpiar();
+  escena.telon(false);
+  escenarioCSS.reposo(`Esta noche · ${estado.ganador.nombre}`);
+  $('aviso').textContent = `Eligieron ${estado.ganador.nombre}.`;
+  estado.ocupado = false;
+  refrescarFoso();
+}
+
+/* ── Focos de la marquesina: reposo 620 · girando 110 · fiesta 240 ── */
+
+let pasoFocos = 0;
+let relojFocos = null;
+
+function modoDeFocos() {
+  if (estado.fase === 'ganador' || estado.fase === 'funcion') return 'fiesta';
+  return estado.ocupado ? 'girando' : 'reposo';
+}
+
+function armarFocos() {
+  const modo = modoDeFocos();
+  if (relojFocos) clearInterval(relojFocos.id);
+  if (reducido()) {
+    document.querySelectorAll('.foco').forEach((l) => l.classList.add('on'));
+    sala3D?.focos(0, 'todo');
+    relojFocos = null;
+    return;
+  }
+  const ms = modo === 'fiesta' ? 240 : modo === 'girando' ? 110 : 620;
+  const tic = () => {
+    escenarioCSS.focos(pasoFocos, modo);
+    sala3D?.focos(pasoFocos, modo);
+    document.documentElement.style.setProperty(
+      '--brillo-firma', (0.34 + 0.42 * (pasoFocos % 2)).toFixed(2));
+    pasoFocos += 1;
+  };
+  tic();
+  relojFocos = { modo, id: setInterval(tic, ms) };
+}
+
+/* El modo cambia con la fase; sólo se rearma cuando de verdad cambió. */
+function vigilarFocos() {
+  const modo = modoDeFocos();
+  if (!relojFocos || relojFocos.modo !== modo) armarFocos();
+}
+
+/* ── Cabina del prototipo ────────────────────────────────────────── */
+
+function mando(contenedor, opciones, leer, escribir) {
+  const el = $(contenedor);
+  el.innerHTML = opciones.map((o) =>
+    `<button class="opcion" type="button" data-valor="${o.valor}">${o.etiqueta}</button>`).join('');
+  const pintar = () => [...el.children].forEach((b) =>
+    b.setAttribute('aria-pressed', String(b.dataset.valor === String(leer()))));
+  el.addEventListener('click', (ev) => {
+    const b = ev.target.closest('button');
+    if (!b || b.disabled) return;
+    escribir(b.dataset.valor);
+    pintar();
+  });
+  pintar();
+  return pintar;
+}
+
+mando('mando-ritmo', [
+  { valor: 'rapido', etiqueta: 'Rápido' },
+  { valor: 'normal', etiqueta: 'Normal' },
+  { valor: 'dramatico', etiqueta: 'Dramático' },
+], () => estado.ajustes.ritmo, (v) => { estado.ajustes.ritmo = v; });
+
+mando('mando-paro', [
+  { valor: 'uno', etiqueta: 'Uno por uno' },
+  { valor: 'juntos', etiqueta: 'Juntos' },
+], () => estado.ajustes.paro, (v) => { estado.ajustes.paro = v; });
+
+mando('mando-conteo', [
+  { valor: 'true', etiqueta: 'Con conteo' },
+  { valor: 'false', etiqueta: 'Sin conteo' },
+], () => estado.ajustes.conteo, (v) => { estado.ajustes.conteo = v === 'true'; });
+
+const pintarVersion = mando('mando-version', [
+  { valor: '3d', etiqueta: '3D' },
+  { valor: 'css', etiqueta: 'CSS de hoy' },
+], () => estado.version, (v) => {
+  if (estado.ocupado || (v === '3d' && !estado.hay3D)) return;
+  estado.version = v;
+  aplicarVersion();
+});
+
+function aplicarVersion() {
+  const tresD = estado.version === '3d' && estado.hay3D;
+  const saliendo = tableroEl.classList.contains('tresd') && !tresD;
+  if (saliendo && estado.ocupado) escenarioCSS.terminarTiras();
+  tableroEl.classList.toggle('tresd', tresD);
+  sala3D?.encender(tresD);
+  if (tresD) {
+    /* Al volver a 3D la escena se pone al día con la fase que ya corre. */
+    sala3D.telon(escenarioEl.classList.contains('abierto'));
+    sala3D.setFase(estado.fase);
+    if (estado.fase === 'ganador' && estado.ganador) sala3D.ganador(estado.ganador);
+    pintarFicha3D(estado.fase === 'ganador' ? estado.ganador : null);
+  } else {
+    pintarFicha3D(null);
+    escenarioCSS.centrarConteo();
+  }
+  $('nota-cabina').textContent = estado.hay3D
+    ? (tresD
+      ? 'Escenario en tres dimensiones · un solo contexto WebGL, 20 cuadros por segundo en reposo'
+      : 'Escenario CSS de hoy · el 3D queda apagado, sin cuadros')
+    : `Sin escenario 3D: ${estado.motivoSinTresD}. Manda la versión CSS de hoy.`;
+  [...$('mando-version').children].forEach((b) => {
+    b.disabled = estado.ocupado || (b.dataset.valor === '3d' && !estado.hay3D);
+  });
+  pintarVersion();
+}
+
+function sinTresD(motivo) {
+  tresDPendiente = null;
+  estado.hay3D = false;
+  estado.motivoSinTresD = motivo;
+  estado.version = 'css';
+  aplicarVersion();
+  pintarVersion();
+}
+
+/* ── Arranque del DOM ────────────────────────────────────────────── */
+
+['focos-arriba', 'focos-abajo'].forEach((id) => {
+  $(id).innerHTML = Array.from({ length: 12 }, () => '<i class="foco"></i>').join('');
+});
+
+$('filtros').innerHTML = FILTROS.map((f) =>
+  `<button class="filtro" type="button" data-valor="${f.valor}" aria-pressed="false">${f.etiqueta}</button>`).join('');
+$('filtros').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button');
+  if (!b || estado.ocupado) return;
+  secuenciaGiro += 1;
+  estado.filtro = b.dataset.valor;
+  estado.ganador = null;
+  estado.elegido = null;
+  fijarFase('reposo');
+  escena.telon(false);
+  escena.reposo(textoDeReposo());
+  refrescarFoso();
+});
+
+$('fichas-veto').innerHTML =
+  Array.from({ length: VETOS_POR_NOCHE }, () => '<i class="ficha-veto"></i>').join('');
+
+$('palanca').addEventListener('click', () => {
+  sala3D?.pedirGiroscopio();
+  girar();
+});
+
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-accion]');
+  if (!b) return;
+  if (b.dataset.accion === 'veto') void vetar();
+  if (b.dataset.accion === 'funcion') ponerFuncion();
+});
+
+escenarioCSS.reposo('Baja la palanca y que el azar decida');
+refrescarFoso();
+armarFocos();
+setInterval(vigilarFocos, 200);
+$('nota-cabina').textContent = 'Sala CSS pintada · llamando al escenario en tres dimensiones…';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   El escenario en tres dimensiones
+   three.js llega tarde y a propósito: la sala CSS ya está pintada cuando
+   este import arranca, y si falla —o no hay WebGL, o el aparato pide
+   movimiento reducido— la sala CSS se queda y nadie se entera.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function hayWebGL() {
+  let c = null, gl = null;
+  try {
+    c = document.createElement('canvas');
+    gl = c.getContext('webgl2') || c.getContext('webgl');
+    const disponible = !!gl;
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    return disponible;
+  } catch { return false; }
+  finally { gl = null; c = null; }
+}
+
+movimientoReducido.addEventListener('change', (evento) => {
+  if (evento.matches && (estado.hay3D || tresDPendiente)) {
+    sinTresD('el aparato pide movimiento reducido');
+  }
+});
+
+if (reducido()) {
+  sinTresD('el aparato pide movimiento reducido');
+} else if (!hayWebGL()) {
+  sinTresD('este navegador no da WebGL');
+} else {
+  try {
+    const THREE = await import('https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js');
+    if (reducido()) sinTresD('el aparato pide movimiento reducido');
+    else if (estado.ocupado) tresDPendiente = THREE;
+    else arrancarSala3D(THREE);
+  } catch (error) {
+    console.warn('El cine · no cargó three.js:', error);
+    sinTresD('no cargó three.js');
+  }
+}
+
+function arrancarSala3D(THREE) {
+  /* Sin gestión de color: la paleta de la casa está escrita en sRGB y debe
+     llegar al píxel tal cual, para que el comparador enfrente los mismos
+     vinos y el mismo latón en las dos versiones. */
+  THREE.ColorManagement.enabled = false;
+
+  const col = (hex) => {
+    const n = parseInt(hex.slice(1), 16);
+    return new THREE.Vector3(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+  };
+
+  const TERCIOPELO = { oscuro: col('#3c0c1a'), medio: col('#6b1a2e'), claro: col('#8e2438') };
+  const LATON = col('#c9a227');
+  const LATON_TENUE = col('#8a6f1c');
+  const CREMA = col('#f2e5c6');
+
+  /* Medidas de la sala, en unidades de escena. Ocho pósters dan la vuelta a
+     cada tambor: el arco de enfrente enseña uno entero y los vecinos se
+     curvan hacia la sombra, como el vidrio del carrete. */
+  const CELDAS = 8;
+  const POSTER_ALTO = 1.92;
+  const POSTER_ANCHO = 1.28;
+  const RADIO = (POSTER_ALTO * CELDAS) / (Math.PI * 2);
+  const ALTO_VISTA = 6.0;
+  const ANCHO_MINIMO = 4.6;
+  const FOV = 34;
+  const TOPE = (3 * Math.PI) / 180;
+  /* El telón recogido se come el 11 % del ancho por lado, así que el arco
+     libre mide el 78 % del escenario. El trío se junta un 8 % y se achica un
+     6 % —el margen que da el encargo— para que los rótulos de los pósters
+     exteriores queden enteros dentro del arco; los cantos de esos pósters sí
+     pasan por detrás de la tela, y eso lee como proscenio. */
+  const SEPARACION = (POSTER_ANCHO + 0.16) * 0.92;
+  const ESCALA_TAMBOR = 0.94;
+
+  /* ── Texturas de lienzo ────────────────────────────────────────── */
+
+  function texturaDe(lienzo, repetir) {
+    const t = new THREE.CanvasTexture(lienzo);
+    t.colorSpace = THREE.LinearSRGBColorSpace;
+    t.wrapS = repetir ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+    t.wrapT = THREE.ClampToEdgeWrapping;
+    t.minFilter = THREE.LinearFilter;
+    t.magFilter = THREE.LinearFilter;
+    t.generateMipmaps = false;
+    t.anisotropy = 1;
+    return t;
+  }
+
+  function lienzoRadial(paradas, lado = 128) {
+    const c = document.createElement('canvas');
+    c.width = c.height = lado;
+    const x = c.getContext('2d');
+    const g = x.createRadialGradient(lado / 2, lado / 2, 0, lado / 2, lado / 2, lado / 2);
+    paradas.forEach(([p, color]) => g.addColorStop(p, color));
+    x.fillStyle = g;
+    x.fillRect(0, 0, lado, lado);
+    return c;
+  }
+
+  const TEX_HALO = texturaDe(lienzoRadial([
+    [0, 'rgba(255,233,168,1)'], [0.28, 'rgba(255,214,120,0.55)'],
+    [0.62, 'rgba(201,162,39,0.16)'], [1, 'rgba(201,162,39,0)'],
+  ]));
+
+  const TEX_POLVO = texturaDe(lienzoRadial([
+    [0, 'rgba(242,229,198,1)'], [0.45, 'rgba(242,229,198,0.35)'], [1, 'rgba(242,229,198,0)'],
+  ], 32));
+
+  /* La tira del tambor: los pósters van acostados porque el eje del cilindro
+     es horizontal —lo alto del póster da la vuelta, lo ancho corre por el
+     eje—, así que cada uno entra girado un cuarto de vuelta. */
+  function lienzoTira(titulos) {
+    const celdaAncho = 384, celdaAlto = 256;
+    const c = document.createElement('canvas');
+    c.width = celdaAncho * CELDAS;
+    c.height = celdaAlto;
+    const x = c.getContext('2d');
+    x.fillStyle = '#050204';
+    x.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < CELDAS; i += 1) {
+      const t = titulos[i % titulos.length];
+      x.save();
+      x.translate(i * celdaAncho + celdaAncho, 0);
+      x.rotate(Math.PI / 2);
+      pintarPoster(x, t, celdaAlto, celdaAncho, true);
+      x.restore();
+    }
+    return c;
+  }
+
+  /* Huella del frustum en los planos extremos de la tela, con la misma
+     órbita y lookAt del render. Se incluyen los cuatro ángulos combinados.
+     El dedo adicional de encuadrar queda fuera de esta envolvente. */
+  function envolventeTelon(proporcion, distancia, zMin, zMax) {
+    const normalizar = (v) => { const l = Math.hypot(...v); return v.map((n) => n / l); };
+    const cruz = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const tangente = Math.tan(FOV * Math.PI / 360);
+    let x = 0, y = 0;
+    for (const ax of [-TOPE, 0, TOPE]) for (const ay of [-TOPE, 0, TOPE]) {
+      const c = [Math.sin(ax) * distancia, Math.sin(ay) * distancia, Math.cos(ax) * Math.cos(ay) * distancia];
+      const n = normalizar(c), derecha = normalizar(cruz([0, 1, 0], n)), arriba = cruz(n, derecha);
+      for (const z of [zMin, zMax]) for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+        const r = n.map((v, i) => -v + tangente * (sx * proporcion * derecha[i] + sy * arriba[i]));
+        const t = (z - c[2]) / r[2];
+        x = Math.max(x, Math.abs(c[0] + t * r[0]));
+        y = Math.max(y, Math.abs(c[1] + t * r[1]));
+      }
+    }
+    return { x, y };
+  }
+
+  /* ── crearTelon ────────────────────────────────────────────────────
+     Frontera R3F: <Telon abierto={bool} encuadre={medioAncho} /> — dos paños
+     de terciopelo, una cenefa fruncida con festones y ribete de latón, y un
+     alzapaño de latón por lado.
+
+     La regla del módulo: los paños NUNCA se esconden. «Abierto» no es «no
+     hay tela», es «la tela está recogida a los lados con su alzapaño», que
+     es lo que enseña la referencia del dueño: el hueco queda dibujado como
+     un arco entre dos paños que siguen colgando a toda altura. `recogida`
+     (0 cerrado → 1 abierto) sigue siendo el único parámetro y sigue viajando
+     con `CURVA_TELON` en 1.15 s. */
+  function crearTelon(grupo) {
+    /* Medidas de referencia: sólo crecen si la caja pide más cobertura.
+       El ancho cerrado se deriva del borde para conservar 0.10 de cruce. */
+    const ANCHO = 2.41, ALTO = 5.4, Z = 1.6;
+    const CENEFA_ANCHO = 4.9, CENEFA_ALTO = 1.3;
+    const BORDE = 2.36, H_ALZA = 0.48;
+    const ALTO_IPHONE = Math.max(ALTO_VISTA, ANCHO_MINIMO / (366 / 490));
+    const DISTANCIA_IPHONE = ALTO_IPHONE / 2 / Math.tan(FOV * Math.PI / 360);
+    const MEDIO_ALTO_IPHONE = ALTO_IPHONE / 2 * (DISTANCIA_IPHONE - Z) / DISTANCIA_IPHONE;
+    let Y_ALZA = 0;
+    /* 0.105 y no 0.11: medido sobre el píxel, la cintura de 0.11 dejaba el
+       hueco en el 77.7 % y el encargo pide ≥ 78 %. Este medio punto lo pone
+       en el 79 % con margen, y a ojo es la misma cintura. */
+    const F_CINTURA = 0.105;         // la cintura del paño, en fracción de W
+    const PLIEGUES = 11;
+
+    const uniformes = {
+      recogida: { value: 0 },
+      /* Medio ancho del escenario que se ve en el plano del paño. Lo pone
+         `encuadrar` desde `medir`: la silueta está escrita en fracciones del
+         ancho del escenario W, así que el módulo necesita saber cuánto se ve
+         para que la cintura mida 0.11·W y el hueco quede en el 78 % de W. */
+      encuadre: { value: 1.95 },
+      borde: { value: BORDE },
+      ancho: { value: ANCHO },
+      medioAlto: { value: ALTO / 2 },
+      suelo: { value: -MEDIO_ALTO_IPHONE },
+      cenefa: { value: 1.701 },
+    };
+
+    const vertice = `
+      uniform float uRecogida;
+      uniform float uLado;
+      uniform float uPliegues;
+      uniform float uAncho;
+      uniform float uEncuadre;
+      uniform float uBorde;
+      uniform float uMedioAlto;
+      uniform float uSuelo;
+      uniform float uCenefa;
+      varying vec2 vUv;
+      varying vec3 vV;
+      varying vec3 vBx;
+      varying vec3 vBz;
+      varying float vS;
+      varying float vGrad;
+      varying float vPaso;
+      varying float vH;
+
+      const float H_ALZA = 0.48;
+      const float F_ARRIBA = 0.30;
+      const float F_CINTURA = 0.105;
+      const float F_SUELO = 0.16;
+
+      /* ── La silueta del paño recogido ────────────────────────────────
+         Devuelve el ancho VISIBLE del paño en fracción del ancho del
+         escenario W, contado desde el canto exterior del escenario, para una
+         altura h del hueco (h = 1 bajo la cenefa, h = 0 en el suelo):
+
+           h = 1        0.30·W   la tela sube ancha hasta el fruncido
+           h = H_ALZA   0.11·W   la CINTURA que ciñe el alzapaño; el hueco
+                                 entre los dos paños queda en el 78 % de W
+           h = 0        0.16·W   el ABANICO del dobladillo, asentado al suelo
+
+         Arriba de la cintura el borde interior dibuja el SWAG: casi una
+         diagonal, con la potencia 1.45 que la hace salir plana de la cintura
+         —ahí la tela está estrangulada— y abrirse de golpe al llegar a la
+         cenefa. Es la curva medida sobre la referencia: a media altura del
+         swag el borde ha recorrido el 37 % del camino, no el 50 %.
+
+         Abajo la tela vuelve a abrirse en ABANICO, casi recto y con un punto
+         de vuelo al final (el 0.80/0.20), que es como cae el dobladillo.
+
+         El hueco resultante es un arco: cerrado arriba —donde la cenefa tapa
+         de todos modos—, máximo a la altura del alzapaño y algo más cerrado
+         en el suelo. */
+      float silueta(float h) {
+        float a = clamp((h - H_ALZA) / (1.0 - H_ALZA), 0.0, 1.0);
+        float b = clamp((H_ALZA - h) / H_ALZA, 0.0, 1.0);
+        float swag = mix(F_CINTURA, F_ARRIBA, pow(a, 1.45));
+        float abanico = mix(F_CINTURA, F_SUELO, b * (0.80 + 0.20 * b));
+        return h >= H_ALZA ? swag : abanico;
+      }
+
+      void main() {
+        vUv = uv;
+        vec3 p = position;
+        /* «s» corre por la tela: 0 en el borde exterior, 1 en el interior.
+           Silueta y pliegues se escriben en «s», que es coordenada material:
+           así los pliegues viajan con el paño y se aprietan cuando se recoge,
+           en vez de deslizarse por debajo de la tela. */
+        float s = uLado < 0.0 ? uv.x : 1.0 - uv.x;
+        vS = s;
+        p.y = (uv.y - 0.5) * 2.0 * uMedioAlto;
+        float h = clamp((p.y - uSuelo) / (uCenefa - uSuelo), 0.0, 1.0);
+
+        /* Ancho del paño a esta altura. Cerrado es la cortina recta de
+           siempre (uAncho); abierto, la silueta. «sobra» es lo que la tela
+           se sale del canto del escenario: se suma para que lo VISIBLE mida
+           exactamente lo que pide la silueta. Un solo «mix»: ni salto ni
+           cambio de topología entre los dos estados. */
+        float W = 2.0 * uEncuadre;
+        float sobra = max(uBorde - uEncuadre, 0.0);
+        float w = mix(uAncho, silueta(h) * W + sobra, uRecogida);
+        p.x = uLado * (uBorde - s * w);
+
+        /* Los pliegues, con la amplitud atada al apretón: el paño recogido
+           está seis veces más junto y sus pliegues son más hondos. Tope
+           0.168 de onda + 0.030 de barriga = z 1.798, que respeta el margen
+           contra la cenefa (1.848 en su valle más adelantado). */
+        float aprieto = clamp(uAncho / max(w, 0.15), 1.0, 4.2);
+        float fase = s * uPliegues * 6.2831853;
+        float amp = min(0.052 * (0.30 + 0.70 * aprieto), 0.168);
+        p.z += sin(fase) * amp + 0.030 * uRecogida * sin(3.14159265 * s);
+        vH = h;                       // el fragmento la usa para el fruncido de la cintura
+
+        /* La cresta se ilumina por píxel, no por vértice: al fragmento le
+           bastan la pendiente de la onda («vGrad»), el paso del pliegue
+           («vPaso», para saber cuánta cresta cabe) y la base de la normal
+           llevada a vista. */
+        /* Con tope: el paño recogido aprieta tanto el pliegue que sin él la
+           cresta se pone de canto (84°) y la tela se lee como lámina
+           acanalada en vez de terciopelo. */
+        vGrad = min(amp * uPliegues * 6.2831853 / max(w, 0.15), 3.2);
+        vPaso = w / uPliegues;
+        vBx = normalMatrix * vec3(uLado, 0.0, 0.0);
+        vBz = normalMatrix * vec3(0.0, 0.0, 1.0);
+
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        vV = -mv.xyz;
+        gl_Position = projectionMatrix * mv;
+      }`;
+
+    const cabecera = `
+      uniform vec3 uOscuro;
+      uniform vec3 uMedio;
+      uniform vec3 uClaro;
+      uniform float uLado;
+      uniform float uRecogida;
+      uniform float uPliegues;
+      uniform float uAncho;
+      varying vec2 vUv;
+      varying vec3 vV;
+      varying vec3 vBx;
+      varying vec3 vBz;
+      varying float vS;
+      varying float vGrad;
+      varying float vPaso;
+      varying float vH;
+      `;
+
+    /* El terciopelo, común a paños y cenefa: crestas claras, valles hondos y
+       un satén estrecho encima. Más contraste que la tira lisa de antes —la
+       referencia enseña la tela acanalada— sin salirse del vino de la casa. */
+    const tela = `
+      vec3 terciopelo(out float f, out float ndv) {
+        float fase = vS * uPliegues * 6.2831853;
+        /* Familias de pliegues: la tela no se frunce con regla. Una onda
+           lenta encima de la del pliegue hace que unas crestas salgan más
+           que otras, que es lo que separa el terciopelo del peine. */
+        float familia = 0.70 + 0.30 * sin(vS * 5.3 + 1.7);
+        f = sin(fase) * 0.5 + 0.5;
+        vec3 n = normalize(vBx * (cos(fase) * vGrad * familia) + vBz);
+        ndv = clamp(dot(n, normalize(vV)), 0.0, 1.0);
+        /* La sala alumbra desde delante y un poco por la izquierda alta: el
+           claro no cae en la cresta sino en su ladera, y por eso la tela
+           parece tela. Luz fija en espacio de vista, como el latón. */
+        float ndl = clamp(dot(n, normalize(vec3(-0.36, 0.34, 0.87))), 0.0, 1.0);
+        float g = pow(clamp(0.32 * f + 0.74 * ndl, 0.0, 1.0), 1.30);
+        vec3 c = mix(uOscuro * 0.62, uMedio, smoothstep(0.02, 0.60, g));
+        c = mix(c, uClaro, smoothstep(0.64, 1.0, g));
+        /* El pelo del terciopelo se oscurece al sesgo, no se aclara. */
+        c *= mix(1.0, 0.72, pow(1.0 - ndv, 2.6));
+        /* El satén se ensancha cuando el paso del pliegue se estrecha: el
+           terciopelo apretado no resuelve una cresta de un píxel y, de paso,
+           así el brillo no titila al girar el aparato. */
+        float finura = smoothstep(0.045, 0.17, vPaso);
+        c += vec3(1.0, 0.90, 0.82) * pow(ndl, mix(10.0, 30.0, finura)) * (0.12 + 0.26 * ndv) * familia;
+        return c;
+      }`;
+
+    const fragmento = cabecera + tela + `
+      const float H_ALZA = 0.48;
+      void main() {
+        float f, ndv;
+        vec3 c = terciopelo(f, ndv) * 0.86;
+        /* Cuanto más apretado el paño, más honda la sombra entre pliegues. */
+        float aprieto = clamp(uAncho / max(vPaso * uPliegues, 0.15), 1.0, 4.2);
+        c *= mix(1.0, 0.84, clamp((aprieto - 1.0) / 3.2, 0.0, 1.0));
+        /* El apretón de la cuerda, resuelto en el fragmento y no en la
+           geometría: el paño ya está contra su tope de onda (0.168) y un
+           milímetro más de pliegue se comería el margen contra la cenefa.
+           Dos cosas en una banda estrecha alrededor de la cintura: el valle
+           se hunde y la cresta se aviva —eso es el fruncido— y, medio dedo
+           por debajo, la sombra que la cuerda tira sobre la tela. Sólo con
+           el telón recogido, que es cuando hay alzapaño. */
+        float dCintura = vH - H_ALZA;
+        float banda = exp(-dCintura * dCintura * 170.0) * uRecogida;
+        c *= mix(1.0, 0.55 + 0.70 * f * f, banda * 0.80);
+        float bajo = clamp(-dCintura / 0.085, 0.0, 1.0);
+        c *= mix(1.0, 0.60, exp(-dCintura * dCintura * 240.0) * uRecogida * (0.35 + 0.65 * bajo));
+        c *= mix(0.38, 1.0, (1.0 - smoothstep(0.86, 1.0, vUv.y)));   // la sombra de la cenefa
+        c *= mix(1.0, 0.62, (1.0 - smoothstep(0.0, 0.22, vUv.y)));   // sombras al foso
+        /* Cerrado, el borde interior es la costura del centro y se hunde;
+           recogido es el filo libre del swag y recoge luz. */
+        c *= mix(1.0, 0.40, smoothstep(0.90, 1.0, vS) * (1.0 - 0.62 * uRecogida));
+        c += uClaro * smoothstep(0.962, 1.0, vS) * uRecogida * 0.30;
+        gl_FragColor = vec4(c, 1.0);
+      }`;
+
+    [-1, 1].forEach((lado) => {
+      const malla = new THREE.Mesh(
+        new THREE.PlaneGeometry(ANCHO, ALTO, 96, 128),
+        new THREE.ShaderMaterial({
+          uniforms: {
+            uRecogida: uniformes.recogida,
+            uEncuadre: uniformes.encuadre,
+            uLado: { value: lado },
+            uPliegues: { value: PLIEGUES },
+            uAncho: uniformes.ancho,
+            uBorde: uniformes.borde,
+            uMedioAlto: uniformes.medioAlto,
+            uSuelo: uniformes.suelo,
+            uCenefa: uniformes.cenefa,
+            uOscuro: { value: TERCIOPELO.oscuro },
+            uMedio: { value: TERCIOPELO.medio },
+            uClaro: { value: TERCIOPELO.claro },
+          },
+          vertexShader: vertice,
+          fragmentShader: fragmento,
+          side: THREE.DoubleSide,
+        }),
+      );
+      malla.position.set(0, 0, Z);
+      // La envolvente del shader supera la caja de la geometría base.
+      malla.frustumCulled = false;
+      grupo.add(malla);
+    });
+
+    /* Cenefa: la misma tela, con el fruncido más denso (22 pliegues sobre
+       4.9 en vez de 16 sobre 4.6), el borde recortado en nueve festones más
+       profundos y regulares, y un ribete de latón cosido al canto. */
+    const cenefa = new THREE.Mesh(
+      new THREE.PlaneGeometry(CENEFA_ANCHO, CENEFA_ALTO, 128, 2),
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uRecogida: { value: 0 },
+          uEncuadre: uniformes.encuadre,
+          uLado: { value: -1 },
+          uPliegues: { value: 22 },
+          uAncho: { value: CENEFA_ANCHO },
+          uBorde: { value: CENEFA_ANCHO / 2 },
+          uMedioAlto: { value: CENEFA_ALTO / 2 },
+          uSuelo: uniformes.suelo,
+          uCenefa: uniformes.cenefa,
+          uOscuro: { value: TERCIOPELO.oscuro },
+          uMedio: { value: TERCIOPELO.medio },
+          uClaro: { value: TERCIOPELO.claro },
+          uLaton: { value: LATON },
+        },
+        vertexShader: vertice,
+        fragmentShader: cabecera + `uniform vec3 uLaton;` + tela + `
+          void main() {
+            float feston = 0.54 - 0.44 * pow(abs(sin(vUv.x * 3.14159265 * 9.0)), 0.60);
+            float d = vUv.y - feston;
+            if (d < 0.0) discard;
+            float f, ndv;
+            vec3 c = terciopelo(f, ndv) * 0.90;
+            c *= mix(0.58, 1.0, smoothstep(0.0, 0.20, d));   // el canto del festón, a sombra
+            float ribete = 1.0 - smoothstep(0.005, 0.022, d);
+            c = mix(c, uLaton * (0.50 + 0.90 * pow(f, 1.6)), ribete * 0.92);
+            gl_FragColor = vec4(c, 1.0);
+          }`,
+        side: THREE.DoubleSide,
+      }),
+    );
+    /* Z mínimo 1.848 > 1.798 de los paños; el faldón más hondo conserva la
+       cobertura al adelantarlo, incluso con el parallax de ±3°. */
+    cenefa.position.set(0, 2.1, 1.9);
+    cenefa.frustumCulled = false;
+    grupo.add(cenefa);
+
+    /* ── Alzapaño ──────────────────────────────────────────────────────
+       La cuerda dorada que CIÑE cada paño por la cintura, con su borla. No
+       es un aro pegado delante de la tela: la curva tiene fondo. El tramo
+       frontal pasa por z 1.855 —delante de la cresta más alta del paño,
+       1.798— y los dos extremos se hunden hasta 1.375, detrás del valle más
+       hondo (1.432), así que la prueba de profundidad esconde media vuelta
+       DETRÁS del paño y la cuerda se lee rodeándolo. Aparece en el último
+       30 % de la apertura —opacidad y escala— y se va al cerrar. Sin luces
+       en la escena, como el marco del ganador: difusa y especular contra una
+       luz fija en espacio de vista, para que el brillo corra por la torzal
+       al ladear el aparato. */
+    const Z_CINTURA = 1.615;      // el plano medio del paño: la cuerda lo cruza
+    const R_CUERDA = 0.052;       // cuerda, no alambre (antes 0.026)
+    const FONDO_CUERDA = 0.24;    // cuánto se hunde por detrás de la tela
+    const opacidadAlza = { value: 0 };
+
+    const vertAlza = `
+      varying vec2 vUv; varying vec3 vN; varying vec3 vP;
+      void main() {
+        vUv = uv;
+        vN = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vP = mv.xyz;
+        gl_Position = projectionMatrix * mv;
+      }`;
+
+    /* El latón de la casa, común a los tres materiales del alzapaño:
+       difusa + especular contra la luz fija en espacio de vista. «relieve»
+       es el bombeo de la hebra —1 en el lomo del cabo, 0 en el surco—: el
+       surco se traga la luz y el lomo se la queda, que es lo que separa una
+       cuerda torcida de un tubo liso. */
+    const latonAlza = `
+      uniform vec3 uLaton; uniform vec3 uTenue; uniform vec3 uCrema;
+      uniform float uOpacidad;
+      varying vec2 vUv; varying vec3 vN; varying vec3 vP;
+      vec3 metal(float relieve, float ancho) {
+        vec3 n = normalize(vN);
+        vec3 v = normalize(-vP);
+        vec3 luz = normalize(vec3(-0.28, 0.62, 0.78));
+        float dif = clamp(dot(n, luz), 0.0, 1.0);
+        float refl = clamp(dot(reflect(-luz, n), v), 0.0, 1.0);
+        float esp = pow(refl, ancho);
+        /* El lóbulo ancho impide que el latón se apague en la mitad que no
+           mira a la luz: sin él la cuerda se lee marrón oliva en vez de
+           dorada. Es el mismo «halo» del marco del ganador. */
+        float halo = pow(refl, 7.0);
+        float filo = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 2.2);
+        float hebra = 0.52 + 0.48 * relieve;
+        return mix(uTenue, uLaton, 0.32 + 0.68 * dif) * (0.42 + 0.80 * dif) * hebra
+             + uCrema * esp * (0.18 + 0.82 * relieve * relieve) * 0.95
+             + uLaton * halo * 0.26 * (0.15 + 0.85 * relieve * relieve)
+             + uLaton * filo * 0.35 * hebra;
+      }`;
+
+    const unifAlza = () => ({
+      uLaton: { value: LATON },
+      uTenue: { value: LATON_TENUE },
+      uCrema: { value: CREMA },
+      uOpacidad: opacidadAlza,
+    });
+
+    /* El nudo y la cabeza de la borla: latón liso, sin torzal. */
+    const matLaton = new THREE.ShaderMaterial({
+      uniforms: unifAlza(),
+      vertexShader: vertAlza,
+      fragmentShader: latonAlza + `
+        void main() { gl_FragColor = vec4(metal(1.0, 34.0), uOpacidad); }`,
+      transparent: true,
+      depthWrite: true,
+    });
+
+    /* La cuerda: tres cabos que dan uTorsion vueltas de un extremo al otro.
+       En el TubeGeometry uv.x corre a lo largo del tubo y uv.y da la vuelta,
+       así que la fase del cabo es uv.y * 3 − uv.x * uTorsion: estrías
+       helicoidales de verdad, sin textura ninguna. */
+    const matCuerda = new THREE.ShaderMaterial({
+      uniforms: Object.assign(unifAlza(), { uTorsion: { value: 13 } }),
+      vertexShader: vertAlza,
+      fragmentShader: latonAlza + `
+        uniform float uTorsion;
+        void main() {
+          float cabo = fract(vUv.y * 3.0 - vUv.x * uTorsion);
+          float s = abs(cabo - 0.5) * 2.0;
+          float relieve = 0.5 + 0.5 * cos(3.14159265 * s);
+          gl_FragColor = vec4(metal(relieve, 30.0), uOpacidad);
+        }`,
+      transparent: true,
+      depthWrite: true,
+    });
+
+    /* La falda de la borla. El cono nace unitario y el vértice le da el
+       perfil —cuello estrecho arriba, cuerpo y vuelo en el dobladillo—
+       reconstruyendo el punto desde uv: el ángulo en uv.x, la altura en
+       uv.y (0 abajo, 1 arriba). Así el perfil se cambia sin tocar la
+       geometría y la borla cuelga de y = 0 hacia abajo. */
+    const matFalda = new THREE.ShaderMaterial({
+      uniforms: Object.assign(unifAlza(), {
+        uAlto: { value: 0.28 }, uRadio: { value: 0.118 }, uHilos: { value: 30 },
+      }),
+      vertexShader: `
+        uniform float uAlto; uniform float uRadio;
+        varying vec2 vUv; varying vec3 vN; varying vec3 vP;
+        float perfil(float v) {
+          float t = 1.0 - clamp(v, 0.0, 1.0);
+          float cuerpo = mix(0.34, 1.0, pow(t, 0.62));
+          float vuelo = 0.15 * exp(-(1.0 - t) * (1.0 - t) * 44.0);
+          return uRadio * (cuerpo + vuelo);
+        }
+        void main() {
+          vUv = uv;
+          float th = uv.x * 6.2831853;
+          float r = perfil(uv.y);
+          float dr = (perfil(uv.y + 0.02) - perfil(uv.y - 0.02)) / (0.04 * uAlto);
+          vec3 p = vec3(sin(th) * r, (uv.y - 1.0) * uAlto, cos(th) * r);
+          vN = normalize(normalMatrix * normalize(vec3(sin(th), -dr, cos(th))));
+          vec4 mv = modelViewMatrix * vec4(p, 1.0);
+          vP = mv.xyz;
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: latonAlza + `
+        uniform float uHilos;
+        void main() {
+          float hilo = vUv.x * uHilos;
+          float k = floor(hilo);
+          /* Cada fleco se corta a su aire: el dobladillo de una borla no es
+             recto. La rifa es la de siempre, sin textura. */
+          float recorte = 0.11 * fract(sin(k * 91.37) * 43758.5453);
+          if (vUv.y < recorte) discard;
+          float s = abs(fract(hilo) - 0.5) * 2.0;
+          float relieve = 0.5 + 0.5 * cos(3.14159265 * s);
+          vec3 c = metal(relieve, 24.0);
+          c *= mix(0.64, 1.0, smoothstep(0.0, 0.62, vUv.y));
+          gl_FragColor = vec4(c, uOpacidad);
+        }`,
+      transparent: true,
+      depthWrite: true,
+    });
+
+    /* La curva de la cintura: una elipse que además VIAJA en z. «u» es el
+       seno del ángulo: el arco de delante (u > 0) baja y se adelanta hasta
+       FONDO_CUERDA, el de detrás (u < 0) sube y se hunde otro tanto, y los
+       dos extremos (u = 0) pasan justo por el plano de la tela, que es
+       donde la cuerda rodea el canto del paño. El exponente 0.72 aplana la
+       ida y la vuelta: la cuerda se queda delante en los dos tercios
+       centrales y se hunde de golpe cerca de los extremos.
+       El signo de «lado» pone el ángulo 0 —donde va el nudo— del lado del
+       hueco en los dos paños. 72 × 8 segmentos = 1152 triángulos. */
+    function curvaCintura(lado, rx, ry, rz) {
+      const puntos = [];
+      const N = 32;
+      for (let i = 0; i < N; i += 1) {
+        const a = (i / N) * Math.PI * 2;
+        const u = Math.sin(a);
+        const fondo = (u < 0 ? -1 : 1) * Math.pow(Math.abs(u), 0.72);
+        puntos.push(new THREE.Vector3(-lado * Math.cos(a) * rx, -u * ry, fondo * rz));
+      }
+      const curva = new THREE.CatmullRomCurve3(puntos, true, 'catmullrom', 0.5);
+      /* El largo de la poligonal, para repartir el torzal a paso constante
+         sin pedirle a la curva que se mida (y sin depender de three). */
+      let largo = 0;
+      for (let i = 0; i < N; i += 1) {
+        const p = puntos[i], q = puntos[(i + 1) % N];
+        largo += Math.hypot(q.x - p.x, q.y - p.y, q.z - p.z);
+      }
+      curva.largo = largo;
+      return curva;
+    }
+
+    /* El cordón corto del que cuelga la borla, del nudo hacia el hueco. */
+    function curvaColgante() {
+      return new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0.01, 0),
+        new THREE.Vector3(0.004, -0.035, 0.006),
+        new THREE.Vector3(0.002, -0.075, 0.009),
+        new THREE.Vector3(0, -0.112, 0.010),
+      ], false, 'catmullrom', 0.5);
+    }
+
+    const A_NUDO = 0.38 * Math.PI;   // el nudo, en el arco de delante y del lado del hueco
+
+    const alzapanos = [-1, 1].map((lado) => {
+      const raiz = new THREE.Group();
+      raiz.position.set(0, Y_ALZA, Z_CINTURA);
+      raiz.rotation.z = lado * 0.16;      // la cuerda cae un punto hacia el hueco
+      raiz.visible = false;
+      raiz.renderOrder = 6;
+      const cuerda = new THREE.Mesh(
+        new THREE.TubeGeometry(curvaCintura(lado, 0.3, 0.1, FONDO_CUERDA), 72, R_CUERDA, 8, true),
+        matCuerda,
+      );
+      const nudo = new THREE.Mesh(new THREE.SphereGeometry(0.062, 14, 10), matLaton);
+      nudo.scale.set(1, 0.80, 0.92);
+      /* La borla cuelga del nudo y se balancea sola: ±2.6° cada 2.6 s. */
+      const borla = new THREE.Group();
+      const colgante = new THREE.Mesh(
+        new THREE.TubeGeometry(curvaColgante(), 10, 0.021, 6, false), matCuerda,
+      );
+      const cabeza = new THREE.Mesh(new THREE.SphereGeometry(0.072, 16, 12), matLaton);
+      cabeza.position.set(0, -0.158, 0.010);
+      cabeza.scale.set(1, 0.86, 1);
+      const cuello = new THREE.Mesh(new THREE.SphereGeometry(0.030, 10, 6), matLaton);
+      cuello.position.set(0, -0.222, 0.010);
+      cuello.scale.set(1, 0.60, 1);
+      const falda = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 30, 6, true), matFalda);
+      falda.position.set(0, -0.228, 0.010);
+      borla.add(colgante, cabeza, cuello, falda);
+      raiz.add(cuerda, nudo, borla);
+      grupo.add(raiz);
+      return { lado, raiz, cuerda, nudo, borla };
+    });
+
+    /* Lo que sabe el telón del encuadre: el medio ancho del escenario en el
+       plano de la tela. Con él la cintura mide 0.11·W en cualquier caja y el
+       cordón abraza justo esa cintura. */
+    function encuadrar(medioAncho, medioAlto = MEDIO_ALTO_IPHONE) {
+      const m = medioAncho;
+      const d = medioAlto / Math.tan(FOV * Math.PI / 360) + Z;
+      const cobertura = envolventeTelon(m / medioAlto, d, 1.432, 1.798);
+      const coberturaCenefa = envolventeTelon(m / medioAlto, d, 1.848, 1.952);
+      const borde = Math.max(BORDE, cobertura.x + 0.09);
+      uniformes.encuadre.value = m;
+      uniformes.borde.value = borde;
+      uniformes.ancho.value = borde + 0.05;
+      uniformes.medioAlto.value = Math.max(ALTO / 2, cobertura.y + 0.09);
+      uniformes.suelo.value = -medioAlto;
+      // La cenefa sigue al techo visible; conserva espesor, festones y Z.
+      const techo = Math.max(2.75 + medioAlto - MEDIO_ALTO_IPHONE, coberturaCenefa.y + 0.09);
+      const anchoCenefa = Math.max(CENEFA_ANCHO, 2 * borde, 2 * (coberturaCenefa.x + 0.09));
+      cenefa.material.uniforms.uAncho.value = anchoCenefa;
+      cenefa.material.uniforms.uBorde.value = anchoCenefa / 2;
+      cenefa.position.y = techo - CENEFA_ALTO / 2;
+      // Festón más bajo (uv.y = 0.10), proyectado al plano de los paños.
+      uniformes.cenefa.value = (techo - 0.90 * CENEFA_ALTO) * (d - Z) / (d - 1.9);
+      Y_ALZA = -medioAlto + H_ALZA * (uniformes.cenefa.value + medioAlto);
+      const dentro = m * (1 - 2 * F_CINTURA);
+      const fuera = m + 0.03;
+      /* La cuerda abraza la cintura y nada más: si se pasa de ancho deja de
+         leerse como cuerda y se convierte en un aro colgado del aire. El
+         extremo de dentro cae justo en el filo libre del swag —ahí se ve
+         rodear el canto— y el de fuera se hunde detrás de la tela, que sigue
+         hasta el borde. */
+      const rx = (fuera - dentro) / 2;
+      const ry = Math.max(0.07, rx * 0.34);
+      const cx = (fuera + dentro) / 2;
+      const uNudo = Math.sin(A_NUDO);
+      alzapanos.forEach((a) => {
+        a.raiz.position.set(a.lado * cx, Y_ALZA, Z_CINTURA);
+        const curva = curvaCintura(a.lado, rx, ry, FONDO_CUERDA);
+        a.cuerda.geometry.dispose();
+        a.cuerda.geometry = new THREE.TubeGeometry(curva, 72, R_CUERDA, 8, true);
+        /* Un paso de torzal por cada 2.6 radios de cuerda: el surco mide lo
+           mismo que el cabo mida la cintura lo que mida. */
+        matCuerda.uniforms.uTorsion.value = Math.max(8, Math.round(curva.largo / (2.6 * R_CUERDA)));
+        a.nudo.position.set(
+          -a.lado * Math.cos(A_NUDO) * rx,
+          -uNudo * ry,
+          Math.pow(uNudo, 0.72) * FONDO_CUERDA,
+        );
+        a.borla.position.set(a.nudo.position.x, a.nudo.position.y - 0.03, a.nudo.position.z + 0.012);
+      });
+    }
+    encuadrar(uniformes.encuadre.value);
+
+    /* La apertura es una transición CSS de verdad, no una persecución
+       exponencial: 1.15 s cronometrados con `CURVA_TELON`, la misma
+       `cubic-bezier(0.66, 0, 0.2, 1)` que la hoja de estilo de la casa. Si
+       llega una orden contraria a medio camino, el tramo arranca desde el
+       valor de ahora y vuelve a durar 1.15 s —igual que hace el navegador al
+       reemplazar una transición en vuelo—, así que nunca hay salto. */
+    // El reloj recorta cuadros lentos a 50 ms a propósito y se pausa al esconder la pestaña.
+    const DURACION = 1.15;
+    let desde = 0, hasta = 0, t0 = -1;
+
+    return {
+      grupo,
+      encuadrar,
+      abrir(t, v) {
+        const meta = v ? 1 : 0;
+        if (meta === hasta && (t0 >= 0 || uniformes.recogida.value === meta)) return;
+        desde = uniformes.recogida.value;
+        hasta = meta;
+        t0 = t;
+      },
+      update(t) {
+        if (t0 >= 0) {
+          const a = Math.min(1, Math.max(0, (t - t0) / DURACION));
+          uniformes.recogida.value = desde + (hasta - desde) * CURVA_TELON(a);
+          if (a >= 1) { uniformes.recogida.value = hasta; t0 = -1; }
+        }
+        /* Los paños no se esconden nunca: abiertos siguen colgando a los
+           lados, y por eso el conteo sigue apareciendo por debajo de la tela
+           mientras el telón viaja. Lo único que aparece y desaparece es el
+           alzapaño, en el último 30 % de la apertura. */
+        const r = uniformes.recogida.value;
+        const k = Math.min(1, Math.max(0, (r - 0.7) / 0.3));
+        const suave = k * k * (3 - 2 * k);
+        opacidadAlza.value = suave;
+        alzapanos.forEach((a, i) => {
+          a.raiz.visible = suave > 0.01;
+          a.raiz.scale.setScalar(0.55 + 0.45 * suave);
+          /* La borla cuelga a plomo aunque la cuerda vaya ladeada, y se
+             balancea sola: ±2.6° con período 2.6 s, desfasada por lado. */
+          a.borla.rotation.z = -a.lado * 0.16
+            + Math.sin(t * 2.417 + i * 1.7) * 0.046 * suave;
+        });
+      },
+      get abierto() { return uniformes.recogida.value > 0.5; },
+    };
+  }
+
+  /* ── crearMarquesina ───────────────────────────────────────────────
+     Frontera R3F: <Marquesina paso modo /> — bombillas de vidrio con
+     filamento y un halo aditivo por bombilla. Sin postproceso. */
+  function crearMarquesina(grupo) {
+    const bombillas = [];
+    const geoVidrio = new THREE.CircleGeometry(4.6, 16);
+    const geoFilamento = new THREE.CircleGeometry(2.4, 12);
+
+    function armar(cuantas) {
+      bombillas.forEach((b) => grupo.remove(b.raiz));
+      bombillas.length = 0;
+      for (let i = 0; i < cuantas; i += 1) {
+        const raiz = new THREE.Group();
+        const vidrio = new THREE.Mesh(geoVidrio, new THREE.MeshBasicMaterial({
+          color: new THREE.Color(0.32, 0.26, 0.09), transparent: true, opacity: 0.9,
+        }));
+        const filamento = new THREE.Mesh(geoFilamento, new THREE.MeshBasicMaterial({
+          color: new THREE.Color(0.54, 0.44, 0.11),
+        }));
+        filamento.position.z = 0.1;
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: TEX_HALO, blending: THREE.AdditiveBlending,
+          depthTest: false, depthWrite: false, transparent: true, opacity: 0,
+        }));
+        halo.scale.setScalar(30);
+        halo.position.z = 0.2;
+        raiz.add(vidrio, filamento, halo);
+        grupo.add(raiz);
+        bombillas.push({ raiz, vidrio, filamento, halo, brillo: 0, objetivo: 0 });
+      }
+    }
+
+    return {
+      grupo,
+      /* Las bombillas se colocan sobre las mismas coordenadas que ocupan los
+         `div.foco` del DOM: la marquesina 3D cae exactamente donde caía. */
+      colocar(puntos) {
+        if (puntos.length !== bombillas.length) armar(puntos.length);
+        puntos.forEach(({ x, y }, i) => bombillas[i].raiz.position.set(x, y, 0));
+      },
+      setPatron(paso, modo) {
+        bombillas.forEach((b, indice) => {
+          b.objetivo = modo === 'todo' ? 1
+            : modo === 'fiesta' ? (paso % 2 === 0 ? 1 : 0)
+            : ((indice + paso) % (modo === 'girando' ? 3 : 4) === 0 ? 1 : 0);
+        });
+      },
+      update(t, dt) {
+        const k = Math.min(1, dt * 14);
+        bombillas.forEach((b) => {
+          b.brillo += (b.objetivo - b.brillo) * k;
+          const v = b.brillo;
+          b.vidrio.material.color.setRGB(0.32 + 0.68 * v, 0.26 + 0.65 * v, 0.09 + 0.57 * v);
+          b.filamento.material.color.setRGB(0.54 + 0.46 * v, 0.44 + 0.52 * v, 0.11 + 0.61 * v);
+          b.halo.material.opacity = v * 0.8;
+          b.halo.scale.setScalar(22 + 12 * v);
+        });
+      },
+    };
+  }
+
+  /* ── crearTambores ─────────────────────────────────────────────────
+     Frontera R3F: <Tambores tiras elegido /> — tres cilindros de eje
+     horizontal con los pósters envueltos. El módulo no sabe qué es un
+     finalista: recibe tiras y ángulos, y los gira. */
+  function crearTambores(grupo) {
+    const vertice = `
+      varying vec2 vUv;
+      varying vec3 vN;
+      void main() {
+        vUv = uv;
+        vN = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`;
+
+    const fragmento = `
+      uniform sampler2D uMapa;
+      uniform float uCeldas;
+      uniform float uElegido;
+      uniform float uApagado;
+      uniform vec3 uLaton;
+      varying vec2 vUv;
+      varying vec3 vN;
+      void main() {
+        vec3 c = texture2D(uMapa, vUv).rgb;
+        float u = fract(vUv.x * uCeldas);
+        float bu = (1.0 - smoothstep(0.0, 0.010, min(u, 1.0 - u)));
+        float bv = (1.0 - smoothstep(0.0, 0.016, min(vUv.y, 1.0 - vUv.y)));
+        float marco = max(bu, bv);
+        c = mix(c, uLaton, marco * (0.26 + 0.6 * uElegido));
+        float cara = clamp(vN.z, 0.0, 1.0);
+        c *= mix(0.035, 1.0, pow(cara, 0.8));
+        c *= 1.0 + 0.4 * uElegido * pow(cara, 2.0);
+        float lum = dot(c, vec3(0.299, 0.587, 0.114));
+        c = mix(c, vec3(lum), 0.7 * uApagado);
+        c *= mix(1.0, 0.28, uApagado);
+        gl_FragColor = vec4(c, 1.0);
+      }`;
+
+    const geoTambor = new THREE.CylinderGeometry(RADIO, RADIO, POSTER_ANCHO, 72, 1, true);
+    const geoTapa = new THREE.CircleGeometry(RADIO, 48);
+    const geoLuz = new THREE.PlaneGeometry(POSTER_ANCHO * 2.1, POSTER_ALTO * 1.5);
+
+    const tambores = [0, 1, 2].map((indice) => {
+      const raiz = new THREE.Group();
+      raiz.position.set((indice - 1) * SEPARACION, 0, -RADIO);
+      raiz.scale.setScalar(ESCALA_TAMBOR);
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          uMapa: { value: null },
+          uCeldas: { value: CELDAS },
+          uElegido: { value: 0 },
+          uApagado: { value: 0 },
+          uLaton: { value: LATON },
+        },
+        vertexShader: vertice,
+        fragmentShader: fragmento,
+      });
+      const eje = new THREE.Group();
+      eje.rotation.z = Math.PI / 2;
+      const cilindro = new THREE.Mesh(geoTambor, material);
+      eje.add(cilindro);
+      [-1, 1].forEach((lado) => {
+        const tapa = new THREE.Mesh(geoTapa, new THREE.MeshBasicMaterial({
+          color: new THREE.Color(0.05, 0.03, 0.04), side: THREE.DoubleSide,
+        }));
+        tapa.rotation.x = Math.PI / 2;
+        tapa.position.y = lado * POSTER_ANCHO / 2;
+        eje.add(tapa);
+      });
+      raiz.add(eje);
+
+      /* La luz del proyector que se posa en el tambor: un plano aditivo
+         delante, no una luz real —no hay postproceso y no hace falta. */
+      const luz = new THREE.Mesh(geoLuz, new THREE.MeshBasicMaterial({
+        map: TEX_HALO, blending: THREE.AdditiveBlending,
+        transparent: true, depthWrite: false, opacity: 0,
+      }));
+      luz.position.set(0, 0, RADIO + 0.3);
+      raiz.add(luz);
+
+      grupo.add(raiz);
+      return {
+        raiz, cilindro, material, luz,
+        p: 0, desde: 0, hasta: 0, inicio: 0, duracion: 0,
+        objetivoLuz: 0, objetivoApagado: 0,
+      };
+    });
+
+    /* El ángulo que deja la celda `k` de frente: la textura empieza en +Z y
+       avanza con theta, así que la vuelta va en contra. */
+    const anguloDe = (p) => -((p + 0.5) / CELDAS) * Math.PI * 2;
+
+    grupo.visible = false;
+
+    return {
+      grupo,
+      montar(tirasPorTambor) {
+        grupo.visible = true;
+        tambores.forEach((tb, i) => {
+          const tira = tirasPorTambor[i];
+          tb.raiz.visible = !!tira;
+          if (!tira) return;
+          tb.material.uniforms.uMapa.value?.dispose();
+          tb.material.uniforms.uMapa.value = texturaDe(lienzoTira(tira.celdas), true);
+          tb.p = 0;
+          tb.destino = tira.destino;
+          tb.desde = 0; tb.hasta = 0; tb.duracion = 0;
+          tb.material.uniforms.uElegido.value = 0;
+          tb.material.uniforms.uApagado.value = 0;
+          tb.objetivoLuz = 0; tb.objetivoApagado = 0;
+          tb.cilindro.rotation.y = anguloDe(0);
+        });
+        /* Con dos finalistas o uno, los tambores sobrantes se van y los que
+           quedan se centran, como se centran los carretes del CSS. */
+        const vivos = tambores.filter((tb) => tb.raiz.visible);
+        vivos.forEach((tb, i) => {
+          tb.raiz.position.x = (i - (vivos.length - 1) / 2) * SEPARACION;
+        });
+      },
+      girar(t0, base, paroJuntos, corto) {
+        tambores.filter((tb) => tb.raiz.visible).forEach((tb, indice) => {
+          const vueltas = 4 + indice;
+          tb.desde = tb.p;
+          tb.hasta = vueltas * CELDAS + tb.destino;
+          tb.inicio = t0;
+          tb.duracion = (corto ? 30 : base + (paroJuntos ? 0 : indice * base * 0.45)) / 1000;
+        });
+      },
+      setElegido(indice) {
+        const vivos = tambores.filter((tb) => tb.raiz.visible);
+        vivos.forEach((tb, i) => {
+          tb.objetivoLuz = i === indice ? 1 : 0;
+          tb.objetivoApagado = indice !== null && i !== indice ? 1 : 0;
+        });
+      },
+      esconder() { grupo.visible = false; },
+      update(t, dt) {
+        const k = Math.min(1, dt * 9);
+        tambores.forEach((tb) => {
+          if (tb.duracion > 0) {
+            const avance = Math.min(1, (t - tb.inicio) / tb.duracion);
+            tb.p = tb.desde + (tb.hasta - tb.desde) * CURVA_CARRETE(avance);
+            if (avance >= 1) { tb.duracion = 0; tb.p = tb.hasta; }
+          }
+          tb.cilindro.rotation.y = anguloDe(tb.p);
+          const u = tb.material.uniforms;
+          u.uElegido.value += (tb.objetivoLuz - u.uElegido.value) * k;
+          u.uApagado.value += (tb.objetivoApagado - u.uApagado.value) * k;
+          tb.luz.material.opacity = u.uElegido.value * 0.55;
+        });
+      },
+    };
+  }
+
+  /* ── crearConteo ───────────────────────────────────────────────────
+     Frontera R3F: <Conteo numero /> — aro, cruces y el número, más el haz
+     del proyector con el polvo en suspensión que cruza el telón. */
+  function crearConteo(grupo) {
+    /* El conteo vive DETRÁS del telón, como en la hoja de estilo de la casa
+       (`.conteo` z-index 5, `.telon` z-index 6): el velo cubre los carretes,
+       los paños pasan por delante del número mientras abren y la cenefa
+       nunca se oscurece. Por eso el velo, el aro, las cruces y el número
+       prueban profundidad —están en z 1.00–1.04, delante del fondo y de los
+       tambores y detrás de los paños (z 1.60) y de la cenefa (z 1.90)—, y
+       siguen sin escribirla para no taparse entre ellos. */
+    const velo = new THREE.Mesh(
+      new THREE.PlaneGeometry(9, 9),
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(0.02, 0.008, 0.016), transparent: true, opacity: 0.92,
+        depthTest: true, depthWrite: false,
+      }),
+    );
+    velo.position.z = 1.0;
+    const aro = new THREE.Mesh(
+      new THREE.TorusGeometry(0.745, 0.006, 6, 96),
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(0.95, 0.9, 0.78), transparent: true, opacity: 0.35,
+        depthTest: true, depthWrite: false,
+      }),
+    );
+    aro.position.z = 1.02;
+    const matCruz = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(0.95, 0.9, 0.78), transparent: true, opacity: 0.22,
+      depthTest: true, depthWrite: false,
+    });
+    const cruzH = new THREE.Mesh(new THREE.PlaneGeometry(8, 0.011), matCruz);
+    const cruzV = new THREE.Mesh(new THREE.PlaneGeometry(0.011, 8), matCruz);
+    cruzH.position.z = cruzV.position.z = 1.02;
+
+    const numero = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.52, 1.52),
+      new THREE.MeshBasicMaterial({
+        transparent: true, depthWrite: false, depthTest: true, opacity: 0,
+      }),
+    );
+    numero.position.z = 1.04;
+
+    /* El orden de dibujo entre ellos se conserva (velo, aro, cruces, número)
+       y sigue por encima del haz, que es aditivo y arranca en renderOrder 0:
+       el haz cruza el telón como la luz de una cabina de verdad. */
+    const caja = new THREE.Group();
+    caja.add(velo, aro, cruzH, cruzV, numero);
+    caja.renderOrder = 20;
+    [velo, aro, cruzH, cruzV, numero].forEach((m, i) => { m.renderOrder = 20 + i; });
+    caja.visible = false;
+    grupo.add(caja);
+
+    /* Haz del proyector: cono abierto y aditivo, así que atraviesa el telón
+       mientras abre, igual que la luz de una cabina de verdad. */
+    const haz = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 2.0, 8.2, 28, 1, true),
+      new THREE.ShaderMaterial({
+        uniforms: { uColor: { value: CREMA }, uIntensidad: { value: 0 } },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `
+          uniform vec3 uColor;
+          uniform float uIntensidad;
+          varying vec2 vUv;
+          void main() {
+            float largo = smoothstep(0.0, 0.35, vUv.y) * (1.0 - smoothstep(0.55, 1.0, vUv.y));
+            float borde = 0.35 + 0.65 * pow(abs(sin(vUv.x * 3.14159)), 0.5);
+            gl_FragColor = vec4(uColor * uIntensidad * largo * borde * 0.22, 1.0);
+          }`,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    haz.rotation.x = Math.PI / 2;
+    haz.position.z = 2.4;
+    haz.visible = false;
+    grupo.add(haz);
+
+    /* Polvo en suspensión dentro del haz. */
+    const CUANTOS = 340;
+    const pos = new Float32Array(CUANTOS * 3);
+    const semillas = new Float32Array(CUANTOS);
+    for (let i = 0; i < CUANTOS; i += 1) {
+      const z = -1.4 + Math.random() * 7.6;
+      const r = (0.09 + (6.2 - z) * 0.24) * Math.sqrt(Math.random());
+      const a = Math.random() * Math.PI * 2;
+      pos[i * 3] = Math.cos(a) * r;
+      pos[i * 3 + 1] = Math.sin(a) * r;
+      pos[i * 3 + 2] = z;
+      semillas[i] = Math.random() * 6.28;
+    }
+    const geoPolvo = new THREE.BufferGeometry();
+    geoPolvo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const polvo = new THREE.Points(geoPolvo, new THREE.PointsMaterial({
+      map: TEX_POLVO, size: 0.055, sizeAttenuation: true,
+      transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+      blending: THREE.AdditiveBlending,
+    }));
+    polvo.visible = false;
+    grupo.add(polvo);
+
+    /* El número se centra por su tinta, no por su caja: `ajusteOpticoDelNumero`
+       corrige lo que la métrica declarada de Copperplate miente. */
+    const cachéNumero = new Map();
+    function texturaNumero(n) {
+      if (cachéNumero.has(n)) return cachéNumero.get(n);
+      const lado = 256, tam = 150;
+      const c = document.createElement('canvas');
+      c.width = c.height = lado;
+      const x = c.getContext('2d');
+      x.font = `400 ${tam}px ${PILA_DISPLAY}`;
+      x.textAlign = 'center';
+      x.textBaseline = 'alphabetic';
+      const m = x.measureText(String(n));
+      const subeCaja = m.fontBoundingBoxAscent || tam * 0.8;
+      const bajaCaja = m.fontBoundingBoxDescent || tam * 0.2;
+      const lineaBase = (lado + subeCaja - bajaCaja) / 2;
+      const ajuste = ajusteOpticoDelNumero({
+        alto: lado,
+        lineaBase,
+        tintaArriba: m.actualBoundingBoxAscent,
+        tintaAbajo: m.actualBoundingBoxDescent,
+      });
+      x.fillStyle = '#f2e5c6';
+      x.fillText(String(n), lado / 2, lineaBase + ajuste);
+      const t = texturaDe(c);
+      cachéNumero.set(n, t);
+      return t;
+    }
+
+    let entrada = 0, mostrando = null, intensidad = 0;
+    return {
+      grupo,
+      setNumero(n) {
+        if (n === null) { mostrando = null; caja.visible = false; return; }
+        mostrando = n;
+        caja.visible = true;
+        numero.material.map = texturaNumero(n);
+        numero.material.needsUpdate = true;
+        entrada = 0;
+      },
+      setHaz(encendido) { intensidad = encendido ? 1 : 0; },
+      update(t, dt) {
+        const u = haz.material.uniforms;
+        u.uIntensidad.value += (intensidad - u.uIntensidad.value) * Math.min(1, dt * 3.2);
+        const viva = u.uIntensidad.value > 0.01;
+        haz.visible = polvo.visible = viva;
+        polvo.material.opacity = u.uIntensidad.value * 0.55;
+        if (viva) {
+          const p = geoPolvo.attributes.position;
+          for (let i = 0; i < CUANTOS; i += 1) {
+            p.array[i * 3 + 1] -= dt * 0.045;
+            p.array[i * 3] += Math.sin(t * 0.5 + semillas[i]) * dt * 0.02;
+            if (p.array[i * 3 + 1] < -1.6) p.array[i * 3 + 1] = 1.6;
+          }
+          p.needsUpdate = true;
+        }
+        if (mostrando !== null) {
+          entrada = Math.min(1, entrada + dt / 0.55);
+          const e = 1 - Math.pow(1 - entrada, 3);
+          numero.scale.setScalar(1.6 - 0.6 * e);   // el pulso 1.6 → 1
+          numero.material.opacity = e;
+        }
+      },
+    };
+  }
+
+  /* ── crearGanador ──────────────────────────────────────────────────
+     Frontera R3F: <Ganador titulo desde vetada /> — el póster sale del
+     tambor, vuela hacia la cámara con la luz detrás y se enmarca en un
+     octágono de latón. El sello «Vetada» también es geometría. */
+  function crearGanador(grupo) {
+    const ANCHO = 1.86, ALTO = 2.79, CANTO = 0.13;
+
+    function octagono(w, h, corte) {
+      const s = new THREE.Shape();
+      s.moveTo(-w / 2 + corte, -h / 2);
+      s.lineTo(w / 2 - corte, -h / 2);
+      s.lineTo(w / 2, -h / 2 + corte);
+      s.lineTo(w / 2, h / 2 - corte);
+      s.lineTo(w / 2 - corte, h / 2);
+      s.lineTo(-w / 2 + corte, h / 2);
+      s.lineTo(-w / 2, h / 2 - corte);
+      s.lineTo(-w / 2, -h / 2 + corte);
+      s.closePath();
+      return s;
+    }
+
+    const forma = octagono(ANCHO + CANTO * 2, ALTO + CANTO * 2, 0.30);
+    const hueco = octagono(ANCHO - 0.02, ALTO - 0.02, 0.26);
+    forma.holes.push(new THREE.Path(hueco.getPoints(64).reverse()));
+    const geoMarco = new THREE.ExtrudeGeometry(forma, {
+      depth: 0.09, bevelEnabled: true, bevelThickness: 0.022,
+      bevelSize: 0.022, bevelSegments: 2, curveSegments: 2,
+    });
+    geoMarco.computeVertexNormals();
+
+    /* Latón sin luces en la escena: anisotropía falsa por la altura, un
+       especular de banda y un filo que recoge la luz del proyector. La luz
+       vive en espacio de vista (fija respecto a la cámara), así que al ladear
+       el marco el brillo corre por el bisel y por el filo: es lo que hace
+       legible el gesto. Dos lóbulos —uno estrecho y fuerte para el destello
+       que viaja, otro ancho y tenue para que el metal no se apague. */
+    const marco = new THREE.Mesh(geoMarco, new THREE.ShaderMaterial({
+      uniforms: { uLaton: { value: LATON }, uTenue: { value: LATON_TENUE }, uCrema: { value: CREMA } },
+      vertexShader: `
+        varying vec3 vN; varying vec3 vP; varying vec3 vLocal;
+        void main() {
+          vN = normalize(normalMatrix * normal);
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vP = mv.xyz; vLocal = position;
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        uniform vec3 uLaton; uniform vec3 uTenue; uniform vec3 uCrema;
+        varying vec3 vN; varying vec3 vP; varying vec3 vLocal;
+        void main() {
+          vec3 n = normalize(vN);
+          vec3 v = normalize(-vP);
+          float banda = 0.5 + 0.5 * sin(vLocal.y * 26.0);
+          vec3 base = mix(uTenue, uLaton, 0.35 + 0.65 * banda);
+          vec3 luz = normalize(vec3(-0.25, 0.55, 0.85));
+          float dif = clamp(dot(n, luz), 0.0, 1.0);
+          float ref = clamp(dot(reflect(-luz, n), v), 0.0, 1.0);
+          float esp = pow(ref, 52.0);
+          float halo = pow(ref, 8.0);
+          float filo = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 2.4);
+          vec3 c = base * (0.34 + 0.72 * dif)
+                 + uCrema * esp * 1.05
+                 + uLaton * halo * 0.22
+                 + uLaton * filo * 0.4;
+          gl_FragColor = vec4(c, 1.0);
+        }`,
+    }));
+
+    /* La lámina: el póster más un barniz. Tres capas, todas view-dependent,
+       que en reposo casi no se notan y al ladear el cartel se encienden:
+       un especular Blinn-Phong de exponente alto con tinte crema, una
+       veladura Fresnel suave en el filo y una banda diagonal ancha que se
+       desplaza con la inclinación, como el cristal de una vitrina. La leve
+       comba del papel (`uComba`) se aplica sobre las tangentes en espacio de
+       vista, así que el destello barre el cartel en vez de encenderse de
+       golpe. `transparent` se conserva para no alterar el orden de dibujo:
+       el halo del proyector va detrás y se pinta antes. */
+    const lamina = new THREE.Mesh(
+      new THREE.PlaneGeometry(ANCHO, ALTO),
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uMapa: { value: null },
+          uCrema: { value: CREMA },
+          uLadeo: { value: new THREE.Vector2(0, 0) },   // (rotación X, rotación Y) en radianes
+          uFuerza: { value: 0 },                        // 0 en reposo, 1 en el tope
+          uOpacidad: { value: 1 },
+          uComba: { value: 0.11 },
+        },
+        vertexShader: `
+          varying vec2 vUv; varying vec3 vN; varying vec3 vP;
+          varying vec3 vT; varying vec3 vB;
+          void main() {
+            vUv = uv;
+            vN = normalize(normalMatrix * normal);
+            vT = normalize(normalMatrix * vec3(1.0, 0.0, 0.0));
+            vB = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vP = mv.xyz;
+            gl_Position = projectionMatrix * mv;
+          }`,
+        fragmentShader: `
+          uniform sampler2D uMapa;
+          uniform vec3 uCrema;
+          uniform vec2 uLadeo;
+          uniform float uFuerza;
+          uniform float uOpacidad;
+          uniform float uComba;
+          varying vec2 vUv; varying vec3 vN; varying vec3 vP;
+          varying vec3 vT; varying vec3 vB;
+          void main() {
+            vec4 tinta = texture2D(uMapa, vUv);
+            vec3 c = tinta.rgb;
+
+            vec3 n = normalize(vN
+              + vT * (vUv.x - 0.5) * uComba
+              + vB * (vUv.y - 0.5) * uComba);
+            vec3 v = normalize(-vP);
+            vec3 luz = normalize(vec3(-0.22, 0.34, 1.0));
+            vec3 h = normalize(luz + v);
+
+            float esp = pow(clamp(dot(n, h), 0.0, 1.0), 110.0);
+            float fres = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 1.8);
+
+            /* La banda del cristal: ancha, diagonal y corrida por el ladeo. */
+            float diag = 0.55 * vUv.x + 0.45 * (1.0 - vUv.y);
+            float centro = 0.46 + uLadeo.y * 1.45 + uLadeo.x * 0.95;
+            float d = (diag - centro) * 3.2;
+            float banda = exp(-(d * d));
+
+            c += uCrema * esp * (0.30 + 1.30 * uFuerza);
+            c += uCrema * fres * (0.10 + 0.34 * uFuerza);
+            c += uCrema * banda * (0.030 + 0.150 * uFuerza);
+
+            gl_FragColor = vec4(c, tinta.a * uOpacidad);
+          }`,
+        transparent: true,
+      }),
+    );
+    lamina.position.z = 0.03;
+
+    /* La luz del proyector detrás del póster: halo aditivo más ancho que
+       el marco, que es lo que hace que el ganador se sienta iluminado. */
+    const luz = new THREE.Mesh(
+      new THREE.PlaneGeometry(ANCHO * 3.4, ALTO * 2.4),
+      new THREE.MeshBasicMaterial({
+        map: TEX_HALO, blending: THREE.AdditiveBlending,
+        transparent: true, depthWrite: false, depthTest: false, opacity: 0,
+      }),
+    );
+    luz.position.z = -0.6;
+
+    const sello = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.72, 0.86),
+      new THREE.MeshBasicMaterial({
+        map: (() => {
+          const c = document.createElement('canvas');
+          c.width = 512; c.height = 256;
+          const x = c.getContext('2d');
+          x.strokeStyle = '#c9566c'; x.lineWidth = 9;
+          x.strokeRect(14, 14, 484, 228);
+          x.strokeRect(30, 30, 452, 196);
+          x.fillStyle = '#c9566c';
+          x.font = `400 82px ${PILA_DISPLAY}`;
+          x.textAlign = 'center'; x.textBaseline = 'middle';
+          textoEspaciado(x, 'VETADA', 256, 132, 12);
+          return texturaDe(c);
+        })(),
+        transparent: true, depthWrite: false, depthTest: false,
+        blending: THREE.AdditiveBlending, opacity: 0,
+      }),
+    );
+    sello.position.z = 0.2;
+    sello.rotation.z = -14 * Math.PI / 180;
+    sello.visible = false;
+
+    /* El cartel —marco, lámina y sello— es lo único que se ladea: el halo del
+       proyector es luz de cabina y se queda quieto colgando de `caja`, que es
+       quien lleva el vuelo (posición y escala). El sello va dentro porque
+       está impreso sobre el cartel, no flotando delante. */
+    const cartel = new THREE.Group();
+    cartel.add(marco, lamina, sello);
+
+    const caja = new THREE.Group();
+    caja.add(luz, cartel);
+    caja.visible = false;
+    grupo.add(caja);
+
+    let vuelo = null, tSello = -1;
+    const ESCALA_SALIDA = POSTER_ANCHO / ANCHO;
+
+    /* Topes del ladeo: ±26° en Y (el eje del gesto largo) y ±16° en X. Los
+       publica el módulo porque son del cartel; quien escucha el puntero los
+       lee para saturar el arrastre contra ellos. */
+    const TOPE_X = (16 * Math.PI) / 180;
+    const TOPE_Y = (26 * Math.PI) / 180;
+
+    /* Retorno: muelle amortiguado analítico (ω 14 rad/s, ζ 0.62). Da un
+       sobrepaso del 8 % a los 0.29 s y se apaga a los 0.6 s sin llegar a
+       oscilar. Analítico y no integrado para que no dependa del cuadro. */
+    const RETORNO = 0.6, OMEGA = 14, ZETA = 0.62;
+    const OMEGA_D = OMEGA * Math.sqrt(1 - ZETA * ZETA);
+    const muelleFactor = (a) => (a >= 1 ? 0 : Math.exp(-ZETA * OMEGA * a * RETORNO)
+      * (Math.cos(OMEGA_D * a * RETORNO)
+        + (ZETA * OMEGA / OMEGA_D) * Math.sin(OMEGA_D * a * RETORNO)));
+
+    let ladeoX = 0, ladeoY = 0, metaLadeoX = 0, metaLadeoY = 0;
+    let inclinando = false, muelle = null, ultimoT = 0;
+
+    function aplomar() {
+      ladeoX = ladeoY = metaLadeoX = metaLadeoY = 0;
+      inclinando = false;
+      muelle = null;
+      cartel.rotation.set(0, 0, 0);
+      lamina.material.uniforms.uLadeo.value.set(0, 0);
+      lamina.material.uniforms.uFuerza.value = 0;
+    }
+
+    return {
+      grupo,
+      topes: { x: TOPE_X, y: TOPE_Y },
+      enEscena() { return caja.visible; },
+      orientacion() { return { x: ladeoX, y: ladeoY }; },
+      mostrar(t0, titulo, desdeX, desde = { escala: 1, z: 0 }) {
+        caja.visible = true;
+        const u = lamina.material.uniforms;
+        u.uMapa.value?.dispose();
+        u.uMapa.value = texturaDe(lienzoPoster(titulo));
+        aplomar();
+        sello.visible = false;
+        sello.material.opacity = 0;
+        tSello = -1;
+        vuelo = { t0, desdeX, escala: ESCALA_SALIDA * desde.escala, z: desde.z, dur: 0.78 };
+        caja.position.set(desdeX, 0, vuelo.z);
+        caja.scale.setScalar(vuelo.escala);
+      },
+      sellar(t0) { sello.visible = true; tSello = t0; },
+      /* Radianes objetivo, ya saturados por quien escucha el puntero; aquí se
+         recortan contra el tope por si acaso. Inclinar mata el muelle. */
+      inclinar(x, y) {
+        metaLadeoX = Math.max(-TOPE_X, Math.min(TOPE_X, x));
+        metaLadeoY = Math.max(-TOPE_Y, Math.min(TOPE_Y, y));
+        inclinando = true;
+        muelle = null;
+      },
+      soltar() {
+        if (!inclinando) return;
+        inclinando = false;
+        metaLadeoX = metaLadeoY = 0;
+        muelle = { t0: ultimoT, x: ladeoX, y: ladeoY };
+      },
+      /* Prueba de impacto: sólo la lámina y el marco. El halo del proyector es
+         mucho más ancho que el cartel y queda fuera a propósito. */
+      impacta(raycaster) {
+        if (!caja.visible) return false;
+        return raycaster.intersectObjects([lamina, marco], false).length > 0;
+      },
+      esconder() { caja.visible = false; vuelo = null; tSello = -1; aplomar(); },
+      update(t, dt) {
+        if (!caja.visible) return;
+        ultimoT = t;
+        if (vuelo) {
+          const a = Math.min(1, (t - vuelo.t0) / vuelo.dur);
+          const e = 1 - Math.pow(1 - a, 3);
+          caja.position.set(vuelo.desdeX * (1 - e), 0.62 * e, vuelo.z + (2.4 - vuelo.z) * e);
+          const s = vuelo.escala + (0.80 - vuelo.escala) * e;
+          caja.scale.setScalar(s);
+          marco.material.visible = a > 0.45;
+          lamina.material.uniforms.uOpacidad.value = 1;
+          luz.material.opacity = 0.5 * e;
+          if (a >= 1) vuelo = null;
+        }
+        if (inclinando) {
+          const k = Math.min(1, dt * 30);
+          ladeoX += (metaLadeoX - ladeoX) * k;
+          ladeoY += (metaLadeoY - ladeoY) * k;
+        } else if (muelle) {
+          const a = (t - muelle.t0) / RETORNO;
+          const f = muelleFactor(a);
+          ladeoX = muelle.x * f;
+          ladeoY = muelle.y * f;
+          if (a >= 1) { ladeoX = 0; ladeoY = 0; muelle = null; }
+        }
+        cartel.rotation.x = ladeoX;
+        cartel.rotation.y = ladeoY;
+        const u = lamina.material.uniforms;
+        u.uLadeo.value.set(ladeoX, ladeoY);
+        u.uFuerza.value = Math.min(1, Math.hypot(ladeoX / TOPE_X, ladeoY / TOPE_Y));
+        if (tSello >= 0) {
+          const a = Math.min(1, (t - tSello) / 0.42);
+          sello.scale.setScalar(2.4 - 1.4 * CURVA_SELLO(a));
+          sello.material.opacity = Math.min(1, a * 2.4);
+        }
+      },
+    };
+  }
+
+  /* ── Sala3D ────────────────────────────────────────────────────────
+     El controlador: lleva la máquina de fases y le manda a cada módulo.
+     Ningún módulo visual sabe en qué fase va el giro; eso vive aquí, que
+     es justo lo que en react-three-fiber sería el estado del padre. */
+  const lienzo = $('lienzo');
+  const renderizador = new THREE.WebGLRenderer({
+    canvas: lienzo, antialias: true, alpha: true, powerPreference: 'low-power',
+  });
+  renderizador.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderizador.autoClear = false;
+  renderizador.outputColorSpace = THREE.LinearSRGBColorSpace;
+
+  const escenaEsc = new THREE.Scene();
+  const camaraEsc = new THREE.PerspectiveCamera(FOV, 1, 0.1, 60);
+  const escenaMar = new THREE.Scene();
+  const camaraMar = new THREE.OrthographicCamera(0, 1, 0, -1, -100, 100);
+
+  const grupoTelon = new THREE.Group();
+  const grupoTambores = new THREE.Group();
+  const grupoConteo = new THREE.Group();
+  const grupoGanador = new THREE.Group();
+  const grupoMarquesina = new THREE.Group();
+  escenaEsc.add(grupoTambores, grupoTelon, grupoConteo, grupoGanador);
+  escenaMar.add(grupoMarquesina);
+
+  const telon = crearTelon(grupoTelon);
+  const marquesina = crearMarquesina(grupoMarquesina);
+  const tambores = crearTambores(grupoTambores);
+  const conteo = crearConteo(grupoConteo);
+  const ganador = crearGanador(grupoGanador);
+
+  /* Un fondo propio para la caja del escenario: el terciopelo de la casa,
+     para que el 3D y el CSS arranquen del mismo negro vinoso. */
+  const fondo = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 40),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(0.055, 0.02, 0.038) }),
+  );
+  fondo.position.z = -7;
+  escenaEsc.add(fondo);
+
+  const tablero = $('tablero');
+  const escenarioCaja = $('escenario');
+  let ANCHO_L = 1, ALTO_L = 1;
+  let banda = { x: 0, y: 0, w: 1, h: 1 };
+  let bandaMar = { x: 0, y: 0, w: 1, h: 1 };
+  let distancia = 9.8;
+
+  function medir() {
+    const caja = tablero.getBoundingClientRect();
+    if (caja.width < 2 || caja.height < 2) return;
+    ANCHO_L = Math.round(caja.width);
+    ALTO_L = Math.round(caja.height);
+    renderizador.setSize(ANCHO_L, ALTO_L, false);
+
+    const esc = escenarioCaja.getBoundingClientRect();
+    const x = Math.round(esc.left - caja.left);
+    const arriba = Math.round(esc.top - caja.top);
+    const w = Math.max(1, Math.round(esc.width));
+    const h = Math.max(1, Math.round(esc.height));
+    banda = { x, y: Math.max(0, ALTO_L - arriba - h), w, h };
+    bandaMar = { x: 0, y: Math.max(1, ALTO_L - arriba), w: ANCHO_L, h: Math.max(1, arriba) };
+
+    const proporcion = w / h;
+    camaraEsc.aspect = proporcion;
+    /* Si la caja se angosta, la cámara se retira para que los tres tambores
+       sigan cabiendo: el encuadre vertical manda, el ancho es el mínimo. */
+    const alto = Math.max(ALTO_VISTA, ANCHO_MINIMO / proporcion);
+    distancia = (alto / 2) / Math.tan((FOV * Math.PI) / 360);
+    camaraEsc.updateProjectionMatrix();
+    /* La cámara del escenario no se mueve NUNCA: se queda en el eje, a la
+       distancia que pide la caja, mirando al origen. Lo que se ladea es la
+       tarjeta (el giroscopio y el ratón alimentan `ganador.inclinar`), que
+       es lo que pidió el dueño. La marquesina ya tenía cámara fija. */
+    camaraEsc.position.set(0, 0, distancia);
+    camaraEsc.lookAt(0, 0, 0);
+
+    /* El paño recogido está escrito en fracciones del ancho del escenario y
+       su borde exterior tiene que pegar al canto: el telón necesita saber
+       cuánto escenario se ve en su plano (z 1.6), que cambia con la caja. */
+    const medioAlto = (alto / 2) * (distancia - 1.6) / distancia;
+    telon.encuadrar(medioAlto * proporcion, medioAlto);
+
+    camaraMar.right = ANCHO_L;
+    camaraMar.bottom = -ALTO_L;
+    camaraMar.updateProjectionMatrix();
+
+    const puntos = [...document.querySelectorAll('.foco')].map((luz) => {
+      const r = luz.getBoundingClientRect();
+      return { x: r.left - caja.left + r.width / 2, y: -(r.top - caja.top + r.height / 2) };
+    });
+    if (puntos.length) marquesina.colocar(puntos);
+  }
+
+  /* ── Giroscopio y ratón: ladean la TARJETA, no la escena ──────────
+     La cámara del escenario está clavada en el eje (`medir`). El aparato y
+     el puntero alimentan el mismo destino que el arrastre, con los topes del
+     cartel; el arrastre manda sobre los dos y el muelle del módulo devuelve
+     el cartel al aplomo en cuanto la fuente ambiente se apaga.
+
+     El sentido es el mismo que tenía la cámara que orbitaba hasta la rev. 3
+     —ladear el aparato a la derecha enseña el costado derecho del cartel—,
+     que es «asomarse», no «empujar»: por eso el signo es contrario al del
+     arrastre, donde la mano agarra el cartel y lo gira. */
+  let metaCartelX = 0, metaCartelY = 0;   // radianes, ya con los topes del cartel
+  let suaveX = 0, suaveY = 0;             // filtrados: lo que ve el cartel
+  let ambienteVivo = false, ladeando = false;
+  let giroscopioPedido = false;
+
+  const ZONA_MUERTA = 0.10;               // fracción del recorrido que no cuenta
+  const FRACCION_RATON = 0.40;            // el hover ladea el 40 % de los topes
+
+  /* Zona muerta suave: ni tiembla en el centro ni salta al salir de ella. */
+  function fuera(v, rango) {
+    const n = Math.max(-1, Math.min(1, v / rango));
+    const m = Math.abs(n);
+    if (m <= ZONA_MUERTA) return 0;
+    return (n < 0 ? -1 : 1) * (m - ZONA_MUERTA) / (1 - ZONA_MUERTA);
+  }
+
+  function ambiente(x, y) {
+    const movio = Math.abs(x - metaCartelX) + Math.abs(y - metaCartelY) > 0.002;
+    metaCartelX = x;
+    metaCartelY = y;
+    ambienteVivo = true;
+    if (movio) despertar();               // 60 fps mientras la tarjeta se mueve
+  }
+
+  function alGirarElAparato(evento) {
+    if (arrastre) return;                 // el gesto manda: el giro no pelea
+    if (evento.gamma === null && evento.beta === null) return;
+    if (!ganador.enEscena()) { ambienteVivo = false; return; }
+    ambiente(
+      fuera((evento.beta ?? 45) - 45, 26) * ganador.topes.x,
+      -fuera(evento.gamma ?? 0, 22) * ganador.topes.y,
+    );
+  }
+
+  async function pedirGiroscopio() {
+    if (giroscopioPedido) return;
+    giroscopioPedido = true;
+    const Ev = window.DeviceOrientationEvent;
+    if (!Ev) return;
+    try {
+      if (typeof Ev.requestPermission === 'function') {
+        const respuesta = await Ev.requestPermission();
+        if (respuesta !== 'granted') return;   // sin permiso, cámara fija
+      }
+      window.addEventListener('deviceorientation', alGirarElAparato);
+    } catch (error) {
+      console.warn('El cine · sin giroscopio:', error);
+    }
+  }
+
+  const conRaton = window.matchMedia('(hover: hover)').matches;
+
+  /* ── El gesto: ladear el cartel ganador ──────────────────────────────
+     Los listeners viven aquí, no dentro de `crearGanador`: el módulo sólo
+     sabe inclinar, soltar y decir si el rayo le da. Así el puerto a
+     react-three-fiber cambia esta parte por `onPointerDown` del `<mesh>` sin
+     tocar el cartel. */
+  const rayo = new THREE.Raycaster();
+  const punto = new THREE.Vector2();
+  const RECORRIDO = 130;                       // px de arrastre ≈ tope suave
+  let arrastre = null;
+
+  const saturar = (px, tope, base) => tope * Math.tanh(px / RECORRIDO
+    + Math.atanh(Math.max(-0.999999, Math.min(0.999999, base / tope))));
+
+  function hayCartel() {
+    return activo && (fase === 'ganador' || fase === 'vetando') && ganador.enEscena();
+  }
+
+  /* NDC dentro de la banda del escenario, que es justo el viewport con el que
+     se dibuja `camaraEsc`; el tablero incluye además la marquesina. */
+  function apuntar(ev) {
+    const r = escenarioCaja.getBoundingClientRect();
+    punto.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+    punto.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+    rayo.setFromCamera(punto, camaraEsc);
+  }
+
+  function pintarCursor(ev) {
+    if (!conRaton) return;
+    if (arrastre) { escenarioCaja.style.cursor = 'grabbing'; return; }
+    if (!hayCartel()) { escenarioCaja.style.cursor = ''; return; }
+    apuntar(ev);
+    escenarioCaja.style.cursor = ganador.impacta(rayo) ? 'grab' : '';
+  }
+
+  /* Con cartel en escena el tablero no hace scroll: el dedo ladea. */
+  function ajustarGesto() {
+    const vivo = hayCartel();
+    tablero.style.touchAction = vivo ? 'none' : '';
+    tablero.style.userSelect = vivo ? 'none' : '';
+    tablero.style.webkitUserSelect = vivo ? 'none' : '';
+    if (!vivo) {
+      if (arrastre) soltarCartel(null);
+      escenarioCaja.style.cursor = '';
+    }
+  }
+
+  function soltarCartel(ev) {
+    if (!arrastre) return;
+    if (ev && ev.pointerId !== arrastre.id) return;
+    const id = arrastre.id;
+    arrastre = null; // lostpointercapture puede reentrar al liberar la captura
+    try { escenarioCaja.releasePointerCapture(id); } catch { /* ya se fue */ }
+    /* Tras el arrastre manda el muelle: la fuente ambiente vuelve a hablar
+       con el siguiente movimiento del puntero o del aparato, no antes. */
+    ambienteVivo = false; ladeando = false;
+    metaCartelX = 0; metaCartelY = 0; suaveX = 0; suaveY = 0;
+    ganador.soltar();
+    if (conRaton) escenarioCaja.style.cursor = '';
+    despertar();
+  }
+
+  escenarioCaja.addEventListener('pointerdown', (ev) => {
+    if (!hayCartel() || arrastre) return;
+    /* La ficha y los botones del ganador son DOM encima del lienzo: si el
+       toque nace ahí, no es el cartel. */
+    if (ev.target?.closest?.('.capa-3d')) return;
+    if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+    apuntar(ev);
+    if (!ganador.impacta(rayo)) return;
+    const base = ganador.orientacion();
+    arrastre = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, base };
+    ganador.inclinar(base.x, base.y); // sujetar cancela el muelle sin cambiar el ángulo
+    try { escenarioCaja.setPointerCapture(ev.pointerId); }
+    catch { soltarCartel(null); return; }
+    window.getSelection?.()?.removeAllRanges?.();
+    if (conRaton) escenarioCaja.style.cursor = 'grabbing';
+    ev.preventDefault();
+    despertar();
+  });
+
+  escenarioCaja.addEventListener('pointermove', (ev) => {
+    if (!arrastre || ev.pointerId !== arrastre.id) return;
+    ganador.inclinar(
+      saturar(ev.clientY - arrastre.y, ganador.topes.x, arrastre.base.x),
+      saturar(ev.clientX - arrastre.x, ganador.topes.y, arrastre.base.y),
+    );
+    ev.preventDefault();
+  });
+
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((nombre) => {
+    escenarioCaja.addEventListener(nombre, soltarCartel);
+  });
+
+  if (conRaton) {
+    tablero.addEventListener('pointermove', (e) => {
+      pintarCursor(e);
+      if (arrastre) return;            // congelado mientras se arrastra el cartel
+      if (!ganador.enEscena()) { ambienteVivo = false; return; }
+      /* El puntero se mide contra la banda del escenario, que es donde vive
+         el cartel; el tablero incluye además la marquesina. */
+      const r = escenarioCaja.getBoundingClientRect();
+      const nx = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
+      const ny = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
+      ambiente(
+        -ny * FRACCION_RATON * ganador.topes.x,
+        -nx * FRACCION_RATON * ganador.topes.y,
+      );
+    });
+    tablero.addEventListener('pointerleave', () => {
+      escenarioCaja.style.cursor = '';
+      if (arrastre) return;
+      metaCartelX = 0; metaCartelY = 0;
+      ambienteVivo = false;            // el muelle devuelve el cartel al aplomo
+      despertar();
+    });
+  }
+
+
+  /* ── El reloj: 20 cuadros en reposo, 60 cuando algo se mueve, 0 si la
+     pestaña se esconde o si la cabina manda la versión CSS ─────────── */
+  let activo = false, pintando = 0, ultimo = 0, siguiente = 0;
+  let reloj = 0, altoHasta = 0, fase = 'reposo';
+
+  const despertar = () => { altoHasta = reloj + 2.2; };
+  /* Arrastrando se pinta a 60 aunque el despertar se haya agotado: un gesto
+     continuo puede durar más de 2.2 s y no debe caer a 20. */
+  const cuadrosPorSegundo = () => (arrastre || reloj < altoHasta
+    || ['conteo', 'girando', 'finalistas', 'vetando'].includes(fase) ? 60 : 20);
+
+  function pintar(ahora) {
+    pintando = requestAnimationFrame(pintar);
+    const t = ahora / 1000;
+    if (t < siguiente) return;
+    siguiente = t + 1 / cuadrosPorSegundo() - 0.002;
+    const dt = Math.min(0.05, Math.max(0.001, t - ultimo));
+    ultimo = t;
+    reloj += dt;
+
+    /* La cámara ya está puesta por `medir` y no se toca. Lo único que se
+       persigue aquí es el ladeo ambiente del cartel: el destino del
+       giroscopio o del ratón, filtrado para que no tiemble, servido al
+       módulo por la misma puerta que el arrastre. */
+    if (arrastre) {
+      ladeando = false;
+    } else if (ambienteVivo && ganador.enEscena()) {
+      if (Math.abs(metaCartelX - suaveX) + Math.abs(metaCartelY - suaveY) > 0.0015) despertar();
+      const k = Math.min(1, dt * 6);
+      suaveX += (metaCartelX - suaveX) * k;
+      suaveY += (metaCartelY - suaveY) * k;
+      ganador.inclinar(suaveX, suaveY);
+      ladeando = true;
+    } else if (ladeando || ambienteVivo) {
+      ambienteVivo = false; ladeando = false;
+      metaCartelX = 0; metaCartelY = 0;
+      suaveX = 0; suaveY = 0;
+      if (ganador.enEscena()) ganador.soltar();
+    }
+
+    telon.update(reloj, dt);
+    marquesina.update(reloj, dt);
+    tambores.update(reloj, dt);
+    conteo.update(reloj, dt);
+    ganador.update(reloj, dt);
+
+    renderizador.setScissorTest(false);
+    renderizador.setClearColor(0x000000, 0);
+    renderizador.setViewport(0, 0, ANCHO_L, ALTO_L);
+    renderizador.clear();
+
+    renderizador.setScissorTest(true);
+    renderizador.setViewport(banda.x, banda.y, banda.w, banda.h);
+    renderizador.setScissor(banda.x, banda.y, banda.w, banda.h);
+    renderizador.setClearColor(0x12080c, 1);
+    renderizador.clear();
+    renderizador.render(escenaEsc, camaraEsc);
+
+    renderizador.setViewport(0, 0, ANCHO_L, ALTO_L);
+    renderizador.setScissor(bandaMar.x, bandaMar.y, bandaMar.w, bandaMar.h);
+    renderizador.render(escenaMar, camaraMar);
+    renderizador.setScissorTest(false);
+  }
+
+  function correr(v) {
+    if (v === activo) return;
+    activo = v;
+    if (v) {
+      medir();
+      ultimo = performance.now() / 1000;
+      siguiente = 0;
+      despertar();
+      if (!document.hidden) pintando = requestAnimationFrame(pintar);
+    } else if (pintando) {
+      cancelAnimationFrame(pintando);
+      pintando = 0;
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (pintando) { cancelAnimationFrame(pintando); pintando = 0; } }
+    else if (activo && !pintando) { ultimo = performance.now() / 1000; siguiente = 0; pintando = requestAnimationFrame(pintar); }
+  });
+
+  new ResizeObserver(() => { if (activo) medir(); }).observe(tablero);
+  window.addEventListener('resize', () => { if (activo) medir(); });
+
+  lienzo.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    correr(false);
+    sinTresD('se perdió el contexto WebGL');
+  });
+
+  /* La tira de un tambor: siete pósters de la casa y el finalista en una
+     celda al azar, que es la que el giro tiene que dejar de frente. */
+  function tira3D(finalista, quieto) {
+    const otros = barajar(estado.candidatos.filter((t) => t.id !== finalista.id)).slice(0, CELDAS - 1);
+    if (!otros.length) otros.push(finalista);
+    const destino = quieto ? 0 : Math.floor(Math.random() * CELDAS);
+    const celdas = [];
+    let k = 0;
+    for (let i = 0; i < CELDAS; i += 1) {
+      if (i === destino) celdas.push(finalista);
+      else { celdas.push(otros[k % otros.length]); k += 1; }
+    }
+    return { celdas, destino };
+  }
+
+  let finalistasEnEscena = [];
+
+  sala3D = {
+    /* El telón recibe el reloj, como los tambores y el ganador: la curva es
+       temporizada y necesita saber cuándo arranca el tramo. */
+    telon(abierto) { telon.abrir(reloj, abierto); despertar(); },
+    reposo() {
+      soltarCartel(null);
+      tambores.esconder(); ganador.esconder();
+      conteo.setNumero(null); conteo.setHaz(false);
+      ajustarGesto();
+      despertar();
+    },
+    conteo(numero) {
+      conteo.setNumero(numero);
+      conteo.setHaz(numero !== null);
+      despertar();
+    },
+    montarTambores(finalistas, quietos = false) {
+      finalistasEnEscena = finalistas;
+      soltarCartel(null);
+      ganador.esconder();
+      conteo.setNumero(null); conteo.setHaz(false);
+      tambores.montar(finalistas.map((f) => tira3D(f, quietos)));
+      ajustarGesto();
+      despertar();
+    },
+    girarTambores(base, paroJuntos, corto) {
+      tambores.girar(reloj, base, paroJuntos, corto);
+      despertar();
+    },
+    elegido(indice) { tambores.setElegido(indice); despertar(); },
+    ganador(titulo) {
+      const i = Math.max(0, finalistasEnEscena.findIndex((t) => t.id === titulo.id));
+      const n = Math.max(1, finalistasEnEscena.length);
+      soltarCartel(null);
+      ganador.mostrar(reloj, titulo, (i - (n - 1) / 2) * SEPARACION, {
+        escala: ESCALA_TAMBOR, z: -RADIO + RADIO * ESCALA_TAMBOR,
+      });
+      /* En cuanto el póster sale del tambor, los tres se van a la sombra:
+         si no, el ganador se ve dos veces, en el marco y en su tambor. */
+      tambores.setElegido(-1);
+      ajustarGesto();
+      despertar();
+    },
+    sello() { ganador.sellar(reloj); despertar(); },
+    limpiar() {
+      soltarCartel(null);
+      tambores.esconder(); ganador.esconder();
+      conteo.setNumero(null); conteo.setHaz(false);
+      ajustarGesto();
+      despertar();
+    },
+    focos(paso, modo) { marquesina.setPatron(paso, modo); },
+    setFase(f) { fase = f; ajustarGesto(); despertar(); },
+    encender(v) { correr(v); ajustarGesto(); },
+    pedirGiroscopio,
+  };
+
+  estado.hay3D = true;
+  aplicarVersion();
+  pintarVersion();
+  armarFocos();
+}
+</script>

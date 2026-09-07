@@ -16,6 +16,7 @@ import {
   mensajeDeVueltaVacia,
   prepararGiro,
   RITMOS,
+  type FaseDelGiro,
 } from "./giro";
 import AltaTitulos from "./alta-titulos";
 import Cabina from "./cabina";
@@ -31,22 +32,14 @@ import { ajusteOpticoDelNumero, type TintaDelNumero } from "./conteo-logica";
 import { calentarPosters, cuandoHayaCalma, urlDePoster } from "./posters";
 import { esLaSalaDeLaCasa } from "./firma-logica";
 import MascotaClaude from "./mascota-claude";
+import Escenario3D, { type MandoDeLaSala3D } from "./escenario-3d";
+import { calentarPosters3D } from "./tres/texturas";
 
 const FILTROS: readonly { valor: FiltroCartelera; etiqueta: string }[] = [
   { valor: "pelicula", etiqueta: "Peli" },
   { valor: "serie", etiqueta: "Serie" },
   { valor: "loQueSea", etiqueta: "Lo que sea" },
 ];
-
-type FaseDelGiro =
-  | "reposo"
-  | "conteo"
-  | "girando"
-  | "finalistas"
-  | "ganador"
-  | "función"
-  | "vuelta vacía"
-  | "vetando";
 
 export type CuentaDeSala = {
   titulos: number;
@@ -129,16 +122,16 @@ function tintaDelNumero(
  * que declara—, así que el número aterrizaba debajo del aro. Se mide el glifo
  * ya pintado y se corre lo que sobre, antes de que la pantalla lo enseñe.
  */
-function NumeroDelConteo({ numero }: { numero: number }) {
+function NumeroDelConteo({ numero, tresD }: { numero: number; tresD: boolean }) {
   const caja = useRef<HTMLSpanElement>(null);
   const ancla = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
-    if (!caja.current || !ancla.current) return;
+    if (tresD || !caja.current || !ancla.current || caja.current.closest(".tresd")) return;
     const tinta = tintaDelNumero(caja.current, ancla.current, String(numero));
     if (!tinta) return;
     caja.current.style.top = `${ajusteOpticoDelNumero(tinta).toFixed(2)}px`;
-  }, [numero]);
+  }, [numero, tresD]);
 
   return (
     <span ref={caja}>
@@ -153,11 +146,11 @@ function NumeroDelConteo({ numero }: { numero: number }) {
  * como suelo y la foto de TMDB se funde encima sólo cuando ya cargó. Si la red
  * tarda o el título no tiene foto, lo que se ve es el dibujo, nunca un vacío.
  */
-function PosterDelCarrete({ titulo }: { titulo: TituloDeSala }) {
+function PosterDelCarrete({ titulo, tresD }: { titulo: TituloDeSala; tresD: boolean }) {
   return (
     <>
       <PosterCrudo titulo={titulo} />
-      {titulo.posterPath && (
+      {!tresD && titulo.posterPath && (
         // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
         <img
           src={urlDePoster(titulo.posterPath, "w185")}
@@ -191,6 +184,72 @@ function tiraDe(
   return [...vueltas, finalista];
 }
 
+function FichaDelGanador({
+  ganador, salaId, ocupado, razonVeto, errorVeto, errorFuncion,
+  elegirFuncion, vetarGanador,
+}: {
+  ganador: TituloDeSala;
+  salaId: Id<"salas">;
+  ocupado: boolean;
+  razonVeto: string;
+  errorVeto: string;
+  errorFuncion: string;
+  elegirFuncion: () => Promise<void>;
+  vetarGanador: () => Promise<void>;
+}) {
+  return (
+    <>
+      <div className="ficha">
+        {ganador.saga && (
+          <p className="saga">
+            {ganador.saga}
+            {ganador.orden !== undefined ? ` · ${ganador.orden}` : ""}
+          </p>
+        )}
+        <h2>{ganador.nombre}</h2>
+        <p className="meta">
+          {ganador.tipo === "serie" ? "Serie" : "Película"}
+          {ganador.anio ? ` · ${ganador.anio}` : ""}
+        </p>
+        <ChipsDisponibilidad
+          key={ganador._id}
+          salaId={salaId}
+          tituloId={ganador._id as Id<"titulos">}
+        />
+      </div>
+      <div className="acciones">
+        <button
+          className="btn-ver"
+          type="button"
+          disabled={ocupado}
+          onClick={() => void elegirFuncion()}
+        >
+          Esta vemos
+        </button>
+        <button
+          className="btn-veto"
+          type="button"
+          disabled={ocupado || Boolean(razonVeto)}
+          onClick={() => void vetarGanador()}
+        >
+          Veto
+        </button>
+      </div>
+      {(razonVeto || errorVeto || errorFuncion) && (
+        <p
+          className={
+            errorVeto || errorFuncion
+              ? "razon-veto error"
+              : "razon-veto"
+          }
+        >
+          {errorFuncion || errorVeto || razonVeto}
+        </p>
+      )}
+    </>
+  );
+}
+
 export default function SalaCartelera({
   salaId,
   codigo,
@@ -222,6 +281,8 @@ export default function SalaCartelera({
   const vetarTitulo = useMutation(api.noches.vetar);
   const cerrarFuncion = useMutation(api.funciones.cerrar);
   const [filtro, setFiltro] = useState<FiltroCartelera>("loQueSea");
+  const [tresD, setTresD] = useState(false);
+  const sala3D = useRef<MandoDeLaSala3D | null>(null);
   const [fase, setFase] = useState<FaseDelGiro>("reposo");
   const [giros, setGiros] = useState(0);
   const [finalistas, setFinalistas] = useState<TituloDeSala[]>([]);
@@ -371,8 +432,11 @@ export default function SalaCartelera({
       .map(({ posterPath }) => posterPath)
       .filter((ruta): ruta is string => Boolean(ruta));
     if (rutas.length === 0) return;
-    return cuandoHayaCalma(() => calentarPosters(rutas, "w185"));
-  }, [cartelera.candidatos, ocupado]);
+    return cuandoHayaCalma(() => {
+      if (tresD) calentarPosters3D(cartelera.candidatos);
+      else calentarPosters(rutas, "w185");
+    });
+  }, [cartelera.candidatos, ocupado, tresD]);
 
   useEffect(() => {
     if (cajonAbierto) botonCerrar.current?.focus();
@@ -406,6 +470,7 @@ export default function SalaCartelera({
               : (indice + paso) % (modo === "girando" ? 3 : 4) === 0;
           luz.classList.toggle("on", encendida);
         });
+        sala3D.current?.focos(paso, modo);
         paso += 1;
       },
       modo === "fiesta" ? 240 : modo === "girando" ? 110 : 620,
@@ -500,18 +565,33 @@ export default function SalaCartelera({
     const base = RITMOS[nocheActual.ajustes.ritmo];
     if (preparacion.primerActo) {
       const paraJuntos = nocheActual.ajustes.paro === "tres";
-      nuevosFinalistas.forEach((_, indice) => {
-        const tira = tiras.current[indice];
-        const alto = tira
-          ?.querySelector<HTMLElement>(".celda")
-          ?.getBoundingClientRect().height;
-        if (!tira || !alto) return;
-        const duracion = reducido
-          ? 30
-          : base + (paraJuntos ? 0 : indice * base * 0.45);
-        tira.style.transition = `transform ${duracion}ms cubic-bezier(.12,.72,.16,1)`;
-        tira.style.transform = `translateY(-${alto * 14}px)`;
-      });
+      sala3D.current?.girarTambores(base, paraJuntos, reducido);
+      // display:none impide medir las celdas. En 3D abrimos sólo el layout
+      // durante esta tarea y lo restauramos antes del pintado: el CSS también
+      // guarda su destino por si se pierde el contexto después de este acto.
+      const pantallaCSS = escenario.current?.querySelector<HTMLElement>(".pantalla");
+      const medirOculta = Boolean(pantallaCSS?.closest(".tresd"));
+      const estiloAnterior = pantallaCSS?.getAttribute("style") ?? null;
+      if (medirOculta && pantallaCSS) pantallaCSS.style.display = "flex";
+      try {
+        nuevosFinalistas.forEach((_, indice) => {
+          const tira = tiras.current[indice];
+          const alto = tira
+            ?.querySelector<HTMLElement>(".celda")
+            ?.getBoundingClientRect().height;
+          if (!tira || !alto) return;
+          const duracion = reducido
+            ? 30
+            : base + (paraJuntos ? 0 : indice * base * 0.45);
+          tira.style.transition = `transform ${duracion}ms cubic-bezier(.12,.72,.16,1)`;
+          tira.style.transform = `translateY(-${alto * 14}px)`;
+        });
+      } finally {
+        if (medirOculta && pantallaCSS) {
+          if (estiloAnterior === null) pantallaCSS.removeAttribute("style");
+          else pantallaCSS.setAttribute("style", estiloAnterior);
+        }
+      }
 
       await esperar(reducido ? 60 : base * (paraJuntos ? 1 : 1.9) + 260);
       if (!giroPuedeContinuar(id)) return;
@@ -585,6 +665,7 @@ export default function SalaCartelera({
 
   function girar() {
     if (!titulos || !noche || ocupado) return;
+    sala3D.current?.pedirGiroscopio();
     void ejecutarGiro(
       cartelera.candidatos,
       cartelera.saltaPrimerActo,
@@ -707,9 +788,23 @@ export default function SalaCartelera({
         />
       ) : (
         <>
+      <Escenario3D
+        ref={sala3D}
+        escenario={escenario}
+        fase={fase}
+        ocupado={ocupado}
+        finalistas={finalistas}
+        tirasDelGiro={tirasDelGiro}
+        candidatos={cartelera.candidatos}
+        elegido={elegido}
+        ganador={ganador}
+        numeroConteo={numeroConteo}
+        selloVisible={selloVisible}
+        onCambio={setTresD}
+      />
       <section
         ref={escenario}
-        className={`escenario${fase !== "reposo" ? " abierto" : ""}`}
+        className={`escenario${fase !== "reposo" ? " abierto" : ""}${tresD ? " tresd" : ""}`}
         aria-label="Ritual del giro"
         tabIndex={-1}
       >
@@ -750,7 +845,7 @@ export default function SalaCartelera({
                   >
                     {tirasDelGiro[indice]?.map((titulo, vuelta) => (
                         <div className="celda" key={`${vuelta}-${titulo._id}`}>
-                          <PosterDelCarrete titulo={titulo} />
+                          <PosterDelCarrete titulo={titulo} tresD={tresD} />
                         </div>
                       ))}
                   </div>
@@ -760,7 +855,7 @@ export default function SalaCartelera({
             </div>
           )}
 
-          {fase === "ganador" && ganador && (
+          {!tresD && fase === "ganador" && ganador && (
             <div className="ganador">
               <div className={`marco-laton${ganador.posterPath ? "" : " punteado"}`}>
                 {ganador.posterPath ? (
@@ -780,53 +875,16 @@ export default function SalaCartelera({
               {!ganador.posterPath && (
                 <p className="fuente sin-poster">sin póster oficial</p>
               )}
-              <div className="ficha">
-                {ganador.saga && (
-                  <p className="saga">
-                    {ganador.saga}
-                    {ganador.orden !== undefined ? ` · ${ganador.orden}` : ""}
-                  </p>
-                )}
-                <h2>{ganador.nombre}</h2>
-                <p className="meta">
-                  {ganador.tipo === "serie" ? "Serie" : "Película"}
-                  {ganador.anio ? ` · ${ganador.anio}` : ""}
-                </p>
-                <ChipsDisponibilidad
-                  key={ganador._id}
-                  salaId={salaId}
-                  tituloId={ganador._id as Id<"titulos">}
-                />
-              </div>
-              <div className="acciones">
-                <button
-                  className="btn-ver"
-                  type="button"
-                  disabled={ocupado}
-                  onClick={() => void elegirFuncion()}
-                >
-                  Esta vemos
-                </button>
-                <button
-                  className="btn-veto"
-                  type="button"
-                  disabled={ocupado || Boolean(razonVeto)}
-                  onClick={() => void vetarGanador()}
-                >
-                  Veto
-                </button>
-              </div>
-              {(razonVeto || errorVeto || errorFuncion) && (
-                <p
-                  className={
-                    errorVeto || errorFuncion
-                      ? "razon-veto error"
-                      : "razon-veto"
-                  }
-                >
-                  {errorFuncion || errorVeto || razonVeto}
-                </p>
-              )}
+              <FichaDelGanador
+                ganador={ganador}
+                salaId={salaId}
+                ocupado={ocupado}
+                razonVeto={razonVeto}
+                errorVeto={errorVeto}
+                errorFuncion={errorFuncion}
+                elegirFuncion={elegirFuncion}
+                vetarGanador={vetarGanador}
+              />
             </div>
           )}
 
@@ -865,6 +923,35 @@ export default function SalaCartelera({
                 : ""}
           </p>
         </div>
+        {tresD && fase === "ganador" && ganador && (
+          <div className="capa-3d viva">
+            <FichaDelGanador
+              ganador={ganador}
+              salaId={salaId}
+              ocupado={ocupado}
+              razonVeto={razonVeto}
+              errorVeto={errorVeto}
+              errorFuncion={errorFuncion}
+              elegirFuncion={elegirFuncion}
+              vetarGanador={vetarGanador}
+            />
+          </div>
+        )}
+        {tresD && (
+          <p className="solo-lectores" role="status" aria-atomic="true">
+            {fase === "ganador" && ganador
+              ? `Ganó ${ganador.nombre}.`
+              : fase === "función" && ganador
+                ? `Eligieron ${ganador.nombre}.${
+                    siguienteDesbloqueado
+                      ? ` Se desbloquea ${siguienteDesbloqueado}.`
+                      : ""
+                  }`
+              : fase === "vuelta vacía"
+                ? mensajeVacio
+                : ""}
+          </p>
+        )}
         {/* El conteo cuelga del escenario y no de la pantalla, aunque caiga
             encima de ella. `.pantalla` no tiene alto propio —el escenario sólo
             declara `min-height`, así que su `height: 100%` no resuelve— y se
@@ -882,7 +969,7 @@ export default function SalaCartelera({
             <div className="aro" />
             <div className="cruz-h" />
             <div className="cruz-v" />
-            <NumeroDelConteo key={numeroConteo} numero={numeroConteo} />
+            <NumeroDelConteo key={numeroConteo} numero={numeroConteo} tresD={tresD} />
           </div>
         )}
         {selloVisible && (

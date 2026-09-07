@@ -4,6 +4,16 @@ import type {
   TituloDeSala,
 } from "./cartelera.ts";
 
+export type FaseDelGiro =
+  | "reposo"
+  | "conteo"
+  | "girando"
+  | "finalistas"
+  | "ganador"
+  | "función"
+  | "vuelta vacía"
+  | "vetando";
+
 export const RITMOS = {
   rapido: 1200,
   normal: 2100,

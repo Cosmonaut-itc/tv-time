@@ -161,6 +161,10 @@ export function crearGanador(grupo: THREE.Group) {
           const c = document.createElement('canvas');
           c.width = 512; c.height = 256;
           const x = c.getContext('2d')!;
+          x.fillStyle = 'rgba(14, 6, 9, 0.58)';
+          x.fillRect(14, 14, 484, 228);
+          x.shadowColor = 'rgba(0,0,0,0.85)'; x.shadowBlur = 8;
+          x.shadowOffsetX = 0; x.shadowOffsetY = 0;
           x.strokeStyle = '#c9566c'; x.lineWidth = 9;
           x.strokeRect(14, 14, 484, 228);
           x.strokeRect(30, 30, 452, 196);
@@ -171,7 +175,8 @@ export function crearGanador(grupo: THREE.Group) {
           return texturaDe(c);
         })(),
         transparent: true, depthWrite: false, depthTest: false,
-        blending: THREE.AdditiveBlending, opacity: 0,
+        // La mezcla normal conserva la tinta sobre pósters claros; la aditiva la lava.
+        blending: THREE.NormalBlending, opacity: 0,
       }),
     );
     sello.position.z = 0.2;
@@ -314,7 +319,7 @@ export function crearGanador(grupo: THREE.Group) {
         if (tSello >= 0) {
           const a = Math.min(1, (t - tSello) / 0.42);
           sello.scale.setScalar(2.4 - 1.4 * CURVA_SELLO(a));
-          sello.material.opacity = Math.min(1, a * 2.4);
+          sello.material.opacity = Math.min(0.94, a * 2.4);
         }
       },
     };

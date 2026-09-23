@@ -95,6 +95,10 @@ function tintaDelNumero(
   if (!contexto) return null;
   const estilo = window.getComputedStyle(caja);
   contexto.font = `${estilo.fontStyle} ${estilo.fontWeight} ${estilo.fontSize} ${estilo.fontFamily}`;
+  // Si el lienzo rechaza la tipografía se queda con la suya —10px sans-serif—
+  // y mediría otro glifo: correr el número con esa cuenta sería peor que no
+  // tocarlo. Se comprueba que el tamaño sobrevivió a la asignación.
+  if (!contexto.font.includes(estilo.fontSize)) return null;
   const medida = contexto.measureText(texto);
   const tintaArriba = medida.actualBoundingBoxAscent;
   const tintaAbajo = medida.actualBoundingBoxDescent;

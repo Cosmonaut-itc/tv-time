@@ -17,6 +17,7 @@ import {
   type PilaDelMuro,
 } from "./muro-logica";
 import PosterCrudo from "./poster-crudo";
+import { urlDePoster } from "./posters";
 
 const FILTROS: readonly { valor: FiltroDelMuro; etiqueta: string }[] = [
   { valor: "todo", etiqueta: "Todo" },
@@ -29,12 +30,35 @@ function PosterDelMuro({ titulo }: { titulo: TituloDeSala }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
     <img
-      src={`https://image.tmdb.org/t/p/w185${titulo.posterPath}`}
+      crossOrigin="anonymous"
+      src={urlDePoster(titulo.posterPath, "w185")}
       alt=""
       width={185}
       height={278}
       loading="lazy"
     />
+  );
+}
+
+// Conserva la foto de la celda hasta que la de detalle esté lista, también si falla.
+function PosterDeFicha({ posterPath }: { posterPath: string }) {
+  const [grandeLista, setGrandeLista] = useState(false);
+  return (
+    <div className="poster-ficha">
+      {/* eslint-disable-next-line @next/next/no-img-element -- TMDB se sirve directo para compartir la petición con WebGL. */}
+      <img crossOrigin="anonymous" src={urlDePoster(posterPath, "w185")} alt="" width={342} height={513} />
+      {/* eslint-disable-next-line @next/next/no-img-element -- La foto de detalle se revela sin retirar el respaldo. */}
+      <img
+        crossOrigin="anonymous"
+        src={urlDePoster(posterPath, "w342")}
+        alt=""
+        width={342}
+        height={513}
+        hidden={!grandeLista}
+        onLoad={() => setGrandeLista(true)}
+        onError={() => setGrandeLista(false)}
+      />
+    </div>
   );
 }
 
@@ -265,8 +289,7 @@ export default function MuroCatalogo({
           <div className="catalogo-ficha">
             <div className={`marco-laton${tituloAbierto.posterPath ? "" : " punteado"}`}>
               {tituloAbierto.posterPath ? (
-                // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
-                <img src={`https://image.tmdb.org/t/p/w342${tituloAbierto.posterPath}`} alt="" width={342} height={513} loading="lazy" />
+                <PosterDeFicha key={tituloAbierto.posterPath} posterPath={tituloAbierto.posterPath} />
               ) : <PosterCrudo titulo={tituloAbierto} />}
             </div>
             {!tituloAbierto.posterPath && <p className="fuente sin-poster">sin póster oficial</p>}

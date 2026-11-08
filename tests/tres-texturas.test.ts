@@ -64,7 +64,7 @@ test("precalentar omite rutas ausentes y nulas y comparte la foto con la tira", 
   assert.equal(Imagen.creadas.length, cantidad + 1, "la tira usa la misma petición precalentada");
 });
 
-test("la tira separa la URL CORS y reutiliza la misma imagen entre peticiones", (t) => {
+test("la tira usa la URL compartida con el catálogo y reutiliza la imagen", (t) => {
   const lienzos: ReturnType<typeof crearLienzo>[] = [];
   instalarDOM(t, lienzos);
   const posterPath = "/tres-prueba-cors.jpg";
@@ -73,8 +73,8 @@ test("la tira separa la URL CORS y reutiliza la misma imagen entre peticiones", 
   t.after(() => primera.destruir());
   const imagen = Imagen.creadas.at(-1)!;
   const url = urlDePoster(posterPath, "w185");
-  assert.notEqual(imagen.src, url);
-  assert.ok(imagen.src.startsWith(url));
+  assert.equal(imagen.src, url);
+  assert.equal(url, "https://image.tmdb.org/t/p/w185/tres-prueba-cors.jpg?cors=1");
   assert.equal(imagen.crossOrigin, "anonymous");
   imagen.cargar();
   const cantidad = Imagen.creadas.length;

@@ -8,7 +8,8 @@ const BASE_TMDB = "https://image.tmdb.org/t/p";
 export type AnchoDePoster = "w185" | "w342";
 
 export function urlDePoster(posterPath: string, ancho: AnchoDePoster): string {
-  return `${BASE_TMDB}/${ancho}${posterPath}`;
+  // El CDN no manda Vary: Origin: esta variante se pide siempre con CORS, también fuera de WebGL.
+  return `${BASE_TMDB}/${ancho}${posterPath}?cors=1`;
 }
 
 const yaPedidos = new Set<string>();
@@ -30,6 +31,7 @@ export function calentarPosters(
     if (yaPedidos.has(url)) continue;
     yaPedidos.add(url);
     const imagen = new window.Image();
+    imagen.crossOrigin = "anonymous";
     imagen.decoding = "async";
     imagen.src = url;
   }

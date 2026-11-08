@@ -768,6 +768,9 @@ button:disabled {
 }
 .marco-laton > svg, .marco-laton > img { display: block; width: 100%; height: auto; }
 
+.poster-ficha { position: relative; width: 100%; aspect-ratio: 2 / 3; }
+.poster-ficha > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
 .marco-laton.punteado {
   border: 2px dashed var(--laton);
 }

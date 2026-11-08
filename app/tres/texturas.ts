@@ -99,13 +99,7 @@ export function vaciarImagenes(): void {
   imagenes.clear();
 }
 
-function urlConCORS(url: string): string {
-  // Evita la caché envenenada por respuestas sin Origin: el CDN no manda Vary: Origin.
-  return `${url}${url.includes("?") ? "&" : "?"}cors=1`;
-}
-
 function pedirImagen(url: string): HTMLImageElement {
-  url = urlConCORS(url);
   const guardada = imagenes.get(url);
   if (guardada) {
     // La caché expulsa la menos usada: pedirla de nuevo la vuelve la más reciente.
@@ -147,7 +141,7 @@ function conFotos(lienzo: HTMLCanvasElement, titulos: readonly TituloDeSala[], a
     const imagen = pedirImagen(urlDePoster(titulo.posterPath, ancho));
     // El cartel conserva la foto del tambor mientras llega la de mayor tamaño.
     const respaldo = ancho === "w342"
-      ? imagenes.get(urlConCORS(urlDePoster(titulo.posterPath, "w185")))
+      ? imagenes.get(urlDePoster(titulo.posterPath, "w185"))
       : undefined;
     const lista = (foto?: HTMLImageElement) => foto?.complete && foto.naturalWidth > 0;
     pintar(indice, lista(imagen) ? imagen : lista(respaldo) ? respaldo : undefined);

@@ -33,6 +33,7 @@ import {
 import type { TituloDeSala } from "./cartelera";
 import HojaInferior from "./hoja-inferior";
 import PosterCrudo from "./poster-crudo";
+import { urlDePoster } from "./posters";
 
 type VistaDelAlta = "buscar" | "saga" | "manual";
 
@@ -41,7 +42,8 @@ function PosterDeAlta({ titulo }: { titulo: TituloEncontrado | { nombre: string;
     return (
       // eslint-disable-next-line @next/next/no-img-element -- El contrato vigente sirve TMDB directo, sin el optimizador de Next.
       <img
-        src={`https://image.tmdb.org/t/p/w185${titulo.posterPath}`}
+        crossOrigin="anonymous"
+        src={urlDePoster(titulo.posterPath, "w185")}
         alt=""
         width={185}
         height={278}

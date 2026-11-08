@@ -154,6 +154,7 @@ function PosterDelCarrete({ titulo, tresD }: { titulo: TituloDeSala; tresD: bool
       {!tresD && titulo.posterPath && (
         // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
         <img
+          crossOrigin="anonymous"
           src={urlDePoster(titulo.posterPath, "w185")}
           alt=""
           width={185}
@@ -851,6 +852,7 @@ export default function SalaCartelera({
                 {ganador.posterPath ? (
                   // eslint-disable-next-line @next/next/no-img-element -- Ticket 002 marca una zona gris: TMDB se sirve directo, sin el optimizador de Next.
                   <img
+                    crossOrigin="anonymous"
                     src={urlDePoster(ganador.posterPath, "w342")}
                     alt=""
                     width={342}

@@ -179,7 +179,6 @@ export default function MuroCatalogo({
     <aside className="catalogo" aria-label="El catálogo">
       <div className="encabezado">
         <h2>EL CATÁLOGO</h2>
-        <span className="donde">cajón sobre la sala</span>
         <button className="catalogo-cerrar" type="button" onClick={onCerrar}>Cerrar</button>
       </div>
       <label className="campo">

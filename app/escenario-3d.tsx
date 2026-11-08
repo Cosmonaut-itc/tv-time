@@ -8,7 +8,6 @@ import { sincronizarSello, debeMontarTambores, faseDeLaSala3D, puedeArrancar, ta
 
 export type MandoDeLaSala3D = {
   girarTambores(base: number, paroJuntos: boolean, corto: boolean): void;
-  pedirGiroscopio(): void;
   focos(paso: number, modo: ModoDeFocos): void;
 };
 
@@ -57,11 +56,6 @@ export default function Escenario3D({
 
   useImperativeHandle(ref, () => ({
     girarTambores: (base, paroJuntos, corto) => sala.current?.girarTambores(base, paroJuntos, corto),
-    pedirGiroscopio: () => {
-      void sala.current?.pedirGiroscopio().catch((error: unknown) => {
-        console.warn("El cine · no se pudo activar el giroscopio:", error);
-      });
-    },
     focos: (paso, modo) => sala.current?.focos(paso, modo),
   }), []);
 

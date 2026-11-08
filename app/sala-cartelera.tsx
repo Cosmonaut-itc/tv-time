@@ -665,7 +665,6 @@ export default function SalaCartelera({
 
   function girar() {
     if (!titulos || !noche || ocupado) return;
-    sala3D.current?.pedirGiroscopio();
     void ejecutarGiro(
       cartelera.candidatos,
       cartelera.saltaPrimerActo,

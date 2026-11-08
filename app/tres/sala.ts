@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { OpcionesDeSala3D, Sala3D, FaseDeLaSala3D } from "./tipos.ts";
 import type { TituloDeSala } from "../cartelera.ts";
 import { ALTO_VISTA, ANCHO_MINIMO, FOV, SEPARACION, ESCALA_TAMBOR, RADIO, GANADOR_Z, TECHO_GANADOR } from "./medidas.ts";
-import { fuera, saturar, cuadrosPorSegundo, tira3D, fraccionAMundo } from "./logica.ts";
+import { saturar, cuadrosPorSegundo, tira3D, fraccionAMundo } from "./logica.ts";
 import { crearTelon } from "./telon.ts";
 import { crearMarquesina } from "./marquesina.ts";
 import { crearTambores } from "./tambores.ts";
@@ -117,7 +117,7 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
     camaraEsc.updateProjectionMatrix();
     /* La cámara del escenario no se mueve NUNCA: se queda en el eje, a la
        distancia que pide la caja, mirando al origen. Lo que se ladea es la
-       tarjeta (el giroscopio y el ratón alimentan `ganador.inclinar`), que
+       tarjeta (el arrastre y el ratón alimentan `ganador.inclinar`), que
        es lo que pidió el dueño. La marquesina ya tenía cámara fija. */
     camaraEsc.position.set(0, 0, distancia);
     camaraEsc.lookAt(0, 0, 0);
@@ -145,24 +145,17 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
     marquesina.colocar(puntos);
   }
 
-  /* ── Giroscopio y ratón: ladean la TARJETA, no la escena ──────────
-     La cámara del escenario está clavada en el eje (`medir`). El aparato y
-     el puntero alimentan el mismo destino que el arrastre, con los topes del
-     cartel; el arrastre manda sobre los dos y el muelle del módulo devuelve
-     el cartel al aplomo en cuanto la fuente ambiente se apaga.
-
-     El sentido es el mismo que tenía la cámara que orbitaba hasta la rev. 3
-     —ladear el aparato a la derecha enseña el costado derecho del cartel—,
-     que es «asomarse», no «empujar»: por eso el signo es contrario al del
-     arrastre, donde la mano agarra el cartel y lo gira. */
+  /* ── Ratón: ladea la TARJETA, no la escena ────────────────────────
+     La cámara del escenario está clavada en el eje (`medir`). El puntero
+     alimenta el mismo destino que el arrastre, con los topes del cartel; el
+     arrastre manda y el muelle del módulo devuelve el cartel al aplomo en
+     cuanto el ratón se va. Sin giroscopio a propósito: pedir permiso de
+     movimiento en cada función molestaba en el iPhone, y el dedo basta. */
   let metaCartelX = 0, metaCartelY = 0;   // radianes, ya con los topes del cartel
   let suaveX = 0, suaveY = 0;             // filtrados: lo que ve el cartel
   let ambienteVivo = false, ladeando = false;
-  let giroscopioPedido = false;
 
   const FRACCION_RATON = 0.40;            // el hover ladea el 40 % de los topes
-
-  /* Zona muerta suave: ni tiembla en el centro ni salta al salir de ella. */
 
   function ambiente(x: number, y: number) {
     const movio = Math.abs(x - metaCartelX) + Math.abs(y - metaCartelY) > 0.002;
@@ -170,34 +163,6 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
     metaCartelY = y;
     ambienteVivo = true;
     if (movio) despertar();               // 60 fps mientras la tarjeta se mueve
-  }
-
-  function alGirarElAparato(evento: DeviceOrientationEvent) {
-    if (arrastre) return;                 // el gesto manda: el giro no pelea
-    if (evento.gamma === null && evento.beta === null) return;
-    if (!ganador.enEscena()) { ambienteVivo = false; return; }
-    ambiente(
-      fuera((evento.beta ?? 45) - 45, 26) * ganador.topes.x,
-      -fuera(evento.gamma ?? 0, 22) * ganador.topes.y,
-    );
-  }
-
-  async function pedirGiroscopio() {
-    if (destruida || giroscopioPedido) return;
-    giroscopioPedido = true;
-    const Ev = window.DeviceOrientationEvent as typeof DeviceOrientationEvent & {
-      requestPermission?: () => Promise<"granted" | "denied">;
-    };
-    if (!Ev) return;
-    try {
-      if (typeof Ev.requestPermission === 'function') {
-        const respuesta = await Ev.requestPermission();
-        if (respuesta !== 'granted') return;   // sin permiso, cámara fija
-      }
-      if (!destruida) escuchar(window, 'deviceorientation', alGirarElAparato);
-    } catch (error) {
-      console.warn('El cine · sin giroscopio:', error);
-    }
   }
 
   const conRaton = window.matchMedia('(hover: hover)').matches;
@@ -347,7 +312,7 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
 
     /* La cámara ya está puesta por `medir` y no se toca. Lo único que se
        persigue aquí es el ladeo ambiente del cartel: el destino del
-       giroscopio o del ratón, filtrado para que no tiemble, servido al
+       ratón, filtrado para que no tiemble, servido al
        módulo por la misma puerta que el arrastre. */
     if (arrastre) {
       ladeando = false;
@@ -490,7 +455,6 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
       ajustarGesto(); despertar();
     },
     encender(v) { correr(v); ajustarGesto(); },
-    pedirGiroscopio,
     medir,
     destruir() {
       if (destruida) return;

@@ -70,16 +70,6 @@ test("la tira deja al finalista en el destino y excluye copias por _id del relle
   assert.deepEqual(candidatos, original);
 });
 
-test("la zona muerta es continua, simétrica y recorta los extremos", async () => {
-  const { fuera } = await import("../app/tres/logica.ts");
-  assert.equal(fuera(2.6, 26), 0);
-  assert.equal(fuera(-2.6, 26), 0);
-  assert.ok(Math.abs(fuera(14.3, 26) - 0.5) < 1e-12);
-  assert.ok(Math.abs(fuera(-14.3, 26) + 0.5) < 1e-12);
-  assert.equal(fuera(50, 26), 1);
-  assert.equal(fuera(-50, 26), -1);
-});
-
 test("el arrastre conserva el ángulo inicial y satura suavemente a 130 px", async () => {
   const { saturar } = await import("../app/tres/logica.ts");
   assert.ok(Math.abs(saturar(0, 0.5, 0.2) - 0.2) < 1e-12);

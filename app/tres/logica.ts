@@ -50,14 +50,6 @@ export function tira3D(finalista: TituloDeSala, candidatos: readonly TituloDeSal
   }
 
 
-const ZONA_MUERTA = 0.10;
-export function fuera(v: number, rango: number) {
-    const n = Math.max(-1, Math.min(1, v / rango));
-    const m = Math.abs(n);
-    if (m <= ZONA_MUERTA) return 0;
-    return (n < 0 ? -1 : 1) * (m - ZONA_MUERTA) / (1 - ZONA_MUERTA);
-  }
-
 /** El gesto usa 130 px de recorrido y parte del ángulo que ya tenía el cartel. */
 export const saturar = (px: number, tope: number, base: number) => tope * Math.tanh(px / 130
   + Math.atanh(Math.max(-0.999999, Math.min(0.999999, base / tope))));

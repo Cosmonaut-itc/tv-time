@@ -71,6 +71,7 @@ export default defineSchema({
     // ninguna función. `visto` con funciones = lo vieron aquí; `visto` sin
     // ninguna función = «ya lo habíamos visto antes».
     visto: v.boolean(),
+    calificaciones: v.optional(v.array(v.object({ butaca: v.string(), estrellas: v.number() }))),
     agregado: v.number(),
   })
     .index("por_sala", ["salaId"])
@@ -101,6 +102,16 @@ export default defineSchema({
   // Caché de TMDB, fuera de las salas: dos salas distintas no piden dos
   // veces lo mismo. Se refresca al usarse cuando pasa de una semana, desde
   // una acción — una query no puede hablar con la red.
+  fichasTmdb: defineTable({
+    tmdbId: v.number(),
+    tipo: tipoTitulo,
+    sinopsis: v.optional(v.string()),
+    calificacion: v.optional(v.number()),
+    actualizada: v.number(),
+  })
+    .index("por_tmdb", ["tipo", "tmdbId"])
+    .index("por_actualizada", ["actualizada"]),
+
   disponibilidad: defineTable({
     tmdbId: v.number(),
     tipo: tipoTitulo,

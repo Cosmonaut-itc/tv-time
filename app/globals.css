@@ -2204,3 +2204,28 @@ button:disabled {
   min-height: 44px;
   min-width: 44px;
 }
+
+.catalogo .sinopsis {
+  margin: 10px auto 0; max-width: 330px;
+  font-size: 13.5px; line-height: 1.5; color: rgba(242,229,198,.82);
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  cursor: pointer;
+}
+.catalogo .sinopsis.abierta { -webkit-line-clamp: unset; display: block; cursor: auto; }
+
+.catalogo .voces { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; max-width: 320px; padding: 2px 0; }
+.catalogo .voz { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.catalogo .voz > span { font-family: var(--datos); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--crema-tenue); }
+.catalogo .estrellas { display: flex; }
+.catalogo .estrellas button {
+  width: 29px; height: 36px; padding: 0; background: none; border: none;
+  font-family: var(--cuerpo); font-size: 21px; letter-spacing: 0; line-height: 1;
+  color: rgba(201,162,39,.22);
+}
+.catalogo .estrellas button.on { color: var(--laton); text-shadow: 0 0 10px rgba(201,162,39,.45); }
+
+
+.alta .resultado .sin {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin-top: 5px; font-family: var(--cuerpo); font-size: 12.5px; line-height: 1.4; color: rgba(242,229,198,.66);
+}

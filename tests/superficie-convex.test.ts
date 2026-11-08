@@ -21,6 +21,7 @@ test("la siembra es interna y la superficie pública usa ids, nunca códigos", a
 
   assert.deepEqual(publicas, [
     "disponibilidad.ts:deTitulo:action",
+    "fichas.ts:deTitulo:action",
     "funciones.ts:historialDeSala:query",
     "funciones.ts:vaciarFunciones:mutation",
     "funciones.ts:vaciarYaVisto:mutation",
@@ -36,12 +37,14 @@ test("la siembra es interna y la superficie pública usa ids, nunca códigos", a
     "titulos.ts:altaEnLote:mutation",
     "titulos.ts:marcarVisto:mutation",
     "titulos.ts:quitar:mutation",
+    "titulos.ts:calificar:mutation",
     "tmdb.ts:buscar:action",
     "tmdb.ts:coleccion:action",
   ]);
 
   for (const modulo of [
     "convex/disponibilidad.ts",
+    "convex/fichas.ts",
     "convex/funciones.ts",
     "convex/noches.ts",
     "convex/salas.ts",

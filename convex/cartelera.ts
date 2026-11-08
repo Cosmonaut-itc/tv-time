@@ -12,6 +12,7 @@ export type TituloDeSala = {
   saga?: string;
   orden?: number;
   agregadoPor?: string;
+  calificaciones?: { butaca: string; estrellas: number }[];
   visto: boolean;
   agregado?: number;
 };

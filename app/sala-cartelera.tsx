@@ -1072,6 +1072,7 @@ export default function SalaCartelera({
       </aside>
 
       <MuroCatalogo
+        butacas={butacas}
         abierta={catalogoAbierto}
         onCerrar={() => {
           setCatalogoAbierto(false);

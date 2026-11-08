@@ -1,6 +1,6 @@
 const DIA_EN_MS = 24 * 60 * 60 * 1000;
 const FRESCURA_EN_MS = 7 * DIA_EN_MS;
-const CADUCIDAD_EN_MS = 180 * DIA_EN_MS;
+export const CADUCIDAD_CACHE_EN_MS = 180 * DIA_EN_MS;
 
 export type Proveedor = { nombre: string; logoPath: string };
 
@@ -28,8 +28,8 @@ export function politicaDeCache(
   }
   return {
     decision: "pedir",
-    servirSiFalla: edad < CADUCIDAD_EN_MS,
-    borrar: edad >= CADUCIDAD_EN_MS,
+    servirSiFalla: edad < CADUCIDAD_CACHE_EN_MS,
+    borrar: edad >= CADUCIDAD_CACHE_EN_MS,
   };
 }
 

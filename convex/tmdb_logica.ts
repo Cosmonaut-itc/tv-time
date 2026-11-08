@@ -1,6 +1,8 @@
+import { mapearFicha, type FichaCruda } from "./fichas_logica.ts";
+
 type ColeccionCruda = { id?: unknown; name?: unknown };
 
-export type ResultadoCrudo = {
+export type ResultadoCrudo = FichaCruda & {
   id?: unknown;
   media_type?: unknown;
   title?: unknown;
@@ -10,7 +12,7 @@ export type ResultadoCrudo = {
   poster_path?: unknown;
 };
 
-export type ParteCruda = {
+export type ParteCruda = FichaCruda & {
   id?: unknown;
   title?: unknown;
   release_date?: unknown;
@@ -65,6 +67,7 @@ export function mapearResultadoDeBusqueda(
   const coleccion = esPelicula ? mapearColeccion(coleccionCruda) : undefined;
 
   return {
+    ...mapearFicha(resultado),
     id: resultado.id,
     tipo: esPelicula ? "pelicula" as const : "serie" as const,
     nombre,
@@ -86,6 +89,7 @@ export function mapearParteDeColeccion(
   const anio = anioDe(fechaEstreno);
   const posterPath = poster(parte.poster_path);
   return {
+    ...mapearFicha(parte),
     id: parte.id,
     tipo: "pelicula" as const,
     nombre: parte.title.trim(),

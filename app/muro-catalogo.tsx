@@ -4,6 +4,8 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
+import DatosFicha from "./datos-ficha";
+import CalificacionesTitulo from "./calificaciones-titulo";
 import ChipsDisponibilidad from "./chips-disponibilidad";
 import type { TituloDeSala } from "./cartelera";
 import HojaInferior from "./hoja-inferior";
@@ -99,12 +101,14 @@ export default function MuroCatalogo({
   onAgregar,
   salaId,
   titulos,
+  butacas,
 }: {
   abierta: boolean;
   onCerrar: () => void;
   onAgregar: (disparador: HTMLButtonElement) => void;
   salaId: Id<"salas">;
   titulos: readonly TituloDeSala[];
+  butacas: readonly string[];
 }) {
   const marcarVisto = useMutation(api.titulos.marcarVisto);
   const quitar = useMutation(api.titulos.quitar);
@@ -259,10 +263,11 @@ export default function MuroCatalogo({
             {!tituloAbierto.posterPath && <p className="fuente sin-poster">sin póster oficial</p>}
             <div className="ficha">
               <h2>{tituloAbierto.nombre}</h2>
-              <p className="meta">{tituloAbierto.anio ?? "s/f"} · {tituloAbierto.tipo === "serie" ? "Serie" : "Película"}</p>
+              <DatosFicha key={tituloAbierto._id} salaId={salaId} tituloId={tituloAbierto._id as Id<"titulos">} anio={tituloAbierto.anio} tipo={tituloAbierto.tipo} />
               <ChipsDisponibilidad key={tituloAbierto._id} salaId={salaId} tituloId={tituloAbierto._id as Id<"titulos">} />
               {tituloAbierto.agregadoPor && <p className="autoria-catalogo">Agregó {tituloAbierto.agregadoPor}</p>}
             </div>
+            {tituloAbierto.visto && <CalificacionesTitulo key={tituloAbierto._id} salaId={salaId} titulo={tituloAbierto} butacas={butacas} />}
             <div className="acciones">
               <button className="btn-ver" type="button" disabled={ocupado} onClick={() => void cambiarVisto()}>
                 {tituloAbierto.visto ? "Volver a la cartelera" : "Ya la vimos"}

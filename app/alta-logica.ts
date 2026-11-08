@@ -15,6 +15,8 @@ export type TituloEncontrado = {
   fechaEstreno?: string;
   posterPath?: string;
   coleccion?: ColeccionEncontrada;
+  sinopsis?: string;
+  calificacion?: number;
 };
 
 export type TituloParaAlta = {
@@ -171,6 +173,8 @@ export function mismaFilaDeBusqueda(
     anterior.id === siguiente.id &&
     anterior.tipo === siguiente.tipo &&
     anterior.nombre === siguiente.nombre &&
+    anterior.sinopsis === siguiente.sinopsis &&
+    anterior.calificacion === siguiente.calificacion &&
     anterior.anio === siguiente.anio &&
     anterior.fechaEstreno === siguiente.fechaEstreno &&
     anterior.posterPath === siguiente.posterPath &&

@@ -408,13 +408,14 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
       despertar();
     },
     montarTambores(finalistas, candidatos, quietos = false) {
-      calentarPosters3D(finalistas, "w342");
       finalistasEnEscena = finalistas;
       soltarCartel(null);
       ganador.esconder();
       actualizarFicha(null, null);
       conteo.setNumero(null); conteo.setHaz(false);
       tambores.montar(tiras3D(finalistas, candidatos, quietos));
+      // Después de montar: las tiras ya renovaron la w185 de cada finalista.
+      calentarPosters3D(finalistas, "w342");
       ajustarGesto();
       despertar();
     },

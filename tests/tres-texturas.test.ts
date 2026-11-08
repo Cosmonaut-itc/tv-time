@@ -146,6 +146,19 @@ test("una foto fallida conserva el dibujo y una foto en caché se pinta al monta
   assert.equal(Imagen.creadas.length, cantidad + 1, "la primera se vuelve a pedir");
 });
 
+ test("la caché expulsa la imagen menos usada, no la más antigua", (t) => {
+  instalarDOM(t, []);
+  const titulos = Array.from({ length: 97 }, (_, i) => titulo(String(i), `/uso-${i}.jpg`));
+  calentarPosters3D(titulos.slice(0, 96));
+  calentarPosters3D([titulos[0]]);
+  calentarPosters3D([titulos[96]]);
+  const cantidad = Imagen.creadas.length;
+  calentarPosters3D([titulos[0]]);
+  assert.equal(Imagen.creadas.length, cantidad, "la usada hace poco sigue guardada");
+  calentarPosters3D([titulos[1]]);
+  assert.equal(Imagen.creadas.length, cantidad + 1, "la menos usada se vuelve a pedir");
+});
+
  test("una carga fallida se vuelve a pedir", (t) => {
   instalarDOM(t, []);
   const pelicula = titulo("reintento", "/reintento.jpg");

@@ -107,7 +107,12 @@ function urlConCORS(url: string): string {
 function pedirImagen(url: string): HTMLImageElement {
   url = urlConCORS(url);
   const guardada = imagenes.get(url);
-  if (guardada) return guardada;
+  if (guardada) {
+    // La caché expulsa la menos usada: pedirla de nuevo la vuelve la más reciente.
+    imagenes.delete(url);
+    imagenes.set(url, guardada);
+    return guardada;
+  }
   const imagen = new Image();
   imagen.crossOrigin = "anonymous";
   imagen.decoding = "async";

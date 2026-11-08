@@ -4,7 +4,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { razonSinRuleta } from "./ruleta-logica";
+import { anuncioDeRuleta, razonSinRuleta, textoBotonRuleta } from "./ruleta-logica";
 import DatosFicha from "./datos-ficha";
 import CartelDeFicha from "./cartel-de-ficha";
 import CalificacionesTitulo from "./calificaciones-titulo";
@@ -68,20 +68,29 @@ const CeldaDeTitulo = memo(function CeldaDeTitulo({
   titulo,
   bloqueada,
   enRuleta,
+  eligiendo,
+  razon,
+  onAlternarRuleta,
   onAbrir,
 }: {
   titulo: TituloDeSala;
   bloqueada: boolean;
   enRuleta: boolean;
+  eligiendo: boolean;
+  razon: string | null;
+  onAlternarRuleta: (titulo: TituloDeSala) => void;
   onAbrir: (titulo: TituloDeSala, disparador: HTMLElement) => void;
 }) {
   const estado = titulo.visto ? "✓ vista" : bloqueada ? "🔒 falta la anterior" : null;
+  const apagada = eligiendo && !enRuleta && Boolean(razon);
   return (
     <button
-      className={`celda${titulo.visto ? " esta-vista" : ""}${bloqueada ? " bloqueada" : ""}${enRuleta ? " en-ruleta" : ""}`}
+      className={`celda${titulo.visto ? " esta-vista" : ""}${bloqueada ? " bloqueada" : ""}${enRuleta ? " en-ruleta" : ""}${apagada ? " apagada" : ""}`}
       type="button"
       aria-label={`${titulo.nombre}${estado ? `, ${estado}` : ""}`}
-      onClick={(evento) => onAbrir(titulo, evento.currentTarget)}
+      aria-pressed={eligiendo ? enRuleta : undefined}
+      aria-disabled={apagada || undefined}
+      onClick={(evento) => eligiendo ? onAlternarRuleta(titulo) : onAbrir(titulo, evento.currentTarget)}
     >
       <PosterDelMuro titulo={titulo} />
       <span className="filete-muro" />
@@ -91,7 +100,10 @@ const CeldaDeTitulo = memo(function CeldaDeTitulo({
 }, (anterior, siguiente) =>
   mismaCeldaDeTitulo(anterior, siguiente) &&
   anterior.onAbrir === siguiente.onAbrir &&
-  anterior.enRuleta === siguiente.enRuleta,
+  anterior.enRuleta === siguiente.enRuleta &&
+  anterior.eligiendo === siguiente.eligiendo &&
+  anterior.razon === siguiente.razon &&
+  anterior.onAlternarRuleta === siguiente.onAlternarRuleta,
 );
 
 const CeldaDePila = memo(function CeldaDePila({
@@ -134,6 +146,7 @@ export default function MuroCatalogo({
   marcadas,
   vetados,
   onAlternarRuleta,
+  onVaciarRuleta,
   onGirarRuleta,
   puedeGirar,
 }: {
@@ -146,6 +159,7 @@ export default function MuroCatalogo({
   marcadas: readonly string[];
   vetados: ReadonlySet<string>;
   onAlternarRuleta: (titulo: TituloDeSala) => void;
+  onVaciarRuleta: () => void;
   onGirarRuleta: () => void;
   puedeGirar: boolean;
 }) {
@@ -163,6 +177,15 @@ export default function MuroCatalogo({
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState("");
   const devolverFocoA = useRef<HTMLElement | null>(null);
+  const buscador = useRef<HTMLInputElement>(null);
+  const [aviso, setAviso] = useState("");
+  const [anuncio, setAnuncio] = useState("");
+  const avisoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const anuncioCuadro = useRef<number | null>(null);
+  const eligiendo = marcadas.length > 0;
+  const razones = useMemo(() => new Map(eligiendo
+    ? titulos.map((titulo) => [titulo._id, razonSinRuleta(titulo, titulos, vetados, marcadas)] as const)
+    : []), [eligiendo, titulos, vetados, marcadas]);
   const muro = useMemo(
     () => derivarMuro(titulos, { filtro, busqueda }),
     [busqueda, filtro, titulos],
@@ -171,6 +194,39 @@ export default function MuroCatalogo({
   const tituloAbierto = titulos.find(({ _id }) => _id === tituloAbiertoId) ?? null;
 
   const razonRuleta = tituloAbierto ? razonSinRuleta(tituloAbierto, titulos, vetados, marcadas) : null;
+
+  const limpiarAviso = useCallback(() => {
+    if (avisoTimer.current !== null) clearTimeout(avisoTimer.current);
+    avisoTimer.current = null;
+    setAviso("");
+  }, []);
+  const anunciar = useCallback((frase: string) => {
+    if (anuncioCuadro.current !== null) cancelAnimationFrame(anuncioCuadro.current);
+    // Reescribir permite anunciar también dos activaciones de la misma razón.
+    setAnuncio("");
+    anuncioCuadro.current = requestAnimationFrame(() => setAnuncio(frase));
+  }, []);
+  const alternarMarcada = useCallback((titulo: TituloDeSala) => {
+    const marcada = marcadas.includes(titulo._id);
+    const razon = marcada ? null : eligiendo
+      ? razones.get(titulo._id) ?? null
+      : razonSinRuleta(titulo, titulos, vetados, marcadas);
+    limpiarAviso();
+    if (razon) {
+      setAviso(razon);
+      avisoTimer.current = setTimeout(() => setAviso(""), 2600);
+      anunciar(razon);
+      return;
+    }
+    setRecienMarcada(marcada ? null : titulo._id);
+    onAlternarRuleta(titulo);
+    anunciar(anuncioDeRuleta(titulo.nombre, !marcada, marcadas.length + (marcada ? -1 : 1)));
+  }, [marcadas, eligiendo, razones, titulos, vetados, limpiarAviso, anunciar, onAlternarRuleta]);
+
+  useEffect(() => () => {
+    if (avisoTimer.current !== null) clearTimeout(avisoTimer.current);
+    if (anuncioCuadro.current !== null) cancelAnimationFrame(anuncioCuadro.current);
+  }, []);
 
   const abrirFicha = useCallback((titulo: TituloDeSala, disparador: HTMLElement) => {
     sesionFicha.current += 1;
@@ -192,9 +248,10 @@ export default function MuroCatalogo({
   }, []);
 
   const cerrarCatalogo = useCallback(() => {
+    limpiarAviso();
     cerrarFicha();
     onCerrar();
-  }, [cerrarFicha, onCerrar]);
+  }, [limpiarAviso, cerrarFicha, onCerrar]);
 
   async function registrarFuncion() {
     if (!tituloAbierto || ocupado) return;
@@ -278,7 +335,8 @@ export default function MuroCatalogo({
   if (!abierta) return null;
 
   return (
-    <aside className="catalogo" aria-label="El catálogo">
+    <aside className={`catalogo${eligiendo ? " eligiendo" : ""}`} aria-label="El catálogo">
+      <p className="solo-lectores" role="status">{anuncio}</p>
       <div className="encabezado">
         <h2>EL CATÁLOGO</h2>
         <button className="btn-cerrar" type="button" aria-label="Cerrar el catálogo" onClick={cerrarCatalogo}>✕</button>
@@ -287,6 +345,7 @@ export default function MuroCatalogo({
         <span className="lupa" aria-hidden="true">⌕</span>
         <span className="solo-lectores">Buscar en el catálogo</span>
         <input
+          ref={buscador}
           value={busqueda}
           onChange={(evento) => setBusqueda(evento.target.value)}
           placeholder="Buscar…"
@@ -320,13 +379,13 @@ export default function MuroCatalogo({
                   <div className="tira">
                     <span className="rotulo-tira" aria-hidden="true" />
                     {celda.visibles.map(({ titulo, bloqueada }) => (
-                      <CeldaDeTitulo titulo={titulo} bloqueada={bloqueada} enRuleta={marcadas.includes(titulo._id)} onAbrir={abrirFicha} key={titulo._id} />
+                      <CeldaDeTitulo titulo={titulo} bloqueada={bloqueada} enRuleta={marcadas.includes(titulo._id)} eligiendo={eligiendo} razon={razones.get(titulo._id) ?? null} onAlternarRuleta={alternarMarcada} onAbrir={abrirFicha} key={titulo._id} />
                     ))}
                   </div>
                 )}
               </div>
             ) : (
-              <CeldaDeTitulo titulo={celda.titulo} bloqueada={celda.bloqueada} enRuleta={marcadas.includes(celda.titulo._id)} onAbrir={abrirFicha} key={celda.titulo._id} />
+              <CeldaDeTitulo titulo={celda.titulo} bloqueada={celda.bloqueada} enRuleta={marcadas.includes(celda.titulo._id)} eligiendo={eligiendo} razon={razones.get(celda.titulo._id) ?? null} onAlternarRuleta={alternarMarcada} onAbrir={abrirFicha} key={celda.titulo._id} />
             ),
           )}
         </main>
@@ -345,21 +404,28 @@ export default function MuroCatalogo({
           </button>
         ) : (
           <div className="barra-ruleta" role="group" aria-label="La ruleta">
-            <button className="mas" type="button" aria-label="Agregar al catálogo" onClick={(evento) => onAgregar(evento.currentTarget)}>＋</button>
+            <button className="vaciar" type="button" aria-label="Vaciar la ruleta" onClick={() => {
+              limpiarAviso();
+              setRecienMarcada(null);
+              onVaciarRuleta();
+              anunciar("La ruleta quedó vacía.");
+              buscador.current?.focus({ preventScroll: true });
+            }}>✕</button>
             <div className="ranuras">
               {[0, 1, 2].map((indice) => {
                 const titulo = titulos.find(({ _id }) => _id === marcadas[indice]);
                 return titulo ? (
-                  <button className={`ranura${recienMarcada === titulo._id ? " recien" : ""}`} key={titulo._id} type="button" onAnimationEnd={() => setRecienMarcada(null)} aria-label={`Ver ${titulo.nombre}`} onClick={(evento) => abrirFicha(titulo, evento.currentTarget)}>
+                  <button className={`ranura${recienMarcada === titulo._id ? " recien" : ""}`} key={titulo._id} type="button" onAnimationEnd={() => setRecienMarcada(null)} aria-label={`Quitar ${titulo.nombre} de la ruleta`} onClick={() => alternarMarcada(titulo)}>
                     <PosterDelMuro titulo={titulo} />
                   </button>
                 ) : <span className="ranura vacia" key={`vacia-${indice}`} aria-hidden="true" />;
               })}
             </div>
-            <button className="girar-estas" type="button" disabled={marcadas.length !== 3 || !puedeGirar} onClick={() => { cerrarFicha(); onGirarRuleta(); }}>Girar con estas</button>
+            <button className="girar-estas" type="button" disabled={marcadas.length !== 3 || !puedeGirar} onClick={() => { limpiarAviso(); cerrarFicha(); onGirarRuleta(); }}>{textoBotonRuleta(marcadas.length)}</button>
           </div>
         )}
       </div>
+      <p className={`aviso-ruleta${aviso ? " on" : ""}`} aria-hidden="true">{aviso}</p>
 
       <HojaInferior
         abierta={tituloAbierto !== null}
@@ -393,10 +459,10 @@ export default function MuroCatalogo({
               <div className="acciones">
                 <button className="btn-ver" type="button" disabled={ocupado} onClick={() => void registrarFuncion()}>Esta vemos</button>
                 {!tituloAbierto.visto && (
-                  <button className="btn-ruleta" type="button" aria-pressed={marcadas.includes(tituloAbierto._id)} disabled={ocupado || Boolean(razonRuleta)} onClick={() => {
-                    setRecienMarcada(marcadas.includes(tituloAbierto._id) ? null : tituloAbierto._id);
-                    onAlternarRuleta(tituloAbierto);
-                  }}>{marcadas.includes(tituloAbierto._id) ? "✓ En la ruleta" : "A la ruleta"}</button>
+                  <button className="btn-ruleta" type="button" disabled={ocupado || Boolean(razonRuleta)} onClick={() => {
+                    alternarMarcada(tituloAbierto);
+                    cerrarFicha();
+                  }}>A la ruleta</button>
                 )}
               </div>
             )}

@@ -1112,6 +1112,7 @@ export default function SalaCartelera({
         marcadas={marcadasVigentes}
         vetados={vetados}
         onAlternarRuleta={alternarRuleta}
+        onVaciarRuleta={() => setMarcadas([])}
         onGirarRuleta={girarMarcadas}
         puedeGirar={!ocupado && Boolean(noche)}
         butacas={butacas}

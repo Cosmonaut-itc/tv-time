@@ -184,7 +184,7 @@ function conFotos(lienzo: HTMLCanvasElement, titulos: readonly TituloDeSala[], a
   };
 }
 
-/* Los pósters entran girados un cuarto de vuelta en el cilindro horizontal. */
+/* El eje horizontal de la textura recorre la cinta; el cuarto de vuelta deja los pósters derechos. */
 export function lienzoTira(celdas: readonly TituloDeSala[]): LienzoConFotos {
   const celdaAncho = 384, celdaAlto = 256;
   const c = document.createElement('canvas');

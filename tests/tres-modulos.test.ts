@@ -6,9 +6,9 @@ import { crearMarquesina } from "../app/tres/marquesina.ts";
 import { crearTambores } from "../app/tres/tambores.ts";
 import { crearConteo } from "../app/tres/conteo.ts";
 import { crearMarco } from "../app/tres/marco.ts";
-import { ALTO_MARCO_GANADOR, GANADOR_ANCHO, GANADOR_ALTO } from "../app/tres/medidas.ts";
+import { ALTO_MARCO_GANADOR, GANADOR_ANCHO, GANADOR_ALTO, ALTURA_CINTA, FRENTE_Z, ESCALA_TAMBOR, POSTER_ALTO } from "../app/tres/medidas.ts";
 import { crearGanador } from "../app/tres/ganador.ts";
-import { tiras3D } from "../app/tres/logica.ts";
+import { tiras3D, desfaseDeCinta } from "../app/tres/logica.ts";
 import type { TituloDeSala } from "../app/cartelera.ts";
 
 function instalarLienzo(t: TestContext) {
@@ -116,8 +116,11 @@ test("telón reversible y vuelo conservan los tiempos del prototipo", (t) => {
   telon.destruir();
 
   const ganador = crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer);
-  ganador.mostrar(0, titulo, 1.3248, { escala: 0.94, z: -0.1466771955534908 });
+  ganador.mostrar(0, titulo, 1.3248, { escala: ESCALA_TAMBOR, z: FRENTE_Z, y: ALTURA_CINTA });
   const caja = ganador.grupo.children[0];
+  assert.deepEqual(caja.position.toArray(), [1.3248, ALTURA_CINTA, FRENTE_Z]);
+  ganador.update(0, 0);
+  assert.equal(caja.position.y, ALTURA_CINTA);
   assert.ok(Math.abs(caja.scale.x - 0.6468817204301075) < 1e-12);
   ganador.update(0.78, 0.05);
   assert.deepEqual(caja.position.toArray(), [0, 0.62, 2.4]);
@@ -270,4 +273,36 @@ test("el marco participa en el gesto aunque el rayo caiga fuera de la lámina", 
   assert.equal(ganador.impacta(rayo), true);
   ganador.esconder();
   assert.equal(ganador.impacta(rayo), false);
+});
+
+
+test("la cinta conserva el frente plano y detiene cada finalista en el centro", (t) => {
+  instalarLienzo(t);
+  const tambores = crearTambores(new THREE.Group());
+  t.after(() => tambores.destruir());
+  const finalistas = [titulo, { ...titulo, _id: "dos" }, { ...titulo, _id: "tres" }];
+  const tiras = tiras3D(finalistas, finalistas, false, () => 0.7);
+  tambores.montar(tiras);
+  const raices = tambores.grupo.children;
+  const posiciones = raices.map((raiz) => raiz.position.clone());
+  tambores.girar(0, 1000, false, false);
+  tambores.update(10, 0.05);
+  raices.forEach((raiz, i) => {
+    const cinta = raiz.children[0] as THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+    assert.equal(cinta.material.uniforms.uDesfase.value, desfaseDeCinta((4 + i) * 8 + tiras[i].destino));
+    assert.ok(raiz.position.equals(posiciones[i]));
+    assert.equal(raiz.position.y, ALTURA_CINTA);
+    assert.equal(raiz.position.z, FRENTE_Z);
+    assert.deepEqual(cinta.rotation.toArray().slice(0, 3), [0, 0, 0]);
+    const puntos = cinta.geometry.getAttribute("position");
+    const normales = cinta.geometry.getAttribute("normal");
+    let frente = 0;
+    for (let j = 0; j < puntos.count; j++) {
+      if (Math.abs(puntos.getY(j)) < POSTER_ALTO && normales.getZ(j) > 0.99) {
+        assert.equal(puntos.getZ(j), 0);
+        frente++;
+      }
+    }
+    assert.ok(frente > 10, "las tres filas visibles comparten un plano");
+  });
 });

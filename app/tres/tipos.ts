@@ -65,8 +65,6 @@ export type Sala3D = {
   setFase(fase: FaseDeLaSala3D): void;
   /** Enciende (mide y pinta) o apaga (0 cuadros) la sala. */
   encender(encendida: boolean): void;
-  /** Pide permiso de giroscopio; sólo tras un gesto del usuario. */
-  pedirGiroscopio(): Promise<void>;
   /** Vuelve a medir el lienzo, la banda y los focos. */
   medir(): void;
   /** Quita listeners y observadores, libera geometrías, materiales, texturas y el contexto. */

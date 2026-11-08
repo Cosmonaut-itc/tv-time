@@ -1289,11 +1289,6 @@ button:disabled {
   font-family: var(--display); font-weight: 400;
   font-size: 13px; letter-spacing: .24em; color: var(--laton);
 }
-.catalogo .encabezado .donde {
-  font-family: var(--datos); font-size: 9px;
-  letter-spacing: .18em; text-transform: uppercase;
-  color: rgba(154,142,117,.7);
-}
 .catalogo .catalogo-cerrar {
   background: none;
   border: none;

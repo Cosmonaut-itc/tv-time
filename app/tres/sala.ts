@@ -7,7 +7,7 @@ import { crearTelon } from "./telon.ts";
 import { crearMarquesina } from "./marquesina.ts";
 import { crearTambores } from "./tambores.ts";
 import { crearConteo } from "./conteo.ts";
-import { vaciarImagenes } from "./texturas.ts";
+import { calentarPosters3D, vaciarImagenes } from "./texturas.ts";
 import { crearGanador } from "./ganador.ts";
 
 /** Conserva sólo la capa y la ficha del ganador actual. */
@@ -408,6 +408,7 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
       despertar();
     },
     montarTambores(finalistas, candidatos, quietos = false) {
+      calentarPosters3D(finalistas, "w342");
       finalistasEnEscena = finalistas;
       soltarCartel(null);
       ganador.esconder();

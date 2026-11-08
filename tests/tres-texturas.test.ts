@@ -146,6 +146,19 @@ test("una foto fallida conserva el dibujo y una foto en caché se pinta al monta
   assert.equal(Imagen.creadas.length, cantidad + 1, "la primera se vuelve a pedir");
 });
 
+ test("la caché expulsa la imagen menos usada, no la más antigua", (t) => {
+  instalarDOM(t, []);
+  const titulos = Array.from({ length: 97 }, (_, i) => titulo(String(i), `/uso-${i}.jpg`));
+  calentarPosters3D(titulos.slice(0, 96));
+  calentarPosters3D([titulos[0]]);
+  calentarPosters3D([titulos[96]]);
+  const cantidad = Imagen.creadas.length;
+  calentarPosters3D([titulos[0]]);
+  assert.equal(Imagen.creadas.length, cantidad, "la usada hace poco sigue guardada");
+  calentarPosters3D([titulos[1]]);
+  assert.equal(Imagen.creadas.length, cantidad + 1, "la menos usada se vuelve a pedir");
+});
+
  test("una carga fallida se vuelve a pedir", (t) => {
   instalarDOM(t, []);
   const pelicula = titulo("reintento", "/reintento.jpg");
@@ -166,3 +179,51 @@ test("vaciar imágenes obliga a pedirlas de nuevo", async (t) => {
   calentarPosters3D([pelicula]);
   assert.equal(Imagen.creadas.length, cantidad + 1);
 });
+
+test("el cartel reutiliza la precarga grande y conserva la pequeña hasta repintar", (t) => {
+  const lienzos: ReturnType<typeof crearLienzo>[] = [];
+  instalarDOM(t, lienzos);
+  const pelicula = titulo("respaldo", "/ganador-respaldo.jpg");
+  calentarPosters3D([pelicula]);
+  const pequena = Imagen.creadas.at(-1)!;
+  pequena.cargar();
+  calentarPosters3D([pelicula], "w342");
+  const grande = Imagen.creadas.at(-1)!;
+  assert.equal(grande.src, "https://image.tmdb.org/t/p/w342/ganador-respaldo.jpg?cors=1");
+  const cantidad = Imagen.creadas.length;
+  const cartel = texturaDe(lienzoPoster(pelicula));
+  t.after(() => cartel.dispose());
+  assert.equal(Imagen.creadas.length, cantidad);
+  assert.equal(lienzos[0].fotos[0][0], pequena);
+  assert.equal(lienzos[0].textos.length, 0, "no pinta la lámina cruda con una foto lista");
+  const version = cartel.version;
+  grande.cargar();
+  assert.equal(lienzos[0].fotos.at(-1)![0], grande);
+  assert.ok(cartel.version > version);
+  assert.equal(lienzos[0].textos.length, 0);
+});
+
+for (const estado of ["grande lista", "pequeña fallida", "ambas pendientes", "sin póster", "grande fallida"] as const) {
+  test(`el cartel elige la foto disponible: ${estado}`, (t) => {
+    const lienzos: ReturnType<typeof crearLienzo>[] = [];
+    instalarDOM(t, lienzos);
+    const pelicula = titulo(estado, estado === "sin póster" ? undefined : `/ganador-${estado}.jpg`);
+    calentarPosters3D([pelicula]);
+    const pequena = Imagen.creadas.at(-1)!;
+    if (estado === "grande fallida" || estado === "grande lista") pequena.cargar();
+    if (estado === "pequeña fallida") pequena.fallar();
+    calentarPosters3D([pelicula], "w342");
+    const grande = Imagen.creadas.at(-1)!;
+    if (estado === "grande lista") grande.cargar();
+    if (estado === "grande fallida") grande.fallar();
+    const cartel = texturaDe(lienzoPoster(pelicula));
+    t.after(() => cartel.dispose());
+    if (estado === "grande lista" || estado === "grande fallida") {
+      assert.equal(lienzos[0].fotos[0][0], estado === "grande lista" ? grande : pequena);
+      assert.equal(lienzos[0].textos.length, 0);
+    } else {
+      assert.equal(lienzos[0].fotos.length, 0);
+      assert.ok(lienzos[0].textos.length > 0);
+    }
+  });
+}

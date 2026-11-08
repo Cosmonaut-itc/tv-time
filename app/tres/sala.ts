@@ -7,7 +7,7 @@ import { crearTelon } from "./telon.ts";
 import { crearMarquesina } from "./marquesina.ts";
 import { crearTambores } from "./tambores.ts";
 import { crearConteo } from "./conteo.ts";
-import { vaciarImagenes } from "./texturas.ts";
+import { calentarPosters3D, vaciarImagenes } from "./texturas.ts";
 import { crearGanador } from "./ganador.ts";
 
 /** Conserva sólo la capa y la ficha del ganador actual. */
@@ -414,6 +414,8 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
       actualizarFicha(null, null);
       conteo.setNumero(null); conteo.setHaz(false);
       tambores.montar(tiras3D(finalistas, candidatos, quietos));
+      // Después de montar: las tiras ya renovaron la w185 de cada finalista.
+      calentarPosters3D(finalistas, "w342");
       ajustarGesto();
       despertar();
     },

@@ -107,7 +107,12 @@ function urlConCORS(url: string): string {
 function pedirImagen(url: string): HTMLImageElement {
   url = urlConCORS(url);
   const guardada = imagenes.get(url);
-  if (guardada) return guardada;
+  if (guardada) {
+    // La caché expulsa la menos usada: pedirla de nuevo la vuelve la más reciente.
+    imagenes.delete(url);
+    imagenes.set(url, guardada);
+    return guardada;
+  }
   const imagen = new Image();
   imagen.crossOrigin = "anonymous";
   imagen.decoding = "async";
@@ -124,10 +129,10 @@ function pedirImagen(url: string): HTMLImageElement {
   return imagen;
 }
 
-export function calentarPosters3D(titulos: readonly TituloDeSala[]): void {
+export function calentarPosters3D(titulos: readonly TituloDeSala[], ancho: AnchoDePoster = "w185"): void {
   if (typeof Image === "undefined") return;
   titulos.forEach((titulo) => {
-    if (titulo.posterPath) pedirImagen(urlDePoster(titulo.posterPath, "w185"));
+    if (titulo.posterPath) pedirImagen(urlDePoster(titulo.posterPath, ancho));
   });
 }
 
@@ -138,11 +143,15 @@ function conFotos(lienzo: HTMLCanvasElement, titulos: readonly TituloDeSala[], a
   const pendientes = new Set<() => void>();
   let destruido = false;
   titulos.forEach((titulo, indice) => {
-    pintar(indice);
-    if (!titulo.posterPath) return;
+    if (!titulo.posterPath) { pintar(indice); return; }
     const imagen = pedirImagen(urlDePoster(titulo.posterPath, ancho));
+    // El cartel conserva la foto del tambor mientras llega la de mayor tamaño.
+    const respaldo = ancho === "w342"
+      ? imagenes.get(urlConCORS(urlDePoster(titulo.posterPath, "w185")))
+      : undefined;
+    const lista = (foto?: HTMLImageElement) => foto?.complete && foto.naturalWidth > 0;
+    pintar(indice, lista(imagen) ? imagen : lista(respaldo) ? respaldo : undefined);
     if (imagen.complete) {
-      if (imagen.naturalWidth > 0) pintar(indice, imagen);
       return;
     }
     const quitar = () => {
@@ -200,8 +209,8 @@ export function lienzoPoster(titulo: TituloDeSala): LienzoConFotos {
   c.width = 256; c.height = 384;
   const x = c.getContext('2d')!;
   return conFotos(c, [titulo], "w342", (_, imagen) => {
-    dibujarPosterCrudo(x, titulo, c.width, c.height);
     if (imagen) x.drawImage(imagen, 0, 0, c.width, c.height);
+    else dibujarPosterCrudo(x, titulo, c.width, c.height);
   });
 }
 

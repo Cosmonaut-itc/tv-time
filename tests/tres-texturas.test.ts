@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { getEventListeners } from "node:events";
 import test, { type TestContext } from "node:test";
 import { calentarPosters3D, lienzoTira, lienzoPoster, texturaDe } from "../app/tres/texturas.ts";
 import type { TituloDeSala } from "../app/cartelera.ts";
@@ -227,3 +228,46 @@ for (const estado of ["grande lista", "pequeña fallida", "ambas pendientes", "s
     }
   });
 }
+
+
+test("la ficha espera una foto, acepta el respaldo tardío y nunca degrada la grande", (t) => {
+  const lienzos: ReturnType<typeof crearLienzo>[] = [];
+  instalarDOM(t, lienzos);
+  const pelicula = titulo("ficha", "/ficha-respaldo-tardio.jpg");
+  const fuente = lienzoPoster(pelicula);
+  const [pequena, grande] = Imagen.creadas.slice(-2);
+  const textura = texturaDe(fuente);
+  assert.equal(fuente.lista(), false);
+  pequena.cargar();
+  assert.equal(fuente.lista(), true);
+  assert.equal(lienzos[0].fotos.at(-1)![0], pequena);
+  grande.cargar();
+  assert.equal(lienzos[0].fotos.at(-1)![0], grande);
+  textura.dispose();
+
+  const otra = lienzoPoster(titulo("otra", "/ficha-grande-primero.jpg"));
+  const [respaldo, detalle] = Imagen.creadas.slice(-2);
+  detalle.cargar();
+  respaldo.cargar();
+  assert.equal(lienzos[1].fotos.at(-1)![0], detalle);
+  otra.destruir();
+});
+
+
+test("veinte fichas canceladas desconectan las dos fotos pendientes", (t) => {
+  instalarDOM(t, []);
+  for (let i = 0; i < 20; i++) {
+    const fuente = lienzoPoster(titulo(String(i), `/ficha-cancelada-${i}.jpg`));
+    const fotos = Imagen.creadas.slice(-2);
+    const textura = texturaDe(fuente);
+    const version = textura.version;
+    fotos.forEach((foto) => assert.equal(getEventListeners(foto, "load").length, 1));
+    textura.dispose();
+    fotos.forEach((foto) => {
+      assert.equal(getEventListeners(foto, "load").length, 0);
+      assert.equal(getEventListeners(foto, "error").length, 1, "sólo queda la invalidación de la caché acotada");
+      foto.cargar();
+    });
+    assert.equal(textura.version, version, "una foto tardía no toca la textura liberada");
+  }
+});

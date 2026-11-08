@@ -9,6 +9,7 @@ export const PILA_DISPLAY = '"Copperplate","Copperplate Gothic Light","Futura","
 /** Cada lienzo cancela sus suscripciones al liberarse su textura. */
 export type LienzoConFotos = {
   lienzo: HTMLCanvasElement;
+  lista(): boolean;
   alLlegar(cb: () => void): () => void;
   destruir(): void;
 };
@@ -136,36 +137,42 @@ function conFotos(lienzo: HTMLCanvasElement, titulos: readonly TituloDeSala[], a
   const avisos = new Set<() => void>();
   const pendientes = new Set<() => void>();
   let destruido = false;
+  const fotos = new Set<number>();
   titulos.forEach((titulo, indice) => {
     if (!titulo.posterPath) { pintar(indice); return; }
+    // También se pide y escucha el respaldo al abrir desde el catálogo: la
+    // foto DOM puede estar en caché sin haber pasado todavía por three.js.
+    const respaldo = ancho === "w342" ? pedirImagen(urlDePoster(titulo.posterPath, "w185")) : undefined;
     const imagen = pedirImagen(urlDePoster(titulo.posterPath, ancho));
-    // El cartel conserva la foto del tambor mientras llega la de mayor tamaño.
-    const respaldo = ancho === "w342"
-      ? imagenes.get(urlDePoster(titulo.posterPath, "w185"))
-      : undefined;
     const lista = (foto?: HTMLImageElement) => foto?.complete && foto.naturalWidth > 0;
-    pintar(indice, lista(imagen) ? imagen : lista(respaldo) ? respaldo : undefined);
-    if (imagen.complete) {
-      return;
+    const repintar = () => {
+      const foto = lista(imagen) ? imagen : lista(respaldo) ? respaldo : undefined;
+      if (foto) fotos.add(indice);
+      pintar(indice, foto);
+    };
+    repintar();
+    for (const foto of [imagen, respaldo]) {
+      if (!foto || foto.complete) continue;
+      const quitar = () => {
+        foto.removeEventListener("load", cargar);
+        foto.removeEventListener("error", fallar);
+        pendientes.delete(quitar);
+      };
+      const cargar = () => {
+        quitar();
+        if (destruido) return;
+        repintar();
+        avisos.forEach((cb) => cb());
+      };
+      const fallar = () => { quitar(); };
+      pendientes.add(quitar);
+      foto.addEventListener("load", cargar);
+      foto.addEventListener("error", fallar);
     }
-    const quitar = () => {
-      imagen.removeEventListener("load", cargar);
-      imagen.removeEventListener("error", fallar);
-      pendientes.delete(quitar);
-    };
-    const cargar = () => {
-      quitar();
-      if (destruido) return;
-      pintar(indice, imagen);
-      avisos.forEach((cb) => cb());
-    };
-    const fallar = () => { quitar(); }; // El dibujo queda; no se registra un error.
-    pendientes.add(quitar);
-    imagen.addEventListener("load", cargar);
-    imagen.addEventListener("error", fallar);
   });
   return {
     lienzo,
+    lista: () => titulos.every((titulo, indice) => !titulo.posterPath || fotos.has(indice)),
     alLlegar(cb) {
       if (!destruido) avisos.add(cb);
       return () => { avisos.delete(cb); };

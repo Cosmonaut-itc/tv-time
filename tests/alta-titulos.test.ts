@@ -194,6 +194,8 @@ test("las filas iguales saltan una instantánea nueva y detectan un solo campo d
   assert.notEqual(nueva, duna);
   assert.equal(mismaFilaDeBusqueda(duna, nueva), true);
   assert.equal(mismaFilaDeBusqueda(duna, { ...nueva, posterPath: "/otra.jpg" }), false);
+  assert.equal(mismaFilaDeBusqueda(duna, { ...nueva, sinopsis: "Una nueva sinopsis" }), false);
+  assert.equal(mismaFilaDeBusqueda(duna, { ...nueva, calificacion: 8.1 }), false);
 });
 
 test("las partes memoizadas comparan por campos aunque Convex entregue otra instantánea", () => {

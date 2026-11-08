@@ -14,6 +14,8 @@ import type * as catalogo_inicial from "../catalogo_inicial.js";
 import type * as codigo from "../codigo.js";
 import type * as disponibilidad from "../disponibilidad.js";
 import type * as disponibilidad_logica from "../disponibilidad_logica.js";
+import type * as fichas from "../fichas.js";
+import type * as fichas_logica from "../fichas_logica.js";
 import type * as funciones from "../funciones.js";
 import type * as funciones_logica from "../funciones_logica.js";
 import type * as noche from "../noche.js";
@@ -42,6 +44,8 @@ declare const fullApi: ApiFromModules<{
   codigo: typeof codigo;
   disponibilidad: typeof disponibilidad;
   disponibilidad_logica: typeof disponibilidad_logica;
+  fichas: typeof fichas;
+  fichas_logica: typeof fichas_logica;
   funciones: typeof funciones;
   funciones_logica: typeof funciones_logica;
   noche: typeof noche;

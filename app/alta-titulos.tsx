@@ -82,6 +82,7 @@ const FilaDeBusqueda = memo(function FilaDeBusqueda({
   const meta = [
     titulo.anio ?? "s/f",
     titulo.tipo === "serie" ? "Serie" : "Película",
+    titulo.calificacion === undefined ? null : `TMDB ${titulo.calificacion.toFixed(1)}`,
     agregado ? "ya está" : !estrenado ? etiquetaDeEstrenoPendiente(titulo.fechaEstreno) : null,
   ].filter(Boolean).join(" · ");
 
@@ -96,6 +97,7 @@ const FilaDeBusqueda = memo(function FilaDeBusqueda({
       <span>
         <span className="nom">{titulo.nombre}</span>
         <span className="met">{meta}</span>
+        {titulo.sinopsis && <span className="sin">{titulo.sinopsis}</span>}
       </span>
       <span className="sumar" aria-hidden="true">
         {agregado ? "✓" : !estrenado ? "⏳" : ocupado ? "…" : "＋"}

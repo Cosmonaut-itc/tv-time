@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { claveLugarDeSaga, claveTmdb, prepararLoteDeAlta } from "./altas_logica";
-import { validarTituloDeSala } from "./titulos_logica";
+import { calificarTitulo, validarTituloDeSala } from "./titulos_logica";
 
 const tituloDeSala = v.object({
   _id: v.id("titulos"),
@@ -14,6 +14,7 @@ const tituloDeSala = v.object({
   orden: v.optional(v.number()),
   agregadoPor: v.optional(v.string()),
   visto: v.boolean(),
+  calificaciones: v.optional(v.array(v.object({ butaca: v.string(), estrellas: v.number() }))),
   agregado: v.number(),
 });
 
@@ -48,6 +49,7 @@ export const deSala = query({
         saga,
         orden,
         agregadoPor,
+        calificaciones,
         visto,
         agregado,
       }) => ({
@@ -60,6 +62,7 @@ export const deSala = query({
         saga,
         orden,
         agregadoPor,
+        calificaciones,
         visto,
         agregado,
       }),
@@ -130,6 +133,26 @@ export const quitar = mutation({
     await ctx.db.delete(tituloId);
     // `noches.vetados` puede conservar el id: la derivación sólo mira títulos
     // que siguen en la sala y esa fila efímera caduca al próximo corte.
+    return null;
+  },
+});
+
+export const calificar = mutation({
+  args: { salaId: v.id("salas"), tituloId: v.id("titulos"), butaca: v.string(), estrellas: v.number() },
+  returns: v.null(),
+  handler: async (ctx, { salaId, tituloId, butaca, estrellas }) => {
+    const titulo = await ctx.db.get(tituloId);
+    validarTituloDeSala(titulo, salaId);
+    const sala = await ctx.db.get(salaId);
+    if (!sala) throw new Error("La sala no existe.");
+    const calificaciones = calificarTitulo({
+      visto: titulo.visto,
+      calificaciones: titulo.calificaciones,
+      butacas: sala.butacas,
+      butaca,
+      estrellas,
+    });
+    await ctx.db.patch(tituloId, { calificaciones });
     return null;
   },
 });

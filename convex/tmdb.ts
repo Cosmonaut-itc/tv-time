@@ -13,6 +13,8 @@ const tituloEncontrado = v.object({
   id: v.number(),
   tipo: v.union(v.literal("pelicula"), v.literal("serie")),
   nombre: v.string(),
+  sinopsis: v.optional(v.string()),
+  calificacion: v.optional(v.number()),
   anio: v.optional(v.number()),
   fechaEstreno: v.optional(v.string()),
   posterPath: v.optional(v.string()),

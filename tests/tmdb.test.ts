@@ -67,3 +67,18 @@ test("las partes de colección conservan la fecha completa que manda en el orden
     },
   );
 });
+
+test("búsqueda y colección incluyen sinopsis y nota con la misma regla", () => {
+  const datos = { id: 1, title: "Antes", overview: "  Una noche.  ", vote_average: 7.777, vote_count: 2 };
+  const encontrado = mapearResultadoDeBusqueda({ ...datos, media_type: "movie" });
+  const parte = mapearParteDeColeccion(datos, { id: 2, nombre: "Antes" });
+  for (const titulo of [encontrado, parte]) {
+    assert.equal(titulo?.sinopsis, "Una noche.");
+    assert.equal(titulo?.calificacion, 7.8);
+  }
+  const sinDatos = mapearResultadoDeBusqueda({ ...datos, media_type: "movie", overview: " ", vote_count: 0 });
+  assert.ok(!("sinopsis" in sinDatos!));
+  assert.ok(!("calificacion" in sinDatos!));
+  const sinVotos = mapearParteDeColeccion({ ...datos, vote_count: undefined }, { id: 2, nombre: "Antes" });
+  assert.ok(!("calificacion" in sinVotos!));
+});

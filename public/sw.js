@@ -33,7 +33,6 @@ const DOCUMENTO_TELON_RESPALDO = `<!doctype html>
       position: fixed;
       inset: 0;
       overflow: hidden;
-      background: #000;
     }
 
     .telon-de-entrada::after {

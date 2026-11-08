@@ -1,75 +1,18 @@
+import { crearMarco } from "./marco.ts";
 import * as THREE from "three";
 import { destruirGrupo } from "./recursos.ts";
-import { LATON, LATON_TENUE, CREMA, GANADOR_ALTO, GANADOR_CANTO, ALTO_MARCO_GANADOR, GANADOR_Z } from "./medidas.ts";
+import { CREMA, GANADOR_ANCHO, GANADOR_ALTO, ALTO_MARCO_GANADOR, GANADOR_Z } from "./medidas.ts";
 import { TEX_HALO, texturaDe, lienzoPoster, PILA_DISPLAY, textoEspaciado } from "./texturas.ts";
 import { escalaDeVuelo, poseDelGanador } from "./logica.ts";
 import { CURVA_SELLO } from "./curvas.ts";
 import type { TituloDeSala } from "../cartelera.ts";
 
-export function crearGanador(grupo: THREE.Group) {
+export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRenderer) {
     const haloTextura = TEX_HALO();
-    const ANCHO = 1.86, ALTO = GANADOR_ALTO, CANTO = GANADOR_CANTO;
+    const ANCHO = GANADOR_ANCHO, ALTO = GANADOR_ALTO;
 
-    function octagono(w: number, h: number, corte: number) {
-      const s = new THREE.Shape();
-      s.moveTo(-w / 2 + corte, -h / 2);
-      s.lineTo(w / 2 - corte, -h / 2);
-      s.lineTo(w / 2, -h / 2 + corte);
-      s.lineTo(w / 2, h / 2 - corte);
-      s.lineTo(w / 2 - corte, h / 2);
-      s.lineTo(-w / 2 + corte, h / 2);
-      s.lineTo(-w / 2, h / 2 - corte);
-      s.lineTo(-w / 2, -h / 2 + corte);
-      s.closePath();
-      return s;
-    }
-
-    const forma = octagono(ANCHO + CANTO * 2, ALTO + CANTO * 2, 0.30);
-    const hueco = octagono(ANCHO - 0.02, ALTO - 0.02, 0.26);
-    forma.holes.push(new THREE.Path(hueco.getPoints(64).reverse()));
-    const geoMarco = new THREE.ExtrudeGeometry(forma, {
-      depth: 0.09, bevelEnabled: true, bevelThickness: 0.022,
-      bevelSize: 0.022, bevelSegments: 2, curveSegments: 2,
-    });
-    geoMarco.computeVertexNormals();
-
-    /* Latón sin luces en la escena: anisotropía falsa por la altura, un
-       especular de banda y un filo que recoge la luz del proyector. La luz
-       vive en espacio de vista (fija respecto a la cámara), así que al ladear
-       el marco el brillo corre por el bisel y por el filo: es lo que hace
-       legible el gesto. Dos lóbulos —uno estrecho y fuerte para el destello
-       que viaja, otro ancho y tenue para que el metal no se apague. */
-    const marco = new THREE.Mesh(geoMarco, new THREE.ShaderMaterial({
-      uniforms: { uLaton: { value: LATON }, uTenue: { value: LATON_TENUE }, uCrema: { value: CREMA } },
-      vertexShader: `
-        varying vec3 vN; varying vec3 vP; varying vec3 vLocal;
-        void main() {
-          vN = normalize(normalMatrix * normal);
-          vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          vP = mv.xyz; vLocal = position;
-          gl_Position = projectionMatrix * mv;
-        }`,
-      fragmentShader: `
-        uniform vec3 uLaton; uniform vec3 uTenue; uniform vec3 uCrema;
-        varying vec3 vN; varying vec3 vP; varying vec3 vLocal;
-        void main() {
-          vec3 n = normalize(vN);
-          vec3 v = normalize(-vP);
-          float banda = 0.5 + 0.5 * sin(vLocal.y * 26.0);
-          vec3 base = mix(uTenue, uLaton, 0.35 + 0.65 * banda);
-          vec3 luz = normalize(vec3(-0.25, 0.55, 0.85));
-          float dif = clamp(dot(n, luz), 0.0, 1.0);
-          float ref = clamp(dot(reflect(-luz, n), v), 0.0, 1.0);
-          float esp = pow(ref, 52.0);
-          float halo = pow(ref, 8.0);
-          float filo = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 2.4);
-          vec3 c = base * (0.34 + 0.72 * dif)
-                 + uCrema * esp * 1.05
-                 + uLaton * halo * 0.22
-                 + uLaton * filo * 0.4;
-          gl_FragColor = vec4(c, 1.0);
-        }`,
-    }));
+    const moldura = crearMarco(renderizador);
+    const marco = moldura.grupo;
 
     /* La lámina: el póster más un barniz. Tres capas, todas view-dependent,
        que en reposo casi no se notan y al ladear el cartel se encienden:
@@ -141,7 +84,8 @@ export function crearGanador(grupo: THREE.Group) {
         transparent: true,
       }),
     );
-    lamina.position.z = 0.03;
+    // La laca del perfil queda delante del papel, como en el prototipo.
+    lamina.position.z = 0;
 
     /* La luz del proyector detrás del póster: halo aditivo más ancho que
        el marco, que es lo que hace que el ganador se sienta iluminado. */
@@ -231,7 +175,7 @@ export function crearGanador(grupo: THREE.Group) {
 
     return {
       grupo,
-      destruir() { destruirGrupo(grupo); },
+      destruir() { moldura.destruir(); destruirGrupo(grupo); },
       topes: { x: TOPE_X, y: TOPE_Y },
       enEscena() { return caja.visible; },
       orientacion() { return { x: ladeoX, y: ladeoY }; },
@@ -276,7 +220,7 @@ export function crearGanador(grupo: THREE.Group) {
          mucho más ancho que el cartel y queda fuera a propósito. */
       impacta(raycaster: THREE.Raycaster) {
         if (!caja.visible) return false;
-        return raycaster.intersectObjects([lamina, marco], false).length > 0;
+        return raycaster.intersectObjects([lamina, marco], true).length > 0;
       },
       esconder() { caja.visible = false; vuelo = null; tSello = -1; aplomar(); },
       update(t: number, dt: number) {
@@ -291,7 +235,7 @@ export function crearGanador(grupo: THREE.Group) {
           caja.position.set(vuelo.desdeX * (1 - e), metaSuave.y * e, vuelo.z + (GANADOR_Z - vuelo.z) * e);
           const s = vuelo.escala + (metaSuave.escala - vuelo.escala) * e;
           caja.scale.setScalar(s);
-          marco.material.visible = a > 0.45;
+          marco.visible = a > 0.45;
           lamina.material.uniforms.uOpacidad.value = 1;
           luz.material.opacity = 0.5 * e;
           if (a >= 1) vuelo = null;

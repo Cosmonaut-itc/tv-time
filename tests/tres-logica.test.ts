@@ -16,8 +16,8 @@ test("la proyección de la banda de escritorio llega al plano del ganador", asyn
 });
 
 for (const caso of [
-  { nombre: "escritorio", banda: 430, ficha: 268, escala: 0.756, altura: 219 },
-  { nombre: "iPhone", banda: 442, ficha: 280, escala: 0.772, altura: 230 },
+  { nombre: "escritorio", banda: 430, ficha: 268, escala: 0.758, altura: 219 },
+  { nombre: "iPhone", banda: 442, ficha: 280, escala: 0.773, altura: 230 },
 ]) test(`${caso.nombre} ancla el marco al techo aprobado y deja margen sólo sobre la ficha`, async () => {
   const { fraccionAMundo, poseDelGanador } = await import("../app/tres/logica.ts");
   const { ALTO_MARCO_GANADOR, TECHO_GANADOR } = await import("../app/tres/medidas.ts");

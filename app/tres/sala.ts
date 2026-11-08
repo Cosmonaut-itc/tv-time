@@ -68,7 +68,7 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
   const marquesina = crearMarquesina(grupoMarquesina);
   const tambores = crearTambores(grupoTambores);
   const conteo = crearConteo(grupoConteo);
-  const ganador = crearGanador(grupoGanador);
+  const ganador = crearGanador(grupoGanador, renderizador);
 
   /* Un fondo propio para la caja del escenario: el terciopelo de la casa,
      para que el 3D y el CSS arranquen del mismo negro vinoso. */

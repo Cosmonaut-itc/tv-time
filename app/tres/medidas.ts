@@ -20,11 +20,12 @@ export const RADIO = (POSTER_ALTO * CELDAS) / (Math.PI * 2);
 export const ALTO_VISTA = 6.0;
 export const ANCHO_MINIMO = 4.6;
 export const FOV = 34;
+export const GANADOR_ANCHO = 1.86;
 export const GANADOR_ALTO = 2.79;
-export const GANADOR_CANTO = 0.13;
+export const GANADOR_CANTO = 0.106 * 1.2;
 export const ALTO_MARCO_GANADOR = GANADOR_ALTO + 2 * GANADOR_CANTO;
 // Borde superior de la pose histórica aprobada, delante de la cenefa.
-export const TECHO_GANADOR = 0.62 + ALTO_MARCO_GANADOR * 0.80 / 2;
+export const TECHO_GANADOR = 1.84;
 export const GANADOR_Z = 2.4;
 export const TOPE = (3 * Math.PI) / 180;
   /* El telón recogido se come el 11 % del ancho por lado, así que el arco

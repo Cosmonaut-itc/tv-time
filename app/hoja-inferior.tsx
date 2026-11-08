@@ -104,9 +104,15 @@ export default function HojaInferior({
     const elemento = hoja.current;
     if (!elemento) return;
     elemento.style.removeProperty("transition");
+    elemento.style.removeProperty("height");
     // Confirma la posición arrastrada antes de quitar el transform inline:
     // el destino del CSS debe partir de ahí, sin pasar por la posición abierta.
-    if (!abierta) elemento.getBoundingClientRect();
+    // La altura queda fija durante la salida aunque el contenido conservado
+    // reciba datos tarde.
+    if (!abierta) {
+      const altoAlCerrar = elemento.offsetHeight;
+      if (tieneContenido) elemento.style.height = `${altoAlCerrar}px`;
+    }
     elemento.style.removeProperty("transform");
     velo.current?.style.removeProperty("opacity");
     velo.current?.style.removeProperty("transition");

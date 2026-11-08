@@ -1,0 +1,1437 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12080c">
+<title>Mejoras de la sala</title>
+<style>
+/* ═══════════ Tokens y base: copiados de app/globals.css ═══════════ */
+:root {
+  --terciopelo: #12080c;
+  --foso: #0b0507;
+  --vino: #4e1122;
+  --vino-claro: #8e2438;
+  --laton: #c9a227;
+  --laton-tenue: #8a6f1c;
+  --crema: #f2e5c6;
+  --crema-tenue: #9a8e75;
+  --sombra: rgba(0, 0, 0, 0.55);
+  --display: "Copperplate", "Copperplate Gothic Light", "Futura", "Century Gothic", "Trebuchet MS", sans-serif;
+  --cuerpo: "Optima", "Avenir Next", "Futura", "Segoe UI", system-ui, sans-serif;
+  --datos: "DIN Alternate", "Avenir Next Condensed", ui-monospace, monospace;
+  --curva-telon: cubic-bezier(0.66, 0, 0.2, 1);
+}
+* { box-sizing: border-box; padding: 0; margin: 0; }
+html { height: 100%; background: #12080c; }
+html, body { max-width: 100vw; overflow-x: hidden; }
+body {
+  min-height: 100%; display: flex; flex-direction: column;
+  color: var(--crema); background: var(--foso);
+  font-family: var(--cuerpo);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+input { color: var(--crema); font-family: var(--cuerpo); }
+button {
+  border-radius: 2px; font-family: var(--datos);
+  letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
+  color: inherit;
+  transition: transform 0.12s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+button:active { transform: translateY(1px); }
+button:focus-visible { outline: 2px solid var(--laton); outline-offset: 3px; }
+button:disabled { opacity: 0.35; cursor: not-allowed; }
+.solo-lectores { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ═══════════ La sala ═══════════ */
+.sala {
+  position: relative; display: flex; flex: 1; flex-direction: column;
+  width: 100%; max-width: 460px; min-height: 100dvh; margin: 0 auto;
+  background: radial-gradient(120% 55% at 50% 0%, #1e1014 0%, var(--terciopelo) 55%, var(--foso) 100%);
+}
+.cornisa-controles {
+  position: fixed; top: 0; left: 50%; z-index: 20;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  width: min(100%, 460px);
+  padding: calc(env(safe-area-inset-top, 0px) + 3px) 3px 3px;
+  border-bottom: 1px solid var(--laton-tenue);
+  background: linear-gradient(180deg, rgba(78, 17, 34, .96), rgba(18, 8, 12, .98));
+  box-shadow: 0 7px 14px rgba(0, 0, 0, .42);
+  transform: translateX(-50%);
+}
+.cornisa-control {
+  position: relative; display: grid; place-items: center;
+  min-width: 44px; min-height: 44px; padding: 0;
+  font-size: 13px; letter-spacing: 0; color: var(--laton);
+  background: none; border: none;
+}
+.cornisa-control + .cornisa-control::before {
+  content: ""; position: absolute; top: 10px; bottom: 10px; left: 0; width: 1px;
+  background: rgba(201, 162, 39, .18);
+}
+.marquesina { position: relative; flex: none; padding: calc(59px + env(safe-area-inset-top, 0px)) 16px 12px; text-align: center; }
+.focos { display: flex; justify-content: center; gap: 9px; padding: 6px 0; }
+.foco { width: 7px; height: 7px; border-radius: 50%; background: var(--laton-tenue); }
+.foco.on { background: #ffe9a8; box-shadow: 0 0 7px 2px rgba(255, 214, 120, 0.75), 0 0 18px 6px rgba(201, 162, 39, 0.28); }
+.rotulo {
+  padding: 12px 10px 10px;
+  border: 1px solid var(--laton-tenue); border-right-width: 3px; border-left-width: 3px;
+  background: linear-gradient(180deg, rgba(78, 17, 34, 0.55), rgba(18, 8, 12, 0.2));
+}
+.rotulo h1 {
+  margin: 0; color: var(--laton); font-family: var(--display);
+  font-size: 27px; font-weight: 400; letter-spacing: 0.34em; text-indent: 0.34em;
+  text-shadow: 0 1px 0 #3a2a08, 0 0 22px rgba(201, 162, 39, 0.35);
+}
+.rotulo .abanico {
+  display: block; width: 96px; height: 8px; margin: 7px auto 0;
+  background: linear-gradient(90deg, transparent 0 6%, var(--laton-tenue) 6% 8%, transparent 8% 22%,
+    var(--laton-tenue) 22% 24%, transparent 24% 42%, var(--laton) 42% 58%, transparent 58% 76%,
+    var(--laton-tenue) 76% 78%, transparent 78% 92%, var(--laton-tenue) 92% 94%, transparent 94%);
+}
+.escenario {
+  position: relative; flex: none; height: 486px;
+  margin: 4px 12px 0;
+  border: 1px solid rgba(201, 162, 39, 0.22); border-bottom: none;
+  background: #080407; overflow: hidden;
+}
+.telon {
+  position: absolute; top: 0; bottom: 0; width: 52%; z-index: 6;
+  background: repeating-linear-gradient(90deg, #3c0c1a 0, #6b1a2e 11px, #8e2438 20px, #6b1a2e 29px, #3c0c1a 40px);
+  box-shadow: inset 0 22px 40px rgba(0, 0, 0, 0.55), 0 0 30px rgba(0, 0, 0, 0.6);
+  transition: transform 1.15s cubic-bezier(0.66, 0, 0.2, 1);
+}
+.telon::after { content: ""; position: absolute; inset: 0 0 auto; height: 26px; background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent); }
+.telon.izq { left: 0; }
+.telon.der { right: 0; }
+.escenario.abierto .telon.izq { transform: translateX(-89%); }
+.escenario.abierto .telon.der { transform: translateX(89%); }
+
+.trio {
+  position: absolute; inset: 40px 22px 200px; z-index: 2;
+  display: flex; gap: 8px; align-items: center; justify-content: center;
+  transition: opacity .3s ease;
+}
+.trio.fuera { opacity: 0; pointer-events: none; }
+.carrete {
+  position: relative; width: calc((100% - 16px) / 3); aspect-ratio: 2 / 3;
+  overflow: hidden; border: 1px solid rgba(201, 162, 39, 0.3); background: #050204;
+  transition: filter .12s ease, opacity .3s ease, box-shadow .12s ease;
+  filter: brightness(.5) saturate(.7);
+}
+.carrete svg { display: block; width: 100%; height: 100%; }
+.carrete.luz { filter: none; border-color: var(--laton); box-shadow: 0 0 0 1px var(--laton), 0 0 22px rgba(201, 162, 39, 0.45); }
+.carrete.descartado { opacity: 0.28; filter: saturate(0.3) brightness(.6); }
+
+/* El ganador en tres dimensiones: el lienzo vive aquí o en la ficha. */
+.anfitrion-3d { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; }
+.anfitrion-3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.anfitrion-3d .respaldo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.anfitrion-3d.con-3d .respaldo { display: none; }
+.escenario .anfitrion-3d { position: absolute; inset: 0; z-index: 3; }
+.escenario .conmutador-marco { left: 30px; top: 8px; bottom: auto; }
+.escenario .anfitrion-3d[hidden] { display: none; }
+
+.sello-dom {
+  position: absolute; z-index: 5; left: 50%; top: 40%;
+  padding: 10px 20px; pointer-events: none;
+  border: 3px double #c9566c; background: rgba(14, 6, 9, 0.62);
+  color: #c9566c; font-family: var(--display); font-size: 30px; letter-spacing: .3em; text-indent: .3em;
+  transform: translate(-50%, -50%) rotate(-14deg) scale(2.4); opacity: 0;
+}
+.sello-dom.on { animation: sellar .42s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+@keyframes sellar { to { transform: translate(-50%, -50%) rotate(-14deg) scale(1); opacity: .94; } }
+
+.capa-ganador {
+  position: absolute; inset: auto 0 0; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 26px 16px 16px;
+  background: linear-gradient(to top, rgba(8, 4, 7, 0.94) 60%, rgba(8, 4, 7, 0));
+  animation: entra .4s ease both;
+}
+.capa-ganador[hidden] { display: none; }
+@keyframes entra { from { opacity: 0; transform: translateY(8px); } }
+.panel-vetos {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 0 12px 12px; padding: 9px 12px;
+  border: 1px solid rgba(242, 229, 198, 0.14); background: rgba(142, 36, 56, 0.12);
+}
+.panel-vetos.agotado { opacity: 0.45; }
+.panel-vetos .etiqueta { font-family: var(--datos); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--crema-tenue); }
+.panel-vetos .fichas { display: flex; gap: 5px; }
+.panel-vetos .ficha-veto { width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--vino-claro); background: var(--vino-claro); }
+.panel-vetos .ficha-veto.usada { background: transparent; }
+
+/* ═══════════ Ficha (compartida por ganador y catálogo) ═══════════ */
+.ficha { text-align: center; width: 100%; }
+.ficha h2 {
+  margin: 0; font-family: var(--display); font-size: 19px; font-weight: 400;
+  letter-spacing: 0.13em; color: var(--crema); text-wrap: balance; line-height: 1.25;
+}
+.ficha .meta {
+  margin: 6px 0 0; font-family: var(--datos); font-size: 10.5px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--crema-tenue);
+  font-variant-numeric: tabular-nums;
+}
+.ficha .meta b { color: var(--crema); font-weight: 400; }
+.servicios { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px;
+  border: 1px solid rgba(242,229,198,.22); border-radius: 2px;
+  font-family: var(--datos); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--crema); background: rgba(242,229,198,.05);
+}
+.chip .punto { width: 7px; height: 7px; border-radius: 50%; }
+.chip.renta { color: var(--laton); border-color: rgba(201,162,39,.45); }
+.fuente { margin: 7px 0 0; font-family: var(--datos); font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: rgba(242,229,198,.32); }
+.acciones { display: flex; gap: 8px; width: 100%; max-width: 320px; }
+.btn-ver {
+  flex: 2; min-height: 46px; padding: 13px 10px; font-size: 12px; border: none; color: #2A1B04;
+  background: linear-gradient(180deg, #E8C65A, var(--laton) 55%, #8A6F1C);
+  box-shadow: 0 2px 0 #5A470F, 0 6px 16px rgba(0,0,0,.5);
+}
+.btn-veto {
+  flex: 1; min-height: 46px; padding: 13px 6px; font-size: 11px;
+  background: transparent; color: var(--vino-claro); border: 1px solid rgba(142, 36, 56, 0.75);
+}
+.razon-veto { max-width: 300px; color: var(--crema-tenue); font-family: var(--datos); font-size: 9.5px; letter-spacing: 0.08em; line-height: 1.5; text-align: center; }
+
+/* ═══════════ Catálogo ═══════════ */
+.catalogo {
+  position: fixed; z-index: 30; inset: 0; max-width: 460px; margin: 0 auto;
+  overflow-y: auto; padding: 0 0 100px;
+  background: radial-gradient(120% 55% at 50% 0%, #1E1014 0%, var(--terciopelo) 55%, var(--foso) 100%);
+}
+.catalogo[hidden] { display: none; }
+/* NUEVO · el encabezado se queda pegado arriba: el cierre siempre está a la vista. */
+.catalogo .encabezado {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px 8px 14px;
+  background: linear-gradient(180deg, #1E1014 70%, rgba(30,16,20,0));
+}
+.catalogo .encabezado h2 {
+  margin: 0; flex: 1; font-family: var(--display); font-weight: 400;
+  font-size: 13px; letter-spacing: .24em; color: var(--laton);
+}
+.btn-cerrar {
+  flex: none; display: grid; place-items: center;
+  width: 44px; height: 44px; padding: 0;
+  border: 1px solid rgba(201,162,39,.45); background: rgba(3,1,2,.45);
+  color: var(--crema); font-family: var(--cuerpo); font-size: 17px; letter-spacing: 0; line-height: 1;
+}
+.btn-cerrar:active { background: rgba(201,162,39,.14); }
+.catalogo .campo {
+  display: flex; align-items: center; gap: 9px;
+  border: 1px solid rgba(201,162,39,.3); background: rgba(3,1,2,.5);
+  padding: 0 11px; margin: 0 12px;
+}
+.catalogo .campo input { flex: 1; min-width: 0; background: none; border: none; outline: none; padding: 11px 0; font-size: 16px; }
+.catalogo .campo input::placeholder { color: rgba(154,142,117,.7); }
+.catalogo .campo .lupa, .alta .lupa { color: var(--laton-tenue); font-size: 14px; }
+.catalogo .chips { display: flex; gap: 6px; padding: 10px 12px 4px; overflow-x: auto; scrollbar-width: none; }
+.catalogo .chips .chip {
+  flex: none; background: none; border: 1px solid rgba(201,162,39,.22); color: var(--crema-tenue);
+  font-family: var(--datos); font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  padding: 7px 10px; display: flex; align-items: center; gap: 7px;
+}
+.catalogo .chips .chip b { font-weight: 400; color: var(--laton-tenue); font-variant-numeric: tabular-nums; }
+.catalogo .chips .chip.sel { color: var(--laton); border-color: var(--laton); background: rgba(201,162,39,.08); }
+.catalogo .chips .chip.sel b { color: var(--laton); }
+.catalogo .muro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 8px 12px 0; }
+.catalogo .celda { position: relative; background: none; border: none; padding: 0; display: block; width: 100%; letter-spacing: 0; text-transform: none; transition: opacity .25s ease; }
+.catalogo .celda svg { display: block; width: 100%; height: auto; }
+.catalogo .celda .filete-muro { position: absolute; inset: 0; border: 1px solid rgba(201,162,39,.28); pointer-events: none; transition: border-color .2s ease, box-shadow .2s ease; }
+.catalogo .celda.esta-vista { opacity: .34; }
+.catalogo .celda.esta-vista .filete-muro { border-color: rgba(154,142,117,.35); }
+.catalogo .celda.bloqueada .filete-muro { border-color: rgba(142,36,56,.6); }
+/* NUEVO · marcada para la ruleta: el filete se vuelve latón entero. */
+.catalogo .celda.en-ruleta .filete-muro { border: 2px solid var(--laton); box-shadow: 0 0 14px rgba(201,162,39,.45), inset 0 0 0 1px rgba(3,1,2,.6); }
+.catalogo .celda .banda {
+  position: absolute; left: 0; right: 0; top: 0;
+  background: linear-gradient(0deg, transparent, rgba(3,1,2,.92) 42%);
+  padding: 5px 5px 16px; font-family: var(--datos); font-size: 8.5px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--crema); text-align: left;
+}
+.catalogo .celda.bloqueada .banda { color: #E39FAE; }
+.catalogo .nada { margin: 24px 14px; color: var(--crema-tenue); font-family: var(--datos); font-size: 10px; letter-spacing: .14em; line-height: 1.6; text-align: center; text-transform: uppercase; }
+
+.catalogo .llamada {
+  position: fixed; left: 0; right: 0; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  max-width: 460px; margin: 0 auto; padding: 0 12px; z-index: 35; pointer-events: none;
+}
+.catalogo .llamada > * { pointer-events: auto; }
+.catalogo .llamada .agregar {
+  width: 100%;
+  background: linear-gradient(180deg, var(--vino), #340B17);
+  border: 1px solid var(--laton-tenue); color: var(--laton);
+  font-family: var(--display); font-size: 14px; letter-spacing: .26em; text-indent: .26em;
+  padding: 15px 10px; box-shadow: 0 -8px 26px rgba(0,0,0,.6);
+}
+/* NUEVO · la barra de la ruleta reemplaza la llamada mientras haya marcadas. */
+.barra-ruleta {
+  display: flex; align-items: center; gap: 8px; padding: 7px;
+  background: linear-gradient(180deg, var(--vino), #340B17);
+  border: 1px solid var(--laton-tenue); box-shadow: 0 -8px 26px rgba(0,0,0,.6);
+  animation: sube .22s ease both;
+}
+@keyframes sube { from { transform: translateY(10px); opacity: 0; } }
+.barra-ruleta .mas {
+  flex: none; width: 40px; height: 51px; padding: 0;
+  background: none; border: 1px solid rgba(201,162,39,.4); color: var(--laton);
+  font-family: var(--display); font-size: 20px; letter-spacing: 0;
+}
+.ranuras { display: flex; gap: 5px; flex: none; }
+.ranura {
+  width: 34px; height: 51px; padding: 0; overflow: hidden;
+  border: 1px solid var(--laton); background: rgba(3,1,2,.5); letter-spacing: 0;
+}
+.ranura svg { display: block; width: 100%; height: 100%; }
+.ranura.vacia { border: 1px dashed rgba(201,162,39,.45); background: none; pointer-events: none; }
+.ranura.recien { animation: sellar-alta .5s ease both; }
+.girar-estas {
+  flex: 1; min-width: 0; min-height: 51px; padding: 0 8px; border: none;
+  color: #2a1b04; font-family: var(--display); font-size: 12.5px; letter-spacing: .14em;
+  background: linear-gradient(180deg, #e8c65a, var(--laton) 55%, #8a6f1c);
+  box-shadow: 0 2px 0 #5a470f;
+}
+.girar-estas:disabled { opacity: 1; color: rgba(201,162,39,.55); background: none; border: 1px solid rgba(201,162,39,.25); box-shadow: none; }
+
+/* ═══════════ Hoja inferior ═══════════ */
+.velo {
+  position: fixed; inset: 0; background: rgba(3,1,2,.72);
+  opacity: 0; pointer-events: none; transition: opacity .3s ease; z-index: 40;
+}
+.velo.on { opacity: 1; pointer-events: auto; }
+/* La hoja baja 48 px más allá del borde: el rebote la sube un poco de más y
+   no debe asomar el hueco de abajo. */
+.hoja {
+  position: fixed; left: 0; right: 0; bottom: -48px;
+  max-width: 460px; margin: 0 auto; max-height: calc(90dvh + 48px);
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #1A0D12 0%, var(--terciopelo) 60%, var(--foso) 100%);
+  border: 1px solid var(--laton-tenue); border-bottom: none; border-top-width: 3px;
+  transform: translateY(102%); transition: transform .38s var(--curva-telon);
+  z-index: 50; box-shadow: 0 -14px 40px rgba(0,0,0,.7);
+  visibility: hidden;
+}
+.hoja.abierta { transform: none; visibility: visible; }
+.hoja:focus { outline: none; }
+.hoja.cerrandose { visibility: visible; }
+/* NUEVO · la cabecera es el asa: se arrastra entera; el ✕ la cierra. */
+.cabecera-hoja {
+  position: relative; flex: none; height: 30px; touch-action: none; cursor: grab;
+}
+.cabecera-hoja .asa { width: 54px; height: 3px; background: var(--laton-tenue); margin: 11px auto 0; border-radius: 2px; }
+.cabecera-hoja .btn-cerrar { position: absolute; top: 4px; right: 6px; z-index: 6; }
+.cuerpo-hoja {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 14px calc(70px + env(safe-area-inset-bottom, 0px));
+}
+.catalogo-ficha { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ficha-3d { width: 100%; height: 292px; margin-top: -4px; }
+.ficha-3d .respaldo { width: 166px; }
+.marco-laton {
+  position: relative; width: 172px; padding: 7px;
+  background: linear-gradient(145deg, var(--laton) 0%, #6E5410 42%, var(--laton) 58%, #4A390B 100%);
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+}
+.marco-laton svg { display: block; width: 100%; height: auto; }
+
+/* NUEVO · sinopsis: cuatro renglones; un toque la abre entera. */
+.sinopsis {
+  margin: 10px auto 0; max-width: 330px;
+  font-size: 13.5px; line-height: 1.5; color: rgba(242,229,198,.82);
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  cursor: pointer;
+}
+.sinopsis.abierta { -webkit-line-clamp: unset; display: block; cursor: auto; }
+.autoria-catalogo { margin-top: 9px; color: rgba(154,142,117,.75); font-family: var(--datos); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; }
+
+/* NUEVO · las dos voces de la sala: una fila de estrellas por butaca. */
+.voces { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; max-width: 320px; padding: 2px 0; }
+.voz { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.voz > span { font-family: var(--datos); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--crema-tenue); }
+.estrellas { display: flex; }
+.estrellas button {
+  width: 29px; height: 36px; padding: 0; background: none; border: none;
+  font-family: var(--cuerpo); font-size: 21px; letter-spacing: 0; line-height: 1;
+  color: rgba(201,162,39,.22);
+}
+.estrellas button.on { color: var(--laton); text-shadow: 0 0 10px rgba(201,162,39,.45); }
+
+/* NUEVO · los botones de la ficha: dos de peso, dos quietos. */
+.btn-ruleta {
+  flex: 1.3; min-height: 46px; padding: 10px 6px; font-size: 11px;
+  background: transparent; color: var(--laton); border: 1px solid rgba(201,162,39,.55);
+}
+.btn-ruleta[aria-pressed="true"] { background: rgba(201,162,39,.14); border-color: var(--laton); }
+.btn-ruleta:disabled { opacity: .38; }
+.acciones-quietas { display: flex; justify-content: center; gap: 2px; margin-top: -6px; }
+.acciones-quietas button {
+  min-height: 44px; padding: 0 12px; background: none; border: none;
+  font-size: 9.5px; letter-spacing: .16em; color: var(--crema-tenue);
+}
+.acciones-quietas .quitar { color: #b5566a; }
+.acciones-quietas .quitar.confirma { color: #FFDDE4; background: var(--vino); }
+.confirmacion {
+  min-height: 46px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-family: var(--datos); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--crema);
+  animation: entra .25s ease both;
+}
+.confirmacion b { color: var(--laton); font-weight: 400; }
+.confirmacion button { min-height: 34px; padding: 0 10px; background: none; border: 1px solid rgba(201,162,39,.35); color: var(--laton); font-size: 9.5px; }
+
+/* ═══════════ El alta (cajón) ═══════════ */
+.alta .cabecera-hoja { height: auto; display: flex; align-items: center; gap: 10px; padding: 18px 8px 10px 14px; border-bottom: 1px solid rgba(201,162,39,.2); }
+.alta .cabecera-hoja .asa { position: absolute; top: 0; left: 50%; margin: 9px 0 0 -27px; }
+.alta .cabecera-hoja h2 { margin: 0; flex: 1; font-family: var(--display); font-weight: 400; font-size: 13px; letter-spacing: .24em; color: var(--laton); }
+.alta .cabecera-hoja .btn-cerrar { position: static; }
+.alta .butaca-alta {
+  background: none; border: 1px solid rgba(201,162,39,.35); color: var(--crema);
+  font-size: 10px; letter-spacing: .16em; padding: 6px 9px; min-height: 32px;
+}
+.alta .butaca-alta b { color: var(--laton); font-weight: 400; }
+.alta .cuerpo-hoja { padding-top: 13px; }
+.alta .campo { display: flex; align-items: center; gap: 9px; border: 1px solid rgba(201,162,39,.35); background: rgba(3,1,2,.5); padding: 0 11px; }
+.alta .campo input { flex: 1; min-width: 0; background: none; border: none; outline: none; padding: 13px 0; font-size: 16px; }
+.alta .resultado {
+  display: grid; grid-template-columns: 42px 1fr auto; gap: 11px; align-items: start;
+  width: 100%; text-align: left; background: none; border: none;
+  border-bottom: 1px solid rgba(201,162,39,.12); padding: 10px 2px;
+  letter-spacing: 0; text-transform: none;
+}
+.alta .resultado svg { width: 42px; height: 63px; display: block; }
+.alta .resultado .nom { display: block; font-family: var(--cuerpo); font-size: 15px; line-height: 1.25; }
+.alta .resultado .met { display: block; font-family: var(--datos); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--crema-tenue); margin-top: 4px; }
+.alta .resultado .met b { color: var(--crema); font-weight: 400; }
+/* NUEVO · dos renglones de sinopsis bastan para reconocer el título. */
+.alta .resultado .sin {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin-top: 5px; font-family: var(--cuerpo); font-size: 12.5px; line-height: 1.4; color: rgba(242,229,198,.66);
+}
+.alta .resultado .sumar {
+  align-self: center; font-family: var(--datos); font-size: 19px; color: var(--laton);
+  border: 1px solid rgba(201,162,39,.3); width: 30px; height: 30px; line-height: 27px; text-align: center;
+}
+.alta .resultado[disabled] { opacity: .4; }
+.alta .resultado[disabled] .sumar { border-style: dashed; color: var(--crema-tenue); font-size: 12px; }
+.alta .resultado.puesto { animation: sellar-alta .5s ease both; }
+@keyframes sellar-alta { 0% { background: rgba(201,162,39,.28); } 100% { background: transparent; } }
+.alta .sin-resultados { border: 1px dashed rgba(201,162,39,.3); margin-top: 10px; padding: 20px 16px; text-align: center; color: var(--crema-tenue); line-height: 1.5; font-size: 14px; }
+
+/* ═══════════ El historial ═══════════ */
+.historial-contenido { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.historial-contenido h2 { margin: 0; color: var(--laton); font-family: var(--display); font-size: 18px; font-weight: 400; letter-spacing: .2em; }
+.historial-contenido section { padding: 12px; border: 1px solid rgba(201,162,39,.26); background: rgba(78,17,34,.12); }
+.historial-contenido h3 { margin: 0 0 8px; font-family: var(--display); font-weight: 400; font-size: 12px; letter-spacing: .22em; color: var(--laton); }
+.historial-contenido ul { list-style: none; }
+.fila-historial { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(201,162,39,.1); font-size: 14px; }
+.fila-historial time, .fila-historial em { flex: none; font-family: var(--datos); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--crema-tenue); font-style: normal; }
+.fila-historial.recien { animation: sellar-alta 1.2s ease both; }
+
+/* ═══════════ Herramienta del prototipo (no es diseño) ═══════════ */
+.conmutador-marco {
+  position: absolute; z-index: 5; left: 0; bottom: 4px;
+  padding: 5px 7px; min-height: 0;
+  border: 1px dashed rgba(242,229,198,.3); background: rgba(3,1,2,.6);
+  color: rgba(242,229,198,.6); font-size: 8.5px; letter-spacing: .12em;
+}
+</style>
+</head>
+<body>
+
+<div class="sala">
+  <nav class="cornisa-controles" aria-label="Controles del mezzanine">
+    <button class="cornisa-control" type="button" aria-label="Ver el catálogo" id="abrir-catalogo">▦</button>
+    <button class="cornisa-control" type="button" aria-label="Ver el historial" id="abrir-historial">◷</button>
+  </nav>
+
+  <header class="marquesina">
+    <div class="focos" aria-hidden="true">
+      <i class="foco on"></i><i class="foco"></i><i class="foco on"></i><i class="foco"></i><i class="foco on"></i><i class="foco"></i><i class="foco on"></i>
+    </div>
+    <div class="rotulo"><h1>EL CINE</h1><span class="abanico"></span></div>
+  </header>
+
+  <main class="escenario" id="escenario">
+    <div class="trio fuera" id="trio"></div>
+    <div class="anfitrion-3d" id="host-escenario" hidden>
+      <div class="respaldo marco-laton" id="respaldo-escenario"></div>
+      <button class="conmutador-marco" type="button"></button>
+    </div>
+    <div class="sello-dom" id="sello">VETADA</div>
+    <section class="capa-ganador" id="capa-ganador" hidden aria-live="polite"></section>
+    <div class="telon izq"></div><div class="telon der"></div>
+  </main>
+  <div class="panel-vetos" id="panel-vetos"></div>
+</div>
+
+<aside class="catalogo" id="catalogo" aria-label="El catálogo" hidden>
+  <div class="encabezado">
+    <h2>EL CATÁLOGO</h2>
+    <button class="btn-cerrar" type="button" id="cerrar-catalogo" aria-label="Cerrar el catálogo">✕</button>
+  </div>
+  <label class="campo">
+    <span class="lupa" aria-hidden="true">⌕</span>
+    <span class="solo-lectores">Buscar en el catálogo</span>
+    <input id="buscar" placeholder="Buscar…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+  </label>
+  <div class="chips" role="group" aria-label="Filtrar catálogo" id="filtros"></div>
+  <div id="muro"></div>
+  <div class="llamada" id="llamada"></div>
+</aside>
+
+<div class="velo" id="velo" aria-hidden="true"></div>
+
+<section class="hoja" id="hoja-ficha" role="dialog" aria-modal="true" aria-label="Ficha del título" tabindex="-1">
+  <div class="cabecera-hoja"><div class="asa"></div><button class="btn-cerrar" type="button" aria-label="Cerrar la ficha">✕</button></div>
+  <div class="cuerpo-hoja">
+    <div class="catalogo-ficha">
+      <div class="anfitrion-3d ficha-3d" id="host-ficha">
+        <div class="respaldo marco-laton" id="respaldo-ficha"></div>
+        <button class="conmutador-marco" type="button"></button>
+      </div>
+      <div id="ficha-datos" class="catalogo-ficha" style="width:100%"></div>
+    </div>
+  </div>
+</section>
+
+<section class="hoja alta" id="hoja-alta" role="dialog" aria-modal="true" aria-label="Agregar al catálogo" tabindex="-1">
+  <div class="cabecera-hoja">
+    <div class="asa"></div>
+    <h2>AGREGAR</h2>
+    <button class="butaca-alta" type="button" id="butaca-alta">Agrega <b>FÉLIX</b> ⇄</button>
+    <button class="btn-cerrar" type="button" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="cuerpo-hoja">
+    <label class="campo">
+      <span class="lupa" aria-hidden="true">⌕</span>
+      <span class="solo-lectores">Buscar en TMDB</span>
+      <input id="buscar-tmdb" value="antes" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    </label>
+    <div id="resultados"></div>
+  </div>
+</section>
+
+<section class="hoja" id="hoja-historial" role="dialog" aria-modal="true" aria-label="El historial" tabindex="-1">
+  <div class="cabecera-hoja"><div class="asa"></div><button class="btn-cerrar" type="button" aria-label="Cerrar el historial">✕</button></div>
+  <div class="cuerpo-hoja"><div class="historial-contenido" id="historial"></div></div>
+</section>
+
+<script type="module">
+/* ═══════════════ Datos falsos ═══════════════ */
+const HOY = '2026-11-07';
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const fechaCorta = (iso) => { const [, m, d] = iso.split('-').map(Number); return `${d} ${MESES[m - 1]}`; };
+const SERVICIOS = { 'Max': '#4b5bd6', 'Netflix': '#e50914', 'Disney+': '#1f6fd1', 'Apple TV+': '#d9d9d9', 'Prime Video': '#1fa3e0', 'MUBI': '#3a3a3a' };
+
+const titulos = [
+  { id: 'duna', nombre: 'Duna', anio: 2021, tipo: 'pelicula', motivo: 'duna', saga: 'Duna', orden: 1, tmdb: 7.8,
+    servicios: [['Max']], agrego: 'Félix', visto: true, voces: { 'Félix': 5, 'Sofía': 4 },
+    sinopsis: 'Paul Atreides llega con su familia a Arrakis, el planeta desierto del que sale la especia más valiosa del universo. Cuando una traición destruye a su casa, huye al desierto y busca refugio entre los fremen, que lo miran como al elegido de una vieja profecía.' },
+  { id: 'duna2', nombre: 'Duna: Parte Dos', anio: 2024, tipo: 'pelicula', motivo: 'duna', saga: 'Duna', orden: 2, tmdb: 8.1,
+    servicios: [['Max']], agrego: 'Sofía',
+    sinopsis: 'Paul se une a Chani y a los fremen para vengar a su familia. Mientras la profecía crece a su alrededor, tendrá que elegir entre el amor de su vida y el destino de todo un imperio.' },
+  { id: 'severance', nombre: 'Severance', anio: 2022, tipo: 'serie', motivo: 'pasillo', tmdb: 8.4,
+    servicios: [['Apple TV+']], agrego: 'Sofía',
+    sinopsis: 'Los empleados de Lumon aceptan un procedimiento que separa los recuerdos del trabajo de los de su vida personal. Mark empieza a sospechar lo que esconde la empresa cuando un antiguo compañero lo busca fuera de la oficina.' },
+  { id: 'pobres', nombre: 'Pobres Criaturas', anio: 2023, tipo: 'pelicula', motivo: 'ojo', tmdb: 7.6,
+    servicios: [['Disney+']], agrego: 'Félix',
+    sinopsis: 'Un científico excéntrico devuelve a la vida a Bella Baxter. Con hambre de mundo, Bella se escapa con un abogado vividor y recorre Europa dejando atrás, uno por uno, los prejuicios de su época.' },
+  { id: 'esdla1', nombre: 'El Señor de los Anillos: La Comunidad del Anillo', anio: 2001, tipo: 'pelicula', motivo: 'anillo', saga: 'El Señor de los Anillos', orden: 1, tmdb: 8.4,
+    servicios: [['Max'], ['Prime Video', 'Renta $59']], agrego: 'Félix',
+    sinopsis: 'En la Tierra Media, el hobbit Frodo hereda un anillo de poder que el Señor Oscuro busca para dominarlo todo. Con ocho compañeros emprende el viaje para destruirlo en el fuego donde fue forjado.' },
+  { id: 'esdla2', nombre: 'El Señor de los Anillos: Las Dos Torres', anio: 2002, tipo: 'pelicula', motivo: 'torre', saga: 'El Señor de los Anillos', orden: 2, tmdb: 8.4,
+    servicios: [['Max']], agrego: 'Félix',
+    sinopsis: 'La Comunidad se ha dividido. Frodo y Sam avanzan hacia Mordor guiados por Gollum, mientras Aragorn, Legolas y Gimli defienden el reino de Rohan de los ejércitos de Saruman.' },
+  { id: 'soul', nombre: 'Soul', anio: 2020, tipo: 'pelicula', motivo: 'chispa', tmdb: 8.0,
+    servicios: [['Disney+']], agrego: 'Sofía', visto: true, voces: {},
+    sinopsis: 'Joe, maestro de música en Nueva York, por fin consigue tocar jazz en el mejor club de la ciudad, pero un accidente lo separa de su cuerpo. Para volver tendrá que ayudar a un alma que no le encuentra el chiste a la vida.' },
+  { id: 'eterno', nombre: 'Eterno Resplandor de una Mente sin Recuerdos', anio: 2004, tipo: 'pelicula', motivo: 'ola', tmdb: 8.1,
+    servicios: [['Prime Video', 'Renta $49']], agrego: 'Sofía',
+    sinopsis: 'Tras una ruptura dolorosa, Joel descubre que Clementine borró de su memoria todo rastro de la relación. Decide someterse al mismo procedimiento, pero a mitad del borrado se arrepiente y quiere conservarla.' },
+  { id: 'andor', nombre: 'Andor', anio: 2022, tipo: 'serie', motivo: 'estrella', tmdb: 8.3,
+    servicios: [['Disney+']], agrego: 'Félix', vetadaHoy: true,
+    sinopsis: 'Cinco años antes de la Rebelión, el ladrón Cassian Andor se ve arrastrado a una causa que no buscaba. Una historia de espías sobre cómo nace la resistencia contra el Imperio.' },
+  { id: 'dragon', nombre: 'Cómo Entrenar a tu Dragón', anio: 2010, tipo: 'pelicula', motivo: 'dragon', tmdb: 7.9,
+    servicios: [['Netflix']], agrego: 'Sofía',
+    sinopsis: 'Hipo, un vikingo torpe que no encaja en su aldea, captura a un dragón herido y en lugar de matarlo se hace su amigo. Juntos cambian la manera en que su pueblo entiende a los dragones.' },
+];
+
+const TMDB = [
+  { id: 't1', nombre: 'Antes del Amanecer', anio: 1995, tipo: 'pelicula', motivo: 'ola', tmdb: 7.7,
+    sinopsis: 'Jesse y Céline se conocen en un tren rumbo a Viena y deciden bajarse juntos para recorrer la ciudad durante una sola noche, hablando del amor, la muerte y todo lo que cabe entre los dos.' },
+  { id: 't2', nombre: 'Antes del Atardecer', anio: 2004, tipo: 'pelicula', motivo: 'faro', tmdb: 7.7,
+    sinopsis: 'Nueve años después, Jesse presenta en París el libro que escribió sobre aquella noche. Céline aparece en la librería y tienen hasta que salga su avión para ponerse al día.' },
+  { id: 't3', nombre: 'Antes de la Medianoche', anio: 2013, tipo: 'pelicula', motivo: 'arbol', tmdb: 7.6,
+    sinopsis: 'Jesse y Céline pasan un verano en Grecia con sus hijas. En la última noche de vacaciones, una conversación tras otra los obliga a mirar de frente lo que se volvió su vida juntos.' },
+  { id: 't4', nombre: 'Antes de que Anochezca', anio: 2000, tipo: 'pelicula', motivo: 'pluma', tmdb: 7.1,
+    sinopsis: 'La vida del escritor cubano Reinaldo Arenas, desde su infancia en el campo hasta el exilio en Nueva York, contada a partir de sus propias memorias.' },
+  { id: 't5', nombre: 'Vidas Pasadas', anio: 2023, tipo: 'pelicula', motivo: 'ojo', tmdb: 7.8,
+    sinopsis: 'Nora y Hae Sung fueron inseparables de niños en Seúl. Veinte años después se reencuentran en Nueva York durante una semana que los hace preguntarse qué habría pasado.' },
+  { id: 't6', nombre: 'Fleabag', anio: 2016, tipo: 'serie', motivo: 'telaraña', tmdb: 8.2,
+    sinopsis: 'Una mujer de Londres, ingeniosa y con el corazón roto, intenta sacar adelante su café y su vida mientras le habla a la cámara como si fuéramos sus cómplices.' },
+];
+
+const estado = {
+  funciones: [{ id: 'f0', tituloId: 'duna', fecha: '2026-10-12' }],
+  ruleta: [],                 // ids en el orden en que se marcaron
+  vetos: 1,                   // quedan esta noche (uno se fue en Andor)
+  filtro: 'todo', q: '',
+  fichaId: null,
+  confirmando: false,         // «¿Seguro? Quitar»
+  confirmacion: null,         // { tituloId, funcionId, antes } → «Quedó en el historial»
+  giro: null,                 // { candidatos, ganador, fase }
+  butacaAlta: 'Félix',
+  agregados: new Set(),
+  marcoNuevo: true,
+};
+
+/* ═══════════════ Pósters dibujados (de prototypes/catalogo.html) ═══════════════ */
+const PALETAS = {
+  duna: ['#3A2A10', '#8A5A18', '#E8C877'], anillo: ['#0E1A12', '#1E3A24', '#B99A48'],
+  estrella: ['#0A0A16', '#1A1A38', '#D8D8F0'], dragon: ['#101E28', '#1E3E52', '#6ECBD6'],
+  telaraña: ['#2A0A18', '#5A123A', '#FF6FA8'], pasillo: ['#0E1214', '#1E2A2E', '#8FE0D8'],
+  faro: ['#160A20', '#38124E', '#C08CFF'], ojo: ['#1E0A18', '#4A1038', '#F2A0C8'],
+  ola: ['#0A1220', '#12305A', '#8FC4F0'], arbol: ['#0C1410', '#1A3020', '#9ED07A'],
+  pluma: ['#141410', '#2E3020', '#E8DCA8'], chispa: ['#160E1E', '#2E1848', '#7FE0C0'],
+  torre: ['#141008', '#302614', '#D8B040'], mano: ['#1A1014', '#3A1C24', '#C9A227'],
+};
+function dibujo(m, ac, f2) {
+  if (m === 'duna') return `<path d="M0 300 Q75 262 150 300 T300 300 V450 H0Z" fill="${ac}" opacity=".28"/><path d="M0 344 Q90 300 150 344 T300 336 V450 H0Z" fill="${ac}" opacity=".4"/><circle cx="150" cy="152" r="52" fill="${ac}" opacity=".9"/>`;
+  if (m === 'anillo') return `<circle cx="150" cy="200" r="76" fill="none" stroke="${ac}" stroke-width="9" opacity=".9"/><circle cx="150" cy="200" r="98" fill="none" stroke="${ac}" stroke-width="2" opacity=".4"/><path d="M0 380 L90 250 L150 320 L210 230 L300 380Z" fill="${ac}" opacity=".2"/>`;
+  if (m === 'estrella') return `<path d="M150 96 L166 176 L246 192 L166 208 L150 288 L134 208 L54 192 L134 176Z" fill="${ac}" opacity=".92"/><circle cx="150" cy="192" r="120" fill="none" stroke="${ac}" stroke-width="1.5" opacity=".3"/>`;
+  if (m === 'dragon') return `<path d="M36 250 Q150 130 264 250 Q210 214 150 240 Q90 214 36 250Z" fill="${ac}" opacity=".85"/><path d="M150 240 L150 320 M110 290 L150 320 L190 290" stroke="${ac}" stroke-width="4" fill="none" opacity=".7"/>`;
+  if (m === 'telaraña') return [40, 74, 108, 142].map(r => `<circle cx="150" cy="200" r="${r}" fill="none" stroke="${ac}" stroke-width="1.6" opacity=".55"/>`).join('')
+    + [0, 45, 90, 135].map(g => { const r = g * Math.PI / 180, x = Math.cos(r) * 150, y = Math.sin(r) * 150; return `<line x1="${150 - x}" y1="${200 - y}" x2="${150 + x}" y2="${200 + y}" stroke="${ac}" stroke-width="1.4" opacity=".45"/>`; }).join('');
+  if (m === 'pasillo') return `<path d="M0 60 L104 176 V300 L0 400Z" fill="${ac}" opacity=".16"/><path d="M300 60 L196 176 V300 L300 400Z" fill="${ac}" opacity=".16"/><path d="M104 176 H196 V300 H104Z" fill="${ac}" opacity=".9"/>`;
+  if (m === 'faro') return `<path d="M132 132 H168 L180 322 H120Z" fill="${ac}" opacity=".9"/><rect x="126" y="112" width="48" height="24" fill="${f2}"/><path d="M126 124 L18 78 V170Z" fill="${ac}" opacity=".28"/><path d="M174 124 L282 78 V170Z" fill="${ac}" opacity=".28"/>`;
+  if (m === 'ojo') return `<path d="M40 200 Q150 108 260 200 Q150 292 40 200Z" fill="none" stroke="${ac}" stroke-width="4" opacity=".85"/><circle cx="150" cy="200" r="42" fill="${ac}" opacity=".8"/><circle cx="150" cy="200" r="16" fill="#000" opacity=".65"/>`;
+  if (m === 'ola') return [0, 1, 2, 3].map(i => `<path d="M0 ${170 + i * 44} Q75 ${140 + i * 44} 150 ${170 + i * 44} T300 ${170 + i * 44}" fill="none" stroke="${ac}" stroke-width="3" opacity="${.7 - i * .13}"/>`).join('') + `<circle cx="150" cy="112" r="34" fill="${ac}" opacity=".35"/>`;
+  if (m === 'arbol') return `<path d="M144 330 V210 M144 250 L96 208 M144 232 L196 190" stroke="${ac}" stroke-width="7" fill="none" opacity=".85"/><circle cx="144" cy="168" r="58" fill="${ac}" opacity=".55"/><circle cx="96" cy="200" r="30" fill="${ac}" opacity=".35"/>`;
+  if (m === 'pluma') return `<path d="M96 320 Q150 200 204 128 Q216 220 150 288 Q120 314 96 320Z" fill="${ac}" opacity=".8"/><path d="M96 320 Q150 232 204 128" stroke="${f2}" stroke-width="2" fill="none" opacity=".9"/>`;
+  if (m === 'chispa') return `<circle cx="150" cy="200" r="30" fill="${ac}" opacity=".95"/>` + [0, 60, 120, 180, 240, 300].map(g => { const r = g * Math.PI / 180; return `<line x1="${150 + Math.cos(r) * 46}" y1="${200 + Math.sin(r) * 46}" x2="${150 + Math.cos(r) * 112}" y2="${200 + Math.sin(r) * 112}" stroke="${ac}" stroke-width="3" opacity=".5"/>`; }).join('');
+  if (m === 'torre') return [[52, 240], [100, 180], [148, 268], [196, 140], [244, 300]].map(([x, y]) => `<rect x="${x}" y="${y}" width="34" height="${360 - y}" fill="${ac}" opacity=".55"/>`).join('') + `<path d="M40 120 L120 176 L180 140 L268 96" stroke="${ac}" stroke-width="3" fill="none" opacity=".9"/>`;
+  return `<path d="M150 96 L214 200 L150 304 L86 200Z" fill="none" stroke="${ac}" stroke-width="3" opacity=".8"/><path d="M150 140 L188 200 L150 260 L112 200Z" fill="${ac}" opacity=".7"/>`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let semilla = 0;
+function poster(t, { rotulo = true, ancho, alto } = {}) {
+  const [f1, f2, ac] = PALETAS[t.motivo] || PALETAS.mano;
+  const id = 'g' + (semilla++);
+  const nom = t.nombre.length > 22 ? t.nombre.slice(0, 20) + '…' : t.nombre;
+  const tam = ancho ? ` width="${ancho}" height="${alto}"` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450"${tam} aria-hidden="true">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${f2}"/><stop offset="100%" stop-color="${f1}"/></linearGradient></defs>
+    <rect width="300" height="450" fill="url(#${id})"/>${dibujo(t.motivo, ac, f2)}
+    <rect x="10" y="10" width="280" height="430" fill="none" stroke="${ac}" stroke-width="1" opacity=".35"/>
+    ${rotulo ? `<rect x="0" y="368" width="300" height="82" fill="#000" opacity=".62"/>
+    <text x="150" y="404" text-anchor="middle" fill="#F2E5C6" font-family="Copperplate, Futura, sans-serif" font-size="18" letter-spacing="1.2">${esc(nom.toUpperCase())}</text>
+    <text x="150" y="426" text-anchor="middle" fill="#9A8E75" font-family="DIN Alternate, monospace" font-size="12" letter-spacing="3">${t.anio || '—'}</text>` : ''}
+  </svg>`;
+}
+
+/* ═══════════════ Reglas de la sala ═══════════════ */
+const $ = (s) => document.querySelector(s);
+const porId = (id) => titulos.find(t => t.id === id);
+const sinAcentos = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function sinPrefijo(nombre, saga) {
+  if (!saga || !sinAcentos(nombre).startsWith(sinAcentos(saga))) return nombre;
+  const n = nombre.slice(saga.length).replace(/^[\s:–-]+/, '');
+  return n.length < 4 ? nombre : n;
+}
+const anteriorSinVer = (t) => !t.saga ? null
+  : titulos.filter(o => o.saga === t.saga && o.orden < t.orden && !o.visto).sort((a, b) => a.orden - b.orden)[0] || null;
+const enCartelera = (t) => !t.visto && !anteriorSinVer(t) && !t.vetadaHoy;
+const marcadas = () => estado.ruleta.filter(id => enCartelera(porId(id)));
+function podarRuleta() { estado.ruleta = marcadas(); }
+
+/* Por qué un título no puede ir a la ruleta, en una frase. null = sí puede. */
+function razonSinRuleta(t) {
+  const a = anteriorSinVer(t);
+  if (a) return `Primero va «${sinPrefijo(a.nombre, a.saga)}».`;
+  if (t.vetadaHoy) return 'La vetaron esta noche.';
+  if (!estado.ruleta.includes(t.id) && marcadas().length >= 3) return 'La ruleta ya tiene tres.';
+  return null;
+}
+
+function registrarFuncion(t) {
+  const funcion = { id: 'f' + Date.now(), tituloId: t.id, fecha: HOY };
+  estado.funciones.push(funcion);
+  const antes = { visto: !!t.visto, voces: t.voces };
+  t.visto = true;
+  t.voces = t.voces || {};
+  podarRuleta();
+  return { tituloId: t.id, funcionId: funcion.id, antes };
+}
+function deshacerFuncion(c) {
+  const t = porId(c.tituloId);
+  estado.funciones = estado.funciones.filter(f => f.id !== c.funcionId);
+  t.visto = c.antes.visto;
+  t.voces = c.antes.voces;
+}
+
+/* ═══════════════ Catálogo ═══════════════ */
+const catalogo = $('#catalogo');
+function abrirCatalogo() { catalogo.hidden = false; pintarCatalogo(); }
+function cerrarCatalogo() { catalogo.hidden = true; if (hojaActual === hojas.ficha) hojas.ficha.cerrar({ inmediato: true }); }
+$('#abrir-catalogo').onclick = abrirCatalogo;
+$('#cerrar-catalogo').onclick = cerrarCatalogo;
+$('#buscar').oninput = (e) => { estado.q = e.target.value; pintarMuro(); };
+
+function visibles() {
+  return titulos.filter(t => {
+    if (estado.q.trim() && !sinAcentos(t.nombre).includes(sinAcentos(estado.q))) return false;
+    if (estado.filtro === 'sinVer' && t.visto) return false;
+    if (estado.filtro === 'vistas' && !t.visto) return false;
+    return true;
+  });
+}
+function pintarCatalogo() { pintarFiltros(); pintarMuro(); pintarLlamada(); }
+function pintarFiltros() {
+  const cuentas = { todo: titulos.length, sinVer: titulos.filter(t => !t.visto).length, vistas: titulos.filter(t => t.visto).length };
+  $('#filtros').innerHTML = [['todo', 'Todo'], ['sinVer', 'Sin ver'], ['vistas', 'Vistas']].map(([v, e]) =>
+    `<button class="chip${estado.filtro === v ? ' sel' : ''}" type="button" data-filtro="${v}" aria-pressed="${estado.filtro === v}">${e} <b>${cuentas[v]}</b></button>`).join('');
+  $('#filtros').querySelectorAll('button').forEach(b => b.onclick = () => { estado.filtro = b.dataset.filtro; pintarFiltros(); pintarMuro(); });
+}
+function pintarMuro() {
+  const lista = visibles();
+  const ruleta = marcadas();
+  $('#muro').innerHTML = lista.length ? `<main class="muro">${lista.map(t => {
+    const bloqueada = !t.visto && anteriorSinVer(t);
+    const banda = t.visto ? '✓ vista' : bloqueada ? '🔒 falta la anterior' : '';
+    return `<button class="celda${t.visto ? ' esta-vista' : ''}${bloqueada ? ' bloqueada' : ''}${ruleta.includes(t.id) ? ' en-ruleta' : ''}" type="button" data-id="${t.id}" aria-label="${esc(t.nombre)}${banda ? ', ' + banda : ''}${ruleta.includes(t.id) ? ', en la ruleta' : ''}">
+      ${poster(t)}<span class="filete-muro"></span>${banda ? `<span class="banda">${banda}</span>` : ''}</button>`;
+  }).join('')}</main>` : `<p class="nada">Nada con <b>«${esc(estado.q)}»</b> en el catálogo.</p>`;
+  $('#muro').querySelectorAll('.celda').forEach(b => b.onclick = () => abrirFicha(b.dataset.id));
+}
+let recienMarcada = null;
+function pintarLlamada() {
+  const ruleta = marcadas();
+  const llamada = $('#llamada');
+  if (!ruleta.length) {
+    llamada.innerHTML = `<button class="agregar" type="button">＋ Agregar al catálogo</button>`;
+    llamada.querySelector('.agregar').onclick = abrirAlta;
+    return;
+  }
+  const ranuras = [0, 1, 2].map(i => {
+    const t = porId(ruleta[i]);
+    return t ? `<button class="ranura${t.id === recienMarcada ? ' recien' : ''}" type="button" data-id="${t.id}" aria-label="Ver ${esc(t.nombre)}">${poster(t, { rotulo: false })}</button>`
+      : `<span class="ranura vacia" aria-hidden="true"></span>`;
+  }).join('');
+  llamada.innerHTML = `<div class="barra-ruleta" role="group" aria-label="La ruleta">
+    <button class="mas" type="button" aria-label="Agregar al catálogo">＋</button>
+    <div class="ranuras">${ranuras}</div>
+    <button class="girar-estas" type="button" ${ruleta.length < 3 ? 'disabled' : ''}>Girar con estas</button>
+  </div>`;
+  recienMarcada = null;
+  llamada.querySelector('.mas').onclick = abrirAlta;
+  llamada.querySelectorAll('.ranura[data-id]').forEach(b => b.onclick = () => abrirFicha(b.dataset.id));
+  llamada.querySelector('.girar-estas').onclick = () => girar(marcadas());
+}
+
+/* ═══════════════ Ficha del catálogo ═══════════════ */
+function abrirFicha(id) {
+  estado.fichaId = id;
+  estado.confirmando = false;
+  estado.confirmacion = null;
+  pintarFicha();
+  hojas.ficha.abrir();
+  vista3D.poner({ host: $('#host-ficha'), titulo: porId(id), modo: 'horizontal', halo: false,
+    alVertical: hojas.ficha.arrastre });
+}
+function pintarFicha() {
+  const t = porId(estado.fichaId);
+  if (!t) return;
+  $('#respaldo-ficha').innerHTML = poster(t);
+  const enRuleta = marcadas().includes(t.id);
+  const razon = t.visto ? null : razonSinRuleta(t);
+  const servicios = t.servicios.map(([s, renta]) =>
+    `<span class="chip${renta ? ' renta' : ''}"><i class="punto" style="background:${SERVICIOS[s]}"></i>${renta ? renta + ' · ' : ''}${s}</span>`).join('');
+  const c = estado.confirmacion;
+  $('#ficha-datos').innerHTML = `
+    <div class="ficha">
+      <h2>${esc(t.nombre)}</h2>
+      <p class="meta">${t.anio} · ${t.tipo === 'serie' ? 'Serie' : 'Película'} · TMDB <b>${t.tmdb.toFixed(1)}</b></p>
+      <p class="sinopsis" role="button" tabindex="0" aria-expanded="false">${esc(t.sinopsis)}</p>
+      <div class="servicios">${servicios}</div>
+      <p class="fuente">Disponibilidad · JustWatch</p>
+      <p class="autoria-catalogo">Agregó ${t.agrego}</p>
+    </div>
+    ${t.visto ? `<div class="voces">${['Félix', 'Sofía'].map(b => `
+      <div class="voz"><span>${b}</span><div class="estrellas" role="radiogroup" aria-label="Calificación de ${b}">
+        ${[1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${t.voces?.[b] === n}" aria-label="${n} de 5" data-butaca="${b}" data-n="${n}" class="${(t.voces?.[b] || 0) >= n ? 'on' : ''}">★</button>`).join('')}
+      </div></div>`).join('')}</div>` : ''}
+    ${c && c.tituloId === t.id ? `<p class="confirmacion">Quedó en el historial · <b>${fechaCorta(HOY)}</b><button type="button" class="deshacer">Deshacer</button></p>` : `
+    <div class="acciones">
+      <button class="btn-ver" type="button" data-accion="esta-vemos">Esta vemos</button>
+      ${t.visto ? '' : `<button class="btn-ruleta" type="button" data-accion="ruleta" aria-pressed="${enRuleta}" ${razon ? 'disabled' : ''}>${enRuleta ? '✓ En la ruleta' : 'A la ruleta'}</button>`}
+    </div>`}
+    ${razon ? `<p class="razon-veto">${razon}</p>` : ''}
+    <div class="acciones-quietas">
+      <button type="button" data-accion="visto">${t.visto ? 'Volver a la cartelera' : 'Ya la habíamos visto'}</button>
+      <button type="button" class="quitar${estado.confirmando ? ' confirma' : ''}" data-accion="quitar">${estado.confirmando ? '¿Seguro? Quitar' : 'Quitar'}</button>
+    </div>`;
+  const d = $('#ficha-datos');
+  const sin = d.querySelector('.sinopsis');
+  sin.onclick = () => { sin.classList.add('abierta'); sin.setAttribute('aria-expanded', 'true'); };
+  d.querySelectorAll('.estrellas button').forEach(b => b.onclick = () => {
+    const n = Number(b.dataset.n);
+    t.voces = { ...t.voces, [b.dataset.butaca]: t.voces?.[b.dataset.butaca] === n ? 0 : n };
+    pintarFicha();
+  });
+  d.querySelector('.deshacer')?.addEventListener('click', () => {
+    deshacerFuncion(estado.confirmacion); estado.confirmacion = null; pintarFicha(); pintarCatalogo();
+  });
+  d.querySelector('[data-accion="esta-vemos"]')?.addEventListener('click', () => {
+    estado.confirmacion = registrarFuncion(t); funcionReciente = estado.confirmacion.funcionId;
+    estado.confirmando = false; pintarFicha(); pintarCatalogo();
+  });
+  d.querySelector('[data-accion="ruleta"]')?.addEventListener('click', () => {
+    if (enRuleta) estado.ruleta = estado.ruleta.filter(id => id !== t.id);
+    else { estado.ruleta = [...marcadas(), t.id]; recienMarcada = t.id; }
+    pintarFicha(); pintarMuro(); pintarLlamada();
+  });
+  d.querySelector('[data-accion="visto"]').onclick = () => {
+    t.visto = !t.visto; if (t.visto) t.voces = t.voces || {};
+    estado.confirmacion = null; podarRuleta(); pintarFicha(); pintarCatalogo();
+  };
+  d.querySelector('[data-accion="quitar"]').onclick = () => {
+    if (!estado.confirmando) { estado.confirmando = true; pintarFicha(); return; }
+    titulos.splice(titulos.indexOf(t), 1); podarRuleta(); hojas.ficha.cerrar(); pintarCatalogo();
+  };
+}
+
+/* ═══════════════ La hoja inferior: arrastre, umbral, rebote ═══════════════
+   Sigue al dedo 1:1 hacia abajo; hacia arriba cede sólo unos píxeles con
+   resistencia. Al soltar cierra si bajó un tercio de la hoja (máximo 150 px)
+   o si se soltó rápido hacia abajo (> 0.5 px/ms); si no, vuelve con un
+   muelle que se pasa un poco y asienta: el rebote. */
+const velo = $('#velo');
+let hojaActual = null;
+function crearHoja(hoja, alCerrar = () => {}) {
+  let arr = null, abierta = false, timer = 0;
+  const alto = () => hoja.getBoundingClientRect().height - 48;
+  const pintar = (y) => {
+    hoja.style.transform = `translateY(${y}px)`;
+    velo.style.opacity = String(Math.max(0, 1 - Math.max(0, y) / alto()));
+  };
+  const api = {
+    hoja,
+    abrir() {
+      if (hojaActual && hojaActual !== api) hojaActual.cerrar({ inmediato: true });
+      clearTimeout(timer);
+      abierta = true; hojaActual = api;
+      hoja.classList.remove('cerrandose');
+      hoja.style.transition = hoja.style.transform = velo.style.opacity = velo.style.transition = '';
+      hoja.classList.add('abierta'); velo.classList.add('on');
+      hoja.querySelector('.cuerpo-hoja').scrollTop = 0;
+      hoja.focus({ preventScroll: true });
+    },
+    cerrar({ velocidad = 0, inmediato = false } = {}) {
+      if (!abierta) return;
+      abierta = false; arr = null;
+      if (hojaActual === api) hojaActual = null;
+      const y = new DOMMatrix(getComputedStyle(hoja).transform).m42 || 0;
+      const resto = alto() + 56 - y;
+      const dur = inmediato ? 0 : Math.round(Math.max(170, Math.min(320, resto / Math.max(velocidad, 1.4))));
+      hoja.classList.add('cerrandose'); hoja.classList.remove('abierta');
+      hoja.style.transition = `transform ${dur}ms cubic-bezier(.25,.8,.3,1)`;
+      velo.style.transition = `opacity ${dur}ms ease`;
+      hoja.style.transform = `translateY(${alto() + 56}px)`;
+      velo.style.opacity = '0';
+      timer = setTimeout(() => {
+        hoja.classList.remove('cerrandose');
+        hoja.style.transition = 'none'; hoja.style.transform = '';
+        velo.classList.remove('on'); velo.style.opacity = velo.style.transition = '';
+        requestAnimationFrame(() => { hoja.style.transition = ''; });
+        alCerrar();
+      }, dur + 20);
+    },
+    estaAbierta: () => abierta,
+    /* El arrastre lo alimentan la cabecera, el marco de la ficha (cuando el
+       gesto es vertical) y el cuerpo cuando ya está arriba del todo. */
+    arrastre: {
+      inicio(y, t) {
+        if (!abierta) return;
+        arr = { y0: y, dy: 0, muestras: [[t, y]] };
+        hoja.style.transition = 'none'; velo.style.transition = 'none';
+      },
+      mover(y, t) {
+        if (!arr) return;
+        let dy = y - arr.y0;
+        if (dy < 0) dy = -22 * (1 - Math.exp(dy / 70));
+        arr.dy = dy;
+        arr.muestras.push([t, y]);
+        while (arr.muestras.length > 2 && t - arr.muestras[0][0] > 90) arr.muestras.shift();
+        pintar(dy);
+      },
+      fin() {
+        if (!arr) return;
+        const [t0, y0] = arr.muestras[0], [t1, y1] = arr.muestras[arr.muestras.length - 1];
+        const v = t1 > t0 ? (y1 - y0) / (t1 - t0) : 0;
+        const dy = arr.dy;
+        arr = null;
+        if (dy > Math.min(150, alto() / 3) || (v > 0.5 && dy > 10)) { api.cerrar({ velocidad: v }); return; }
+        hoja.style.transition = 'transform 480ms cubic-bezier(.2,1.5,.4,1)';
+        velo.style.transition = 'opacity 300ms ease';
+        pintar(0);
+      },
+      activo: () => arr !== null,
+    },
+  };
+  // La cabecera entera es el asa (puntero: dedo y ratón).
+  const cab = hoja.querySelector('.cabecera-hoja');
+  cab.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button')) return;
+    cab.setPointerCapture(e.pointerId);
+    api.arrastre.inicio(e.clientY, e.timeStamp);
+  });
+  cab.addEventListener('pointermove', (e) => api.arrastre.mover(e.clientY, e.timeStamp));
+  ['pointerup', 'pointercancel'].forEach(n => cab.addEventListener(n, () => api.arrastre.fin()));
+  // El cuerpo: sólo con el dedo y sólo si ya no hay nada que desplazar hacia arriba.
+  const cuerpo = hoja.querySelector('.cuerpo-hoja');
+  let toque = null;
+  cuerpo.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1 || e.target.closest('.anfitrion-3d')) { toque = null; return; }
+    toque = { x: e.touches[0].clientX, y: e.touches[0].clientY, arriba: cuerpo.scrollTop <= 0, modo: null };
+  }, { passive: true });
+  cuerpo.addEventListener('touchmove', (e) => {
+    if (!toque) return;
+    const p = e.touches[0], dx = p.clientX - toque.x, dy = p.clientY - toque.y;
+    if (!toque.modo && Math.hypot(dx, dy) > 6) {
+      toque.modo = toque.arriba && dy > 0 && Math.abs(dy) > Math.abs(dx) ? 'hoja' : 'nativo';
+      if (toque.modo === 'hoja') api.arrastre.inicio(toque.y, e.timeStamp);
+    }
+    if (toque.modo === 'hoja') { e.preventDefault(); api.arrastre.mover(p.clientY, e.timeStamp); }
+  }, { passive: false });
+  cuerpo.addEventListener('touchend', () => { if (toque?.modo === 'hoja') api.arrastre.fin(); toque = null; });
+  cuerpo.addEventListener('touchcancel', () => { if (toque?.modo === 'hoja') api.arrastre.fin(); toque = null; });
+  hoja.querySelector('.cabecera-hoja .btn-cerrar').onclick = () => api.cerrar();
+  return api;
+}
+const hojas = {
+  ficha: crearHoja($('#hoja-ficha'), () => { estado.fichaId = null; vista3D.quitar($('#host-ficha')); }),
+  alta: crearHoja($('#hoja-alta')),
+  historial: crearHoja($('#hoja-historial')),
+};
+velo.onclick = () => hojaActual?.cerrar();
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (hojaActual) hojaActual.cerrar();
+  else if (!catalogo.hidden) cerrarCatalogo();
+});
+
+/* ═══════════════ El alta: resultados con sinopsis y TMDB ═══════════════ */
+function abrirAlta() { pintarResultados(); hojas.alta.abrir(); }
+$('#buscar-tmdb').oninput = pintarResultados;
+$('#butaca-alta').onclick = (e) => {
+  estado.butacaAlta = estado.butacaAlta === 'Félix' ? 'Sofía' : 'Félix';
+  e.currentTarget.innerHTML = `Agrega <b>${estado.butacaAlta.toLocaleUpperCase()}</b> ⇄`;
+};
+function pintarResultados() {
+  const q = sinAcentos($('#buscar-tmdb').value.trim());
+  const caja = $('#resultados');
+  if (!q) { caja.innerHTML = ''; return; }
+  const lista = TMDB.filter(r => sinAcentos(r.nombre).includes(q));
+  if (!lista.length) { caja.innerHTML = `<div class="sin-resultados">TMDB no encuentra <b>«${esc($('#buscar-tmdb').value)}»</b>.</div>`; return; }
+  caja.innerHTML = lista.map(r => {
+    const ya = estado.agregados.has(r.id);
+    return `<button class="resultado" type="button" data-id="${r.id}" ${ya ? 'disabled' : ''}>
+      ${poster(r)}
+      <span><span class="nom">${esc(r.nombre)}</span>
+        <span class="met">${r.anio} · ${r.tipo === 'serie' ? 'Serie' : 'Película'} · TMDB <b>${r.tmdb.toFixed(1)}</b>${ya ? ' · ya está' : ''}</span>
+        <span class="sin">${esc(r.sinopsis)}</span></span>
+      <span class="sumar" aria-hidden="true">${ya ? '✓' : '＋'}</span>
+    </button>`;
+  }).join('');
+  caja.querySelectorAll('.resultado').forEach(b => b.onclick = () => {
+    const r = TMDB.find(x => x.id === b.dataset.id);
+    estado.agregados.add(r.id);
+    titulos.unshift({ ...r, servicios: [['MUBI']], agrego: estado.butacaAlta });
+    pintarResultados();
+    caja.querySelector(`[data-id="${r.id}"]`)?.classList.add('puesto');
+    pintarCatalogo();
+  });
+}
+
+/* ═══════════════ El historial ═══════════════ */
+let funcionReciente = null;
+$('#abrir-historial').onclick = () => { pintarHistorial(); hojas.historial.abrir(); };
+function pintarHistorial() {
+  const funciones = [...estado.funciones].sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id));
+  const yaVisto = titulos.filter(t => t.visto && !estado.funciones.some(f => f.tituloId === t.id));
+  $('#historial').innerHTML = `<h2>EL HISTORIAL</h2>
+    <section><h3>LAS FUNCIONES</h3><ul>${funciones.map(f => `<li class="fila-historial${f.id === funcionReciente ? ' recien' : ''}"><span>${esc(porId(f.tituloId)?.nombre || '—')}</span><time>${fechaCorta(f.fecha)}</time></li>`).join('')}</ul></section>
+    <section><h3>YA LO HABÍAMOS VISTO</h3><ul>${yaVisto.map(t => `<li class="fila-historial"><span>${esc(t.nombre)}</span><em>sin fecha</em></li>`).join('')}</ul></section>`;
+}
+
+/* ═══════════════ El giro con tres elegidas: sólo el segundo acto ═══════════════ */
+const escenario = $('#escenario');
+const espera = (ms) => new Promise(r => setTimeout(r, ms));
+function pintarVetos() {
+  $('#panel-vetos').className = `panel-vetos${estado.vetos ? '' : ' agotado'}`;
+  $('#panel-vetos').innerHTML = `<span class="etiqueta">Vetos de la noche</span><span class="fichas">${[0, 1].map(i => `<i class="ficha-veto${i >= estado.vetos ? ' usada' : ''}"></i>`).join('')}</span>`;
+}
+pintarVetos();
+
+async function girar(ids, { duelo = false } = {}) {
+  catalogo.hidden = true;
+  hojaActual?.cerrar({ inmediato: true });
+  const g = { candidatos: [...ids], ganador: null, fase: 'girando' };
+  estado.giro = g;
+  estado.confirmacion = null;
+  escenario.classList.add('abierto');
+  $('#capa-ganador').hidden = true;
+  $('#sello').classList.remove('on');
+  $('#host-escenario').hidden = true;
+  vista3D.quitar($('#host-escenario'));
+  const trio = $('#trio');
+  trio.innerHTML = ids.map(id => `<div class="carrete">${poster(porId(id))}</div>`).join('');
+  trio.classList.remove('fuera');
+  const carretes = [...trio.children];
+  await espera(duelo ? 350 : 900);
+  const elegido = Math.floor(Math.random() * ids.length);
+  // La luz salta entre los finalistas y frena hasta el elegido.
+  const vueltas = ids.length * 3 + elegido + 1;
+  for (let k = 0; k < vueltas; k++) {
+    if (estado.giro !== g) return;
+    carretes.forEach((c, i) => c.classList.toggle('luz', i === k % ids.length));
+    const a = k / vueltas;
+    await espera(70 + 330 * a * a * a);
+  }
+  carretes.forEach((c, i) => c.classList.toggle('descartado', i !== elegido));
+  await espera(650);
+  if (estado.giro !== g) return;
+  g.ganador = ids[elegido];
+  g.fase = 'ganador';
+  trio.classList.add('fuera');
+  $('#respaldo-escenario').innerHTML = poster(porId(g.ganador));
+  $('#host-escenario').hidden = false;
+  vista3D.poner({ host: $('#host-escenario'), titulo: porId(g.ganador), modo: 'libre', halo: true, vuelo: true, reserva: 168 });
+  pintarGanador();
+}
+function pintarGanador() {
+  const g = estado.giro;
+  const t = porId(g.ganador);
+  const c = estado.confirmacion;
+  const hecho = c && c.tituloId === t.id;
+  const sinVeto = !estado.vetos ? 'No quedan vetos esta noche.' : g.candidatos.length < 2 ? 'Con un solo título el veto se apaga.' : null;
+  const capa = $('#capa-ganador');
+  capa.hidden = false;
+  capa.innerHTML = `<div class="ficha"><h2>${esc(t.nombre)}</h2>
+      <p class="meta">${t.anio} · ${t.tipo === 'serie' ? 'Serie' : 'Película'} · TMDB <b>${t.tmdb.toFixed(1)}</b></p></div>
+    ${hecho ? `<p class="confirmacion">Quedó en el historial · <b>${fechaCorta(HOY)}</b><button type="button" class="deshacer">Deshacer</button></p>` : `
+    <div class="acciones">
+      <button class="btn-ver" type="button">Esta vemos</button>
+      <button class="btn-veto" type="button" ${sinVeto || g.fase !== 'ganador' ? 'disabled' : ''}>Vetar</button>
+    </div>`}
+    ${sinVeto && !hecho ? `<p class="razon-veto">${sinVeto}</p>` : ''}`;
+  if (hecho) { capa.querySelector('.deshacer').onclick = () => { deshacerFuncion(estado.confirmacion); estado.confirmacion = null; pintarGanador(); }; return; }
+  capa.querySelector('.btn-ver').onclick = () => {
+    estado.confirmacion = registrarFuncion(t); funcionReciente = estado.confirmacion.funcionId; pintarGanador();
+  };
+  capa.querySelector('.btn-veto').onclick = async () => {
+    g.fase = 'vetando';
+    estado.vetos--; t.vetadaHoy = true; podarRuleta(); pintarVetos(); pintarGanador();
+    $('#sello').classList.add('on');
+    await espera(1100);
+    if (estado.giro !== g) return;
+    girar(g.candidatos.filter(id => id !== t.id), { duelo: true });
+  };
+}
+
+/* ═══════════════ Las vistas 3D: un solo lienzo, va adonde se mira ═══════════════
+   Una pila de anfitriones: la ficha abierta sobre el ganador se lleva el
+   lienzo; al cerrarla, el lienzo vuelve al escenario. Sin three.js, cada
+   anfitrión enseña su marco CSS de siempre. */
+const vista3D = {
+  pila: [], motor: null,
+  poner(v) { this.pila = this.pila.filter(x => x.host !== v.host); this.pila.push(v); this.aplicar(); },
+  quitar(host) { this.pila = this.pila.filter(x => x.host !== host); host.classList.remove('con-3d'); this.aplicar(); },
+  aplicar() {
+    const v = this.pila[this.pila.length - 1];
+    document.querySelectorAll('.anfitrion-3d').forEach(h => h.classList.toggle('con-3d', !!this.motor && v?.host === h));
+    if (this.motor) this.motor.montar(v || null);
+  },
+};
+document.querySelectorAll('.conmutador-marco').forEach(b => b.onclick = (e) => {
+  e.stopPropagation();
+  estado.marcoNuevo = !estado.marcoNuevo;
+  pintarConmutador();
+  vista3D.motor?.marco(estado.marcoNuevo);
+});
+function pintarConmutador() {
+  document.querySelectorAll('.conmutador-marco').forEach(b => b.textContent = estado.marcoNuevo ? 'Prototipo · marco nuevo ⇄' : 'Prototipo · marco de hoy ⇄');
+}
+pintarConmutador();
+document.querySelectorAll('.conmutador-marco').forEach(b => b.addEventListener('pointerdown', e => e.stopPropagation()));
+
+(async () => {
+  try {
+    const THREE = await import('https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js');
+    vista3D.motor = crearMotor(THREE);
+    vista3D.motor.marco(estado.marcoNuevo);
+    vista3D.aplicar();
+  } catch (error) {
+    console.warn('Mejoras de la sala · no cargó three.js:', error);
+  }
+})();
+
+function crearMotor(THREE) {
+  const ANCHO = 1.86, ALTO = 2.79;
+  const LATON = new THREE.Vector3(0xc9 / 255, 0xa2 / 255, 0x27 / 255);
+  const LATON_TENUE = new THREE.Vector3(0x8a / 255, 0x6f / 255, 0x1c / 255);
+  const CREMA = new THREE.Vector3(0xf2 / 255, 0xe5 / 255, 0xc6 / 255);
+
+  const lienzo = document.createElement('canvas');
+  const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true, powerPreference: 'low-power' });
+  r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  r.setClearColor(0x000000, 0);
+  r.outputColorSpace = THREE.SRGBColorSpace;
+  const escena = new THREE.Scene();
+  const camara = new THREE.PerspectiveCamera(30, 1, 0.1, 60);
+
+  /* ── El entorno: la sala misma, pintada en un lienzo equirectangular ──
+     Nada descargado. Lo que el latón refleja es una sala a oscuras: la
+     cabina del proyector detrás del público (de donde viene la luz cálida),
+     dos tiras de luz crema como las de la marquesina y el terciopelo vino
+     abajo. Al ladear el marco, las tiras corren por los filetes. */
+  function entorno() {
+    const W = 1024, H = 512;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#6e5236'); g.addColorStop(0.45, '#3a2618'); g.addColorStop(0.6, '#24120f'); g.addColorStop(1, '#521828');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const elipse = (u, v, rx, ry, color, a = 1) => {
+      x.save(); x.translate(u * W, (1 - v) * H); x.scale(1, ry / rx);
+      const rg = x.createRadialGradient(0, 0, 0, 0, 0, rx);
+      rg.addColorStop(0, color); rg.addColorStop(0.55, color); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      x.globalAlpha = a; x.fillStyle = rg; x.fillRect(-rx, -rx, rx * 2, rx * 2); x.restore();
+    };
+    // +Z (hacia el público) cae en u = 0.75.
+    elipse(0.75, 0.56, 250, 150, '#f0cf8e');            // la luz de la cabina, ancha
+    elipse(0.75, 0.60, 90, 60, '#fff3da');              // su núcleo
+    [0, 0.5, 1].forEach(u => elipse(u, 0.55, 140, 120, '#b0702c', 0.6)); // reflejos laterales
+    elipse(0.75, 0.12, 260, 90, '#7a1a30', 0.9);        // el terciopelo del suelo
+    x.fillStyle = '#24120c';                             // dos sombras que dan contraste al barrer
+    x.fillRect(0.75 * W - 8, (1 - 0.75) * H, 16, 150);
+    x.fillRect(0.75 * W - 150, (1 - 0.47) * H, 300, 10);
+    x.fillStyle = '#fff6e2';                             // tiras crema: los filos nítidos
+    x.fillRect(0.75 * W - 150, (1 - 0.80) * H, 300, 9);
+    x.fillRect(0.75 * W - 200, (1 - 0.72) * H, 8, 120);
+    x.fillRect(0.75 * W + 190, (1 - 0.74) * H, 8, 130);
+    const t = new THREE.CanvasTexture(c);
+    t.mapping = THREE.EquirectangularReflectionMapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    const pm = new THREE.PMREMGenerator(r);
+    const env = pm.fromEquirectangular(t).texture;
+    t.dispose(); pm.dispose();
+    return env;
+  }
+  const env = entorno();
+
+  /* ── El marco NUEVO: una moldura barrida por un perfil ───────────────
+     El perfil va de adentro hacia afuera, en unidades del cartel (el póster
+     mide 1.86 × 2.79). Total: 0.13 de ancho y 0.053 de alto, contra 0.15 ×
+     0.11 del octágono extruido. De adentro hacia afuera:
+       laca negra · contrafilo · junquillo · media caña · filete bajo ·
+       escalón · banda · junquillo · repisa · canto.
+     Cada tramo es una arista viva con el siguiente; dentro de las curvas la
+     normal se suaviza. Las esquinas son ingletes, como un marco de madera
+     de verdad: la normal cambia en la diagonal y el brillo lo dibuja. */
+  const S = 1.2;
+  const arco = (cx, cz, rad, a0, a1, n) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 + (a1 - a0) * i / n; return [cx + rad * Math.cos(a), cz + rad * Math.sin(a)]; });
+  const PERFIL = [
+    { m: 1, p: [[-0.020, 0.003], [0, 0.003]] },
+    { m: 0, p: [[0, 0.003], [0, 0.010]] },
+    { m: 0, p: arco(0.007, 0.010, 0.007, Math.PI, 0, 10) },
+    { m: 0, p: [[0.014, 0.010], [0.017, 0.006]] },
+    { m: 0, p: [[0.017, 0.006], [0.020, 0.010]] },
+    { m: 0, p: arco(0.020, 0.030, 0.020, -Math.PI / 2, 0, 12) },
+    { m: 0, p: [[0.040, 0.030], [0.052, 0.030]] },
+    { m: 0, p: [[0.052, 0.030], [0.052, 0.036]] },
+    { m: 0, p: [[0.052, 0.036], [0.084, 0.036]] },
+    { m: 0, p: arco(0.091, 0.036, 0.007, Math.PI, 0, 10) },
+    { m: 0, p: [[0.098, 0.036], [0.098, 0.026]] },
+    { m: 0, p: [[0.098, 0.026], [0.106, 0.026]] },
+    { m: 0, p: [[0.106, 0.026], [0.106, 0.0]] },
+  ].map(c => ({ m: c.m, p: c.p.map(([px, pz]) => [px * S, pz * S]) }));
+
+  function chaflan(w, h, cc) {
+    const a = w / 2, b = h / 2;
+    return [[-a + cc, -b], [a - cc, -b], [a, -b + cc], [a, b - cc], [a - cc, b], [-a + cc, b], [-a, b - cc], [-a, -b + cc]];
+  }
+  function barrer(camino, perfil) {
+    const N = camino.length;
+    const ns = camino.map((p, i) => {
+      const q = camino[(i + 1) % N]; const ex = q[0] - p[0], ey = q[1] - p[1]; const l = Math.hypot(ex, ey);
+      return [ey / l, -ex / l];
+    });
+    const ms = camino.map((_, i) => {
+      const a = ns[(i - 1 + N) % N], b = ns[i]; const d = 1 + a[0] * b[0] + a[1] * b[1];
+      return [(a[0] + b[0]) / d, (a[1] + b[1]) / d];
+    });
+    const largo = [0]; for (let i = 0; i < N; i++) { const p = camino[i], q = camino[(i + 1) % N]; largo.push(largo[i] + Math.hypot(q[0] - p[0], q[1] - p[1])); }
+    const pos = [], nor = [], uv = [], porMaterial = [[], []];
+    let v0 = 0;
+    for (const corrida of perfil) {
+      const pts = corrida.p;
+      const segN = pts.slice(0, -1).map((p, j) => { const q = pts[j + 1]; const tx = q[0] - p[0], tz = q[1] - p[1]; const l = Math.hypot(tx, tz); return [-tz / l, tx / l]; });
+      const n2 = pts.map((_, j) => { const a = segN[Math.max(0, j - 1)], b = segN[Math.min(segN.length - 1, j)]; const nx = a[0] + b[0], nz = a[1] + b[1]; const l = Math.hypot(nx, nz); return [nx / l, nz / l]; });
+      const vs = [v0]; for (let j = 1; j < pts.length; j++) vs.push(vs[j - 1] + Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]));
+      for (let i = 0; i < N; i++) {
+        const P = camino[i], Q = camino[(i + 1) % N], mP = ms[i], mQ = ms[(i + 1) % N], n = ns[i];
+        const base = pos.length / 3;
+        pts.forEach(([px, pz], j) => {
+          const nn = n2[j];
+          pos.push(P[0] + mP[0] * px, P[1] + mP[1] * px, pz, Q[0] + mQ[0] * px, Q[1] + mQ[1] * px, pz);
+          const nx = n[0] * nn[0], ny = n[1] * nn[0], nz = nn[1];
+          nor.push(nx, ny, nz, nx, ny, nz);
+          uv.push(largo[i] * 4, vs[j] * 4, largo[i + 1] * 4, vs[j] * 4);
+        });
+        for (let j = 0; j < pts.length - 1; j++) {
+          const a = base + j * 2, b = a + 1, c = a + 2, d = a + 3;
+          porMaterial[corrida.m].push(a, d, b, a, c, d);
+        }
+      }
+      v0 = vs[vs.length - 1];
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex([...porMaterial[0], ...porMaterial[1]]);
+    geo.addGroup(0, porMaterial[0].length, 0);
+    geo.addGroup(porMaterial[0].length, porMaterial[1].length, 1);
+    return geo;
+  }
+
+  /* Latón de verdad: metal puro que sólo vive de lo que refleja, cepillado a
+     lo largo de cada tramo de moldura (la anisotropía sigue la u del barrido)
+     y con la rugosidad justa para que el brillo sea una banda y no un espejo. */
+  const laton = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color('#dcb35a'), metalness: 1, roughness: 0.28,
+    anisotropy: 0.5, envMap: env, envMapIntensity: 1.15,
+  });
+  const laca = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color('#0b0507'), metalness: 0, roughness: 0.5,
+    clearcoat: 1, clearcoatRoughness: 0.06, envMap: env, envMapIntensity: 0.9,
+  });
+  const CHAFLAN = 0.07;
+  const camino = chaflan(ANCHO, ALTO, CHAFLAN);
+  const marcoNuevo = new THREE.Group();
+  marcoNuevo.add(new THREE.Mesh(barrer(camino, PERFIL), [laton, laca]));
+  /* Un rombo de latón en cada inglete: el único adorno, sobre la banda. */
+  const latonFacetado = laton.clone(); latonFacetado.flatShading = true; latonFacetado.anisotropy = 0;
+  const rombo = new THREE.ConeGeometry(0.02 * S, 0.006 * S, 4, 1);
+  rombo.rotateX(Math.PI / 2);
+  [1, 3, 5, 7].forEach((i) => {
+    const p = camino[i], q = camino[(i + 1) % camino.length];
+    const ex = q[0] - p[0], ey = q[1] - p[1], l = Math.hypot(ex, ey);
+    const nx = ey / l, ny = -ex / l, d = 0.068 * S;
+    const m = new THREE.Mesh(rombo, latonFacetado);
+    m.position.set((p[0] + q[0]) / 2 + nx * d, (p[1] + q[1]) / 2 + ny * d, 0.036 * S + 0.003 * S);
+    m.rotation.z = Math.atan2(ey, ex);
+    marcoNuevo.add(m);
+  });
+
+  /* ── El marco ANTERIOR: copia literal de app/tres/ganador.ts ── */
+  function octagono(w, h, corte) {
+    const s = new THREE.Shape();
+    s.moveTo(-w / 2 + corte, -h / 2); s.lineTo(w / 2 - corte, -h / 2); s.lineTo(w / 2, -h / 2 + corte);
+    s.lineTo(w / 2, h / 2 - corte); s.lineTo(w / 2 - corte, h / 2); s.lineTo(-w / 2 + corte, h / 2);
+    s.lineTo(-w / 2, h / 2 - corte); s.lineTo(-w / 2, -h / 2 + corte); s.closePath();
+    return s;
+  }
+  const CANTO = 0.13;
+  const forma = octagono(ANCHO + CANTO * 2, ALTO + CANTO * 2, 0.30);
+  forma.holes.push(new THREE.Path(octagono(ANCHO - 0.02, ALTO - 0.02, 0.26).getPoints(64).reverse()));
+  const geoViejo = new THREE.ExtrudeGeometry(forma, { depth: 0.09, bevelEnabled: true, bevelThickness: 0.022, bevelSize: 0.022, bevelSegments: 2, curveSegments: 2 });
+  geoViejo.computeVertexNormals();
+  const marcoViejo = new THREE.Mesh(geoViejo, new THREE.ShaderMaterial({
+    uniforms: { uLaton: { value: LATON }, uTenue: { value: LATON_TENUE }, uCrema: { value: CREMA } },
+    vertexShader: `varying vec3 vN; varying vec3 vP; varying vec3 vLocal;
+      void main() { vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vP = mv.xyz; vLocal = position; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform vec3 uLaton; uniform vec3 uTenue; uniform vec3 uCrema; varying vec3 vN; varying vec3 vP; varying vec3 vLocal;
+      void main() {
+        vec3 n = normalize(vN); vec3 v = normalize(-vP);
+        float banda = 0.5 + 0.5 * sin(vLocal.y * 26.0);
+        vec3 base = mix(uTenue, uLaton, 0.35 + 0.65 * banda);
+        vec3 luz = normalize(vec3(-0.25, 0.55, 0.85));
+        float dif = clamp(dot(n, luz), 0.0, 1.0);
+        float ref = clamp(dot(reflect(-luz, n), v), 0.0, 1.0);
+        float esp = pow(ref, 52.0); float halo = pow(ref, 8.0);
+        float filo = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 2.4);
+        vec3 c = base * (0.34 + 0.72 * dif) + uCrema * esp * 1.05 + uLaton * halo * 0.22 + uLaton * filo * 0.4;
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  }));
+
+  /* ── La lámina: el póster con su barniz (de app/tres/ganador.ts) ── */
+  const lamina = new THREE.Mesh(new THREE.PlaneGeometry(ANCHO, ALTO), new THREE.ShaderMaterial({
+    uniforms: { uMapa: { value: null }, uCrema: { value: CREMA }, uLadeo: { value: new THREE.Vector2() }, uFuerza: { value: 0 }, uOpacidad: { value: 1 }, uComba: { value: 0.11 } },
+    vertexShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vP; varying vec3 vT; varying vec3 vB;
+      void main() { vUv = uv; vN = normalize(normalMatrix * normal); vT = normalize(normalMatrix * vec3(1.0, 0.0, 0.0)); vB = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));
+        vec4 mv = modelViewMatrix * vec4(position, 1.0); vP = mv.xyz; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform sampler2D uMapa; uniform vec3 uCrema; uniform vec2 uLadeo; uniform float uFuerza; uniform float uOpacidad; uniform float uComba;
+      varying vec2 vUv; varying vec3 vN; varying vec3 vP; varying vec3 vT; varying vec3 vB;
+      void main() {
+        vec4 tinta = texture2D(uMapa, vUv); vec3 c = tinta.rgb;
+        vec3 n = normalize(vN + vT * (vUv.x - 0.5) * uComba + vB * (vUv.y - 0.5) * uComba);
+        vec3 v = normalize(-vP); vec3 luz = normalize(vec3(-0.22, 0.34, 1.0)); vec3 h = normalize(luz + v);
+        float esp = pow(clamp(dot(n, h), 0.0, 1.0), 110.0);
+        float fres = pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 1.8);
+        float diag = 0.55 * vUv.x + 0.45 * (1.0 - vUv.y);
+        float centro = 0.46 + uLadeo.y * 1.45 + uLadeo.x * 0.95;
+        float d = (diag - centro) * 3.2; float banda = exp(-(d * d));
+        c += uCrema * esp * (0.30 + 1.30 * uFuerza);
+        c += uCrema * fres * (0.10 + 0.34 * uFuerza);
+        c += uCrema * banda * (0.030 + 0.150 * uFuerza);
+        gl_FragColor = vec4(c, tinta.a * uOpacidad);
+      }`,
+    transparent: true,
+  }));
+
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(ANCHO * 3.4, ALTO * 2.4), new THREE.MeshBasicMaterial({
+    map: (() => {
+      const c = document.createElement('canvas'); c.width = c.height = 128;
+      const x = c.getContext('2d'); const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+      [[0, 'rgba(255,233,168,1)'], [0.28, 'rgba(255,214,120,0.55)'], [0.62, 'rgba(201,162,39,0.16)'], [1, 'rgba(201,162,39,0)']].forEach(([p, col]) => g.addColorStop(p, col));
+      x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+      return new THREE.CanvasTexture(c);
+    })(),
+    blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, depthTest: false, opacity: 0.5,
+  }));
+  halo.position.z = -0.6;
+  halo.renderOrder = -1;
+
+  const cartel = new THREE.Group();
+  cartel.add(marcoNuevo, marcoViejo, lamina);
+  const caja = new THREE.Group();
+  caja.add(halo, cartel);
+  escena.add(caja);
+
+  const texturas = new Map();
+  function texturaDe(t) {
+    if (texturas.has(t.id)) return texturas.get(t.id);
+    const c = document.createElement('canvas'); c.width = 512; c.height = 768;
+    const tex = new THREE.CanvasTexture(c);
+    tex.anisotropy = r.capabilities.getMaxAnisotropy();
+    const img = new Image();
+    img.onload = () => { c.getContext('2d').drawImage(img, 0, 0, 512, 768); tex.needsUpdate = true; };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(poster(t, { ancho: 600, alto: 900 }));
+    texturas.set(t.id, tex);
+    return tex;
+  }
+
+  /* ── El ladeo: topes, saturación y muelle, de app/tres/ganador.ts ── */
+  const TOPE_X = 16 * Math.PI / 180, TOPE_Y = 26 * Math.PI / 180;
+  const saturar = (px, tope, base) => tope * Math.tanh(px / 130 + Math.atanh(Math.max(-0.999999, Math.min(0.999999, base / tope))));
+  const RETORNO = 0.6, OMEGA = 14, ZETA = 0.62, OMEGA_D = OMEGA * Math.sqrt(1 - ZETA * ZETA);
+  const muelleFactor = (a) => (a >= 1 ? 0 : Math.exp(-ZETA * OMEGA * a * RETORNO) * (Math.cos(OMEGA_D * a * RETORNO) + (ZETA * OMEGA / OMEGA_D) * Math.sin(OMEGA_D * a * RETORNO)));
+  let lx = 0, ly = 0, mx = 0, my = 0, inclinando = false, muelle = null;
+  let vista = null, vuelo = null, ajuste = 0.8;
+  const reloj = () => performance.now() / 1000;
+
+  function encuadrar() {
+    if (!vista) return;
+    const w = vista.host.clientWidth, h = vista.host.clientHeight;
+    if (!w || !h) return;
+    r.setSize(w, h, false);
+    camara.aspect = w / h;
+    /* El escenario reserva abajo el sitio de la ficha del ganador: el lienzo
+       cubre todo (el halo se funde bajo el degradado de la ficha en vez de
+       cortarse en seco) y la vista se corre para centrar el cartel arriba. */
+    const reserva = vista.reserva || 0, util = (h - reserva) / h;
+    const altoMarco = ALTO + 0.32, anchoMarco = ANCHO + 0.32;
+    const t = 2 * Math.tan(THREE.MathUtils.degToRad(camara.fov / 2));
+    camara.position.set(0, 0, Math.max(altoMarco / (ajuste * t * util), anchoMarco / (ajuste * t * camara.aspect)));
+    camara.lookAt(0, 0, 0);
+    if (reserva) camara.setViewOffset(w, h, 0, reserva / 2, w, h); else camara.clearViewOffset();
+    camara.updateProjectionMatrix();
+  }
+  const observador = new ResizeObserver(encuadrar);
+
+  /* El gesto. «libre» (escenario): los dos ejes ladean, como hoy.
+     «horizontal» (ficha): a los 6 px se decide el eje; horizontal ladea sólo
+     en Y y el vertical se lo pasa a la hoja, que lo usa para cerrarse. */
+  let gesto = null;
+  lienzo.addEventListener('pointerdown', (e) => {
+    if (!vista || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    lienzo.setPointerCapture(e.pointerId);
+    gesto = { id: e.pointerId, x: e.clientX, y: e.clientY, base: { x: lx, y: ly }, eje: vista.modo === 'libre' ? 'ladeo' : null };
+    if (gesto.eje === 'ladeo') inclinar(gesto.base.x, gesto.base.y);
+  });
+  lienzo.addEventListener('pointermove', (e) => {
+    if (!gesto || e.pointerId !== gesto.id) return;
+    const dx = e.clientX - gesto.x, dy = e.clientY - gesto.y;
+    if (!gesto.eje && Math.hypot(dx, dy) > 6) {
+      gesto.eje = Math.abs(dx) > Math.abs(dy) ? 'ladeo' : 'hoja';
+      if (gesto.eje === 'hoja') vista.alVertical?.inicio(gesto.y, e.timeStamp);
+      else { gesto.x = e.clientX; inclinar(gesto.base.x, gesto.base.y); }
+    }
+    if (gesto.eje === 'ladeo') {
+      inclinar(vista.modo === 'libre' ? saturar(e.clientY - gesto.y, TOPE_X, gesto.base.x) : 0, saturar(e.clientX - gesto.x, TOPE_Y, gesto.base.y));
+    } else if (gesto.eje === 'hoja') vista.alVertical?.mover(e.clientY, e.timeStamp);
+  });
+  const soltarGesto = (e) => {
+    if (!gesto || e.pointerId !== gesto.id) return;
+    if (gesto.eje === 'ladeo') soltar(); else if (gesto.eje === 'hoja') vista?.alVertical?.fin();
+    gesto = null;
+  };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => lienzo.addEventListener(n, soltarGesto));
+
+  function inclinar(x, y) { mx = Math.max(-TOPE_X, Math.min(TOPE_X, x)); my = Math.max(-TOPE_Y, Math.min(TOPE_Y, y)); inclinando = true; muelle = null; }
+  function soltar() { if (!inclinando) return; inclinando = false; muelle = { t0: reloj(), x: lx, y: ly }; }
+
+  let ultimo = reloj();
+  function cuadro() {
+    requestAnimationFrame(cuadro);
+    const t = reloj(), dt = Math.min(0.05, t - ultimo); ultimo = t;
+    if (!vista) return;
+    if (inclinando) { const k = Math.min(1, dt * 30); lx += (mx - lx) * k; ly += (my - ly) * k; }
+    else if (muelle) { const a = (t - muelle.t0) / RETORNO; const f = muelleFactor(a); lx = muelle.x * f; ly = muelle.y * f; if (a >= 1) { lx = ly = 0; muelle = null; } }
+    cartel.rotation.set(lx, ly, 0);
+    lamina.material.uniforms.uLadeo.value.set(lx, ly);
+    lamina.material.uniforms.uFuerza.value = Math.min(1, Math.hypot(lx / TOPE_X, ly / TOPE_Y));
+    if (vuelo) {
+      const a = Math.min(1, (t - vuelo) / 0.78), e = 1 - Math.pow(1 - a, 3);
+      caja.scale.setScalar(0.55 + 0.45 * e);
+      caja.position.z = -1.2 * (1 - e);
+      halo.material.opacity = 0.5 * e;
+      if (a >= 1) vuelo = null;
+    }
+    r.render(escena, camara);
+  }
+  requestAnimationFrame(cuadro);
+
+  return {
+    montar(v) {
+      if (vista) observador.unobserve(vista.host);
+      vista = v;
+      gesto = null; inclinando = false; muelle = null; lx = ly = mx = my = 0;
+      if (!v) { lienzo.remove(); return; }
+      v.host.prepend(lienzo);
+      lamina.material.uniforms.uMapa.value = texturaDe(v.titulo);
+      halo.visible = !!v.halo;
+      ajuste = v.modo === 'libre' ? 0.84 : 0.86;
+      caja.scale.setScalar(1); caja.position.set(0, 0, 0); halo.material.opacity = 0.5;
+      vuelo = v.vuelo ? reloj() : null;
+      v.vuelo = false;
+      observador.observe(v.host);
+      encuadrar();
+    },
+    marco(nuevo) {
+      marcoNuevo.visible = nuevo; marcoViejo.visible = !nuevo;
+      lamina.position.z = nuevo ? 0 : 0.03;
+    },
+  };
+}
+</script>
+</body>
+</html>

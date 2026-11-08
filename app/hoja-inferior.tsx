@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, type RefObject, useContext, useEffect, useMemo, useRef } from "react";
+import { createContext, type ReactNode, type RefObject, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { debeCerrarHoja, resistirArrastre } from "./hoja-inferior-logica";
 
 export type ArrastreDeHoja = {
@@ -41,6 +41,15 @@ export default function HojaInferior({
   children: ReactNode;
   cabecera?: ReactNode;
 }) {
+  // El padre puede vaciar sus datos al cerrar; la salida conserva la última
+  // composición abierta hasta que la hoja ya no sea visible.
+  const [contenido, setContenido] = useState<{ children: ReactNode; cabecera: ReactNode } | null>(
+    abierta ? { children, cabecera } : null,
+  );
+  if (abierta && (!contenido || contenido.children !== children || contenido.cabecera !== cabecera)) {
+    setContenido({ children, cabecera });
+  }
+  const tieneContenido = contenido !== null;
   const hoja = useRef<HTMLElement>(null);
   const estabaAbierta = useRef(false);
   const velo = useRef<HTMLDivElement>(null);
@@ -82,10 +91,6 @@ export default function HojaInferior({
         const velocidad = t > t0 ? (y - y0) / (t - t0) : 0;
         if (debeCerrarHoja(gesto.current.dy, alto.current, velocidad)) {
           gesto.current = null;
-          hoja.current?.style.removeProperty("transition");
-          hoja.current?.style.removeProperty("transform");
-          velo.current?.style.removeProperty("transition");
-          velo.current?.style.removeProperty("opacity");
           onCerrar();
         } else volver();
       },
@@ -94,14 +99,44 @@ export default function HojaInferior({
     };
   }, [abierta, onCerrar]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     gesto.current = null;
-    hoja.current?.style.removeProperty("transform");
-    hoja.current?.style.removeProperty("transition");
+    const elemento = hoja.current;
+    if (!elemento) return;
+    elemento.style.removeProperty("transition");
+    // Confirma la posición arrastrada antes de quitar el transform inline:
+    // el destino del CSS debe partir de ahí, sin pasar por la posición abierta.
+    if (!abierta) elemento.getBoundingClientRect();
+    elemento.style.removeProperty("transform");
     velo.current?.style.removeProperty("opacity");
     velo.current?.style.removeProperty("transition");
-    if (abierta && cuerpo.current) cuerpo.current.scrollTop = 0;
-  }, [abierta]);
+    if (abierta) {
+      if (cuerpo.current) cuerpo.current.scrollTop = 0;
+      return;
+    }
+    if (!tieneContenido) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setContenido(null);
+      return;
+    }
+    const estilo = getComputedStyle(elemento);
+    const duraciones = estilo.transitionDuration.split(",").map((valor) => parseFloat(valor) * (valor.trim().endsWith("ms") ? 1 : 1000));
+    const demoras = estilo.transitionDelay.split(",").map((valor) => parseFloat(valor) * (valor.trim().endsWith("ms") ? 1 : 1000));
+    const duracion = Math.max(0, ...estilo.transitionProperty.split(",").map((propiedad, i) =>
+      ["transform", "all"].includes(propiedad.trim()) ? duraciones[i % duraciones.length] + demoras[i % demoras.length] : 0,
+    ));
+    const terminar = (evento: TransitionEvent) => {
+      if (evento.target === elemento && evento.propertyName === "transform") setContenido(null);
+    };
+    elemento.addEventListener("transitionend", terminar);
+    // Una transición interrumpida o una pestaña en segundo plano puede no
+    // entregar transitionend; el respaldo también libera sus componentes.
+    const respaldo = window.setTimeout(() => setContenido(null), duracion + 50);
+    return () => {
+      elemento.removeEventListener("transitionend", terminar);
+      window.clearTimeout(respaldo);
+    };
+  }, [abierta, tieneContenido]);
 
   useEffect(() => {
     const elemento = cuerpo.current;
@@ -226,10 +261,10 @@ export default function HojaInferior({
             onLostPointerCapture={() => { if (arrastre.activo()) arrastre.cancelar(); }}
           >
             <div className="asa" aria-hidden="true" />
-            {cabecera}
+            {abierta ? cabecera : contenido?.cabecera}
             <button className="btn-cerrar" type="button" aria-label={`Cerrar: ${etiqueta}`} onClick={onCerrar}>✕</button>
           </div>
-          <div className="cuerpo-hoja" ref={cuerpo}>{children}</div>
+          <div className="cuerpo-hoja" ref={cuerpo}>{abierta ? children : contenido?.children}</div>
         </ContextoArrastre.Provider>
       </section>
     </>

@@ -1473,10 +1473,23 @@ button:disabled {
   letter-spacing: .16em;
   text-transform: uppercase;
 }
-.catalogo .btn-veto.confirma {
-  background: var(--vino);
-  border-color: var(--vino-claro);
-  color: #FFDDE4;
+.catalogo .acciones-quietas { display: flex; justify-content: center; gap: 2px; margin-top: -6px; }
+.catalogo .acciones-quietas button {
+  min-height: 44px; padding: 0 12px; background: none; border: none;
+  font-size: 9.5px; letter-spacing: .16em; color: var(--crema-tenue);
+}
+.catalogo .acciones-quietas .quitar { color: #b5566a; }
+.catalogo .acciones-quietas .quitar.confirma { color: #FFDDE4; background: var(--vino); }
+.catalogo .confirmacion {
+  min-height: 46px; margin: 0;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-family: var(--datos); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--crema);
+}
+.catalogo .confirmacion b { color: var(--laton); font-weight: 400; }
+.catalogo .confirmacion button {
+  min-height: 34px; padding: 0 10px; background: none;
+  border: 1px solid rgba(201,162,39,.35); color: var(--laton); font-size: 9.5px;
 }
 /* ── La cabina y el historial ──────────────── */
 

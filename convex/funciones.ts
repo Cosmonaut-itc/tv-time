@@ -5,8 +5,10 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import {
   esPrimeraFuncion,
   idsYaVistosSinFuncion,
+  planParaDeshacer,
   siguienteDeSaga,
   validarEnCartelera,
+  validarTituloDelCatalogo,
   validarTituloParaFuncion,
 } from "./funciones_logica";
 import { nocheDe } from "./noche";
@@ -155,5 +157,48 @@ export const cerrar = mutation({
       // sigue viéndose sin ver, que es justo lo que hay que anunciar.
       siguiente: siguienteDeSaga(titulo, titulos),
     };
+  },
+});
+
+export const registrarDesdeCatalogo = mutation({
+  args: { salaId: v.id("salas"), tituloId: v.id("titulos") },
+  returns: v.object({ funcionId: v.id("funciones"), fecha: v.number() }),
+  handler: async (ctx, { salaId, tituloId }) => {
+    await asegurarSala(ctx, salaId);
+    const titulo = await ctx.db.get(tituloId);
+    validarTituloDelCatalogo(titulo, salaId);
+    const fecha = Date.now();
+    const funcionId = await ctx.db.insert("funciones", {
+      salaId, tituloId, fecha, vistoAntes: titulo.visto,
+    });
+    await ctx.db.patch(tituloId, { visto: true });
+    return { funcionId, fecha };
+  },
+});
+
+export const deshacer = mutation({
+  args: { salaId: v.id("salas"), funcionId: v.id("funciones") },
+  returns: v.null(),
+  handler: async (ctx, { salaId, funcionId }) => {
+    await asegurarSala(ctx, salaId);
+    const funcion = await ctx.db.get(funcionId);
+    if (!funcion) return null;
+    const posterior = await ctx.db
+      .query("funciones")
+      .withIndex("por_titulo", (q) =>
+        q.eq("tituloId", funcion.tituloId).gt("_creationTime", funcion._creationTime))
+      .first();
+    const plan = planParaDeshacer(funcion, salaId, posterior);
+    if (plan?.posterior && posterior) await ctx.db.patch(posterior._id, plan.posterior);
+    if (plan?.titulo) {
+      const titulo = await ctx.db.get(funcion.tituloId);
+      // Quitar un título borra sus funciones; si ya no está, deshacer sigue siendo inocuo.
+      if (titulo) {
+        validarTituloDelCatalogo(titulo, salaId);
+        await ctx.db.patch(titulo._id, plan.titulo);
+      }
+    }
+    await ctx.db.delete(funcionId);
+    return null;
   },
 });

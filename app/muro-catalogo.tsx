@@ -379,8 +379,8 @@ export default function MuroCatalogo({
             {!tituloAbierto.posterPath && <p className="fuente sin-poster">sin póster oficial</p>}
             <div className="ficha">
               <h2>{tituloAbierto.nombre}</h2>
-              <DatosFicha key={tituloAbierto._id} salaId={salaId} tituloId={tituloAbierto._id as Id<"titulos">} anio={tituloAbierto.anio} tipo={tituloAbierto.tipo} />
-              <ChipsDisponibilidad key={tituloAbierto._id} salaId={salaId} tituloId={tituloAbierto._id as Id<"titulos">} />
+              <DatosFicha key={`datos-${tituloAbierto._id}`} salaId={salaId} tituloId={tituloAbierto._id as Id<"titulos">} anio={tituloAbierto.anio} tipo={tituloAbierto.tipo} />
+              <ChipsDisponibilidad key={`disponibilidad-${tituloAbierto._id}`} salaId={salaId} tituloId={tituloAbierto._id as Id<"titulos">} />
               {tituloAbierto.agregadoPor && <p className="autoria-catalogo">Agregó {tituloAbierto.agregadoPor}</p>}
             </div>
             {tituloAbierto.visto && <CalificacionesTitulo key={tituloAbierto._id} salaId={salaId} titulo={tituloAbierto} butacas={butacas} />}

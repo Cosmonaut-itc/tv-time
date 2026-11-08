@@ -35,6 +35,16 @@ const DOCUMENTO_TELON_RESPALDO = `<!doctype html>
       overflow: hidden;
     }
 
+    .telon-de-entrada::after {
+      position: absolute;
+      z-index: 4;
+      inset: 0;
+      background: #000;
+      content: "";
+      pointer-events: none;
+      animation: telon-encender 250ms ease-out forwards;
+    }
+
     .telon-de-entrada__cortina {
       position: absolute;
       inset: 0 auto 0 0;
@@ -105,6 +115,19 @@ const DOCUMENTO_TELON_RESPALDO = `<!doctype html>
       font-size: 11px;
       letter-spacing: 0.08em;
       line-height: 1.65;
+    }
+
+    @keyframes telon-encender {
+      to {
+        opacity: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .telon-de-entrada::after {
+        animation: none;
+        display: none;
+      }
     }
   </style>
 </head>

@@ -55,6 +55,16 @@ body {
   pointer-events: auto;
 }
 
+.telon-de-entrada::after {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  background: #000;
+  content: "";
+  pointer-events: none;
+  animation: telon-encender 250ms ease-out forwards;
+}
+
 .telon-de-entrada__cortina {
   position: absolute;
   inset: 0 auto 0 0;
@@ -110,7 +120,7 @@ body {
   transform: translate(-50%, -50%);
   visibility: hidden;
   text-align: center;
-  animation: telon-cartel-aparecer 180ms ease 2.5s forwards;
+  animation: telon-cartel-aparecer 180ms ease 2.75s forwards;
 }
 
 .telon-de-entrada__rotulo {
@@ -134,20 +144,27 @@ body {
 
 html[data-sala-llego="true"] .telon-de-entrada {
   pointer-events: none;
-  animation: telon-retirar 0s linear 1.101s forwards;
+  animation: telon-retirar 0s linear 1.351s forwards;
 }
 
 html[data-sala-llego="true"] .telon-de-entrada__cortina--izquierda {
-  animation: telon-salir-izquierda 1.1s cubic-bezier(0.4, 0, 0.2, 1)
+  animation: telon-salir-izquierda 1.1s cubic-bezier(0.4, 0, 0.2, 1) 250ms
     forwards;
 }
 
 html[data-sala-llego="true"] .telon-de-entrada__cortina--derecha {
-  animation: telon-salir-derecha 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: telon-salir-derecha 1.1s cubic-bezier(0.4, 0, 0.2, 1) 250ms
+    forwards;
 }
 
 html[data-sala-llego="true"] .telon-de-entrada__cenefa {
-  animation: telon-salir-arriba 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: telon-salir-arriba 1.1s cubic-bezier(0.4, 0, 0.2, 1) 250ms forwards;
+}
+
+@keyframes telon-encender {
+  to {
+    opacity: 0;
+  }
 }
 
 html[data-sala-llego="true"] .telon-de-entrada__cartel {
@@ -188,13 +205,23 @@ html[data-sala-llego="true"] .telon-de-entrada__cartel {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .telon-de-entrada::after {
+    animation: none;
+    display: none;
+  }
+
   .telon-de-entrada__cartel {
     animation-duration: 0.01ms;
+    animation-delay: 2.5s;
   }
 
   html[data-sala-llego="true"] .telon-de-entrada {
     visibility: hidden;
     animation: none;
+  }
+
+  html[data-sala-llego="true"] .telon-de-entrada {
+    animation-delay: 0s;
   }
 
   html[data-sala-llego="true"] .telon-de-entrada__cortina,

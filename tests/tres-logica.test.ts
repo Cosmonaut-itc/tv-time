@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { TituloDeSala } from "../app/cartelera.ts";
-import { tira3D } from "../app/tres/logica.ts";
+import { repartirRelleno, tiras3D } from "../app/tres/logica.ts";
 
 const titulo = (_id: string): TituloDeSala => ({
   _id, nombre: _id, tipo: "pelicula", visto: false,
@@ -58,16 +58,36 @@ test("el ganador nunca baja de escala 0.5 aunque el hueco no alcance", async () 
   }
 });
 
-test("la tira deja al finalista en el destino y excluye copias por _id del relleno", () => {
+test("reparte relleno disjunto, excluye finalistas y conserva el destino de cada tambor", () => {
+  const finalistas = [titulo("f1"), titulo("f2"), titulo("f3")];
+  const candidatos = [...finalistas, ...Array.from({ length: 39 }, (_, i) => titulo(`c${i}`))];
+  const tiras = tiras3D(finalistas, candidatos, false, () => 0.5);
+  assert.equal(tiras.length, 3);
+  assert.deepEqual(tiras.map((tira) => tira.destino), [4, 4, 4]);
+  const relleno = tiras.map((tira) => tira.celdas.filter((_, i) => i !== tira.destino));
+  const ids = relleno.flat().map((t) => t._id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(ids.every((id) => !finalistas.some((f) => f._id === id)));
+  tiras.forEach((tira, i) => assert.equal(tira.celdas[tira.destino], finalistas[i]));
+});
+
+test("con pocos candidatos rellena sin duplicar dentro del tambor hasta agotarlos", () => {
+  const finalistas = [titulo("f1"), titulo("f2"), titulo("f3")];
+  const candidatos = [...finalistas, ...Array.from({ length: 5 }, (_, i) => titulo(`c${i}`))];
+  const rellenos = repartirRelleno(finalistas, candidatos, 7, () => 0.5);
+  assert.ok(rellenos.every((relleno) => relleno.length === 7));
+  for (const relleno of rellenos) assert.equal(new Set(relleno.map((t) => t._id)).size, 5);
+});
+
+test("un tambor conserva destino, reposo y relleno repetido sólo si falta catálogo", () => {
   const finalista = titulo("a");
-  const candidatos = [titulo("a"), titulo("b"), titulo("c")];
-  const original = [...candidatos];
-  const tira = tira3D(finalista, candidatos, false, () => 0.5);
-  assert.equal(tira.celdas.length, 8);
-  assert.equal(tira.destino, 4);
-  assert.equal(tira.celdas[4], finalista);
-  assert.equal(tira.celdas.filter((t) => t._id === finalista._id).length, 1);
-  assert.deepEqual(candidatos, original);
+  const quieta = tiras3D([finalista], [finalista, titulo("b")], true, () => 0.999)[0];
+  assert.equal(quieta.destino, 0);
+  assert.equal(quieta.celdas[0], finalista);
+  assert.deepEqual(quieta.celdas.slice(1).map((t) => t._id), Array(7).fill("b"));
+  const sola = tiras3D([finalista], [], false, () => 0.999)[0];
+  assert.equal(sola.destino, 7);
+  assert.ok(sola.celdas.every((t) => t === finalista));
 });
 
 test("el arrastre conserva el ángulo inicial y satura suavemente a 130 px", async () => {
@@ -100,11 +120,11 @@ test("el vuelo empieza con el ancho aparente del tambor", async () => {
 
 test("la tira quieta arranca de frente y una cartelera vacía usa el finalista", () => {
   const a = titulo("a");
-  const quieta = tira3D(a, [titulo("b")], true, () => 0.999);
+  const quieta = tiras3D([a], [titulo("b")], true, () => 0.999)[0];
   assert.equal(quieta.destino, 0);
   assert.equal(quieta.celdas[0], a);
   assert.deepEqual(quieta.celdas.slice(1).map((t) => t._id), Array(7).fill("b"));
-  const sola = tira3D(a, [], false, () => 0.999);
+  const sola = tiras3D([a], [], false, () => 0.999)[0];
   assert.equal(sola.destino, 7);
   assert.ok(sola.celdas.every((t) => t === a));
 });

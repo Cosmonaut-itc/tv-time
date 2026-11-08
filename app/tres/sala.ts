@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { OpcionesDeSala3D, Sala3D, FaseDeLaSala3D } from "./tipos.ts";
 import type { TituloDeSala } from "../cartelera.ts";
 import { ALTO_VISTA, ANCHO_MINIMO, FOV, SEPARACION, ESCALA_TAMBOR, RADIO, GANADOR_Z, TECHO_GANADOR } from "./medidas.ts";
-import { saturar, cuadrosPorSegundo, tira3D, fraccionAMundo } from "./logica.ts";
+import { saturar, cuadrosPorSegundo, tiras3D, fraccionAMundo } from "./logica.ts";
 import { crearTelon } from "./telon.ts";
 import { crearMarquesina } from "./marquesina.ts";
 import { crearTambores } from "./tambores.ts";
@@ -413,7 +413,7 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
       ganador.esconder();
       actualizarFicha(null, null);
       conteo.setNumero(null); conteo.setHaz(false);
-      tambores.montar(finalistas.map((f) => tira3D(f, candidatos, quietos)));
+      tambores.montar(tiras3D(finalistas, candidatos, quietos));
       ajustarGesto();
       despertar();
     },

@@ -29,6 +29,7 @@ import MarquesinaApagada from "./marquesina-apagada";
 import MuroCatalogo from "./muro-catalogo";
 import PosterCrudo from "./poster-crudo";
 import { ajusteOpticoDelNumero, type TintaDelNumero } from "./conteo-logica";
+import { repartirRelleno } from "./tres/logica.ts";
 import { calentarPosters, cuandoHayaCalma, urlDePoster } from "./posters";
 import { esLaSalaDeLaCasa } from "./firma-logica";
 import MascotaClaude from "./mascota-claude";
@@ -171,17 +172,6 @@ function PosterDelCarrete({ titulo, tresD }: { titulo: TituloDeSala; tresD: bool
       )}
     </>
   );
-}
-
-function tiraDe(
-  candidatos: readonly TituloDeSala[],
-  finalista: TituloDeSala,
-): TituloDeSala[] {
-  const vueltas = Array.from(
-    { length: 14 },
-    () => candidatos[Math.floor(Math.random() * candidatos.length)],
-  );
-  return [...vueltas, finalista];
 }
 
 function FichaDelGanador({
@@ -551,11 +541,12 @@ export default function SalaCartelera({
     }
 
     setFinalistas(nuevosFinalistas);
-    setTirasDelGiro(
-      nuevosFinalistas.map((finalista) =>
-        preparacion.primerActo ? tiraDe(candidatos, finalista) : [finalista],
-      ),
-    );
+    const rellenos = preparacion.primerActo
+      ? repartirRelleno(nuevosFinalistas, candidatos, 14)
+      : [];
+    setTirasDelGiro(nuevosFinalistas.map((finalista, indice) =>
+      preparacion.primerActo ? [...rellenos[indice], finalista] : [finalista],
+    ));
     setFase(preparacion.primerActo ? "girando" : "finalistas");
     await siguientePintado();
     if (!giroPuedeContinuar(id)) return;

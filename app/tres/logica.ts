@@ -36,18 +36,48 @@ export function barajar<T>(lista: readonly T[], azar: () => number = Math.random
   return b;
 }
 
-export function tira3D(finalista: TituloDeSala, candidatos: readonly TituloDeSala[], quieto: boolean, azar: () => number = Math.random) {
-    const otros = barajar(candidatos.filter((t) => t._id !== finalista._id), azar).slice(0, CELDAS - 1);
-    if (!otros.length) otros.push(finalista);
-    const destino = quieto ? 0 : Math.floor(azar() * CELDAS);
-    const celdas = [];
-    let k = 0;
-    for (let i = 0; i < CELDAS; i += 1) {
-      if (i === destino) celdas.push(finalista);
-      else { celdas.push(otros[k % otros.length]); k += 1; }
+/** Reparte relleno entre tambores; sólo repite dentro de un tambor al agotarlo. */
+export function repartirRelleno(
+  finalistas: readonly TituloDeSala[],
+  candidatos: readonly TituloDeSala[],
+  largo: number,
+  azar: () => number = Math.random,
+): TituloDeSala[][] {
+  const disponibles = barajar(
+    candidatos.filter((titulo) => !finalistas.some((finalista) => finalista._id === titulo._id)), azar,
+  );
+  let cursor = 0;
+  return finalistas.map(() => {
+    const relleno: TituloDeSala[] = [];
+    let intentos = 0;
+    while (relleno.length < largo && disponibles.length && intentos < disponibles.length) {
+      if (cursor >= disponibles.length) cursor = 0;
+      const titulo = disponibles[cursor++];
+      intentos += 1;
+      if (!relleno.some((actual) => actual._id === titulo._id)) {
+        relleno.push(titulo);
+        intentos = 0;
+      }
     }
+    while (relleno.length < largo && disponibles.length) relleno.push(disponibles[cursor++ % disponibles.length]);
+    return relleno;
+  });
+}
+
+export function tiras3D(
+  finalistas: readonly TituloDeSala[], candidatos: readonly TituloDeSala[], quieto: boolean,
+  azar: () => number = Math.random,
+) {
+  const rellenos = repartirRelleno(finalistas, candidatos, CELDAS - 1, azar);
+  return finalistas.map((finalista, indice) => {
+    const otros = rellenos[indice].length ? rellenos[indice] : [finalista];
+    const destino = quieto ? 0 : Math.floor(azar() * CELDAS);
+    let k = 0;
+    const celdas = Array.from({ length: CELDAS }, (_, i) =>
+      i === destino ? finalista : otros[k++ % otros.length]);
     return { celdas, destino };
-  }
+  });
+}
 
 
 /** El gesto usa 130 px de recorrido y parte del ángulo que ya tenía el cartel. */

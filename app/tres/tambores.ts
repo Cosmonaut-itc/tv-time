@@ -3,7 +3,7 @@ import { destruirGrupo } from "./recursos.ts";
 import { CELDAS, RADIO, POSTER_ANCHO, POSTER_ALTO, SEPARACION, ESCALA_TAMBOR, LATON } from "./medidas.ts";
 import { TEX_HALO, texturaDe, lienzoTira } from "./texturas.ts";
 import { CURVA_CARRETE } from "./curvas.ts";
-import type { tira3D } from "./logica.ts";
+import type { tiras3D } from "./logica.ts";
 
 export function crearTambores(grupo: THREE.Group) {
     const haloTextura = TEX_HALO();
@@ -99,7 +99,7 @@ export function crearTambores(grupo: THREE.Group) {
     return {
       grupo,
       destruir() { destruirGrupo(grupo); },
-      montar(tirasPorTambor: readonly ReturnType<typeof tira3D>[]) {
+      montar(tirasPorTambor: readonly ReturnType<typeof tiras3D>[number][]) {
         grupo.visible = true;
         tambores.forEach((tb, i) => {
           const tira = tirasPorTambor[i];

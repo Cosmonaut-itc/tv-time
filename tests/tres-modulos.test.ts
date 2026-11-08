@@ -8,7 +8,7 @@ import { crearConteo } from "../app/tres/conteo.ts";
 import { crearMarco } from "../app/tres/marco.ts";
 import { ALTO_MARCO_GANADOR, GANADOR_ANCHO, GANADOR_ALTO } from "../app/tres/medidas.ts";
 import { crearGanador } from "../app/tres/ganador.ts";
-import { tira3D } from "../app/tres/logica.ts";
+import { tiras3D } from "../app/tres/logica.ts";
 import type { TituloDeSala } from "../app/cartelera.ts";
 
 function instalarLienzo(t: TestContext) {
@@ -137,7 +137,7 @@ test("destruir libera geometrías, materiales y texturas, incluidos números fue
     crearTambores(new THREE.Group()), crearConteo(new THREE.Group()), crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer)] as const;
   const [, marquesina, tambores, conteo, ganador] = modulos;
   marquesina.colocar([{ x: 10, y: -10 }, { x: 20, y: -10 }]);
-  tambores.montar([tira3D(titulo, [titulo], true)]);
+  tambores.montar(tiras3D([titulo], [titulo], true));
   ganador.mostrar(0, titulo, 0);
   type Recurso = THREE.BufferGeometry | THREE.Material | THREE.Texture;
   const recursos = new Set<Recurso>();

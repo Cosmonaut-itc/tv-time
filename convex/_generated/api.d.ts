@@ -12,6 +12,7 @@ import type * as altas_logica from "../altas_logica.js";
 import type * as cartelera from "../cartelera.js";
 import type * as catalogo_inicial from "../catalogo_inicial.js";
 import type * as codigo from "../codigo.js";
+import type * as crons from "../crons.js";
 import type * as disponibilidad from "../disponibilidad.js";
 import type * as disponibilidad_logica from "../disponibilidad_logica.js";
 import type * as fichas from "../fichas.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   cartelera: typeof cartelera;
   catalogo_inicial: typeof catalogo_inicial;
   codigo: typeof codigo;
+  crons: typeof crons;
   disponibilidad: typeof disponibilidad;
   disponibilidad_logica: typeof disponibilidad_logica;
   fichas: typeof fichas;

@@ -110,12 +110,16 @@ export default function MuroCatalogo({
   titulos: readonly TituloDeSala[];
   butacas: readonly string[];
 }) {
+  const registrarDesdeCatalogo = useMutation(api.funciones.registrarDesdeCatalogo);
+  const deshacer = useMutation(api.funciones.deshacer);
   const marcarVisto = useMutation(api.titulos.marcarVisto);
   const quitar = useMutation(api.titulos.quitar);
   const [filtro, setFiltro] = useState<FiltroDelMuro>("todo");
   const [busqueda, setBusqueda] = useState("");
   const [pilaAbierta, setPilaAbierta] = useState<string | null>(null);
   const [tituloAbiertoId, setTituloAbiertoId] = useState<string | null>(null);
+  const [funcionRegistrada, setFuncionRegistrada] = useState<{ funcionId: Id<"funciones">; fecha: number } | null>(null);
+  const sesionFicha = useRef(0);
   const [confirmando, setConfirmando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState("");
@@ -127,6 +131,8 @@ export default function MuroCatalogo({
   const tituloAbierto = titulos.find(({ _id }) => _id === tituloAbiertoId) ?? null;
 
   const abrirFicha = useCallback((titulo: TituloDeSala, disparador: HTMLElement) => {
+    sesionFicha.current += 1;
+    setFuncionRegistrada(null);
     devolverFocoA.current = disparador;
     setTituloAbiertoId(titulo._id);
     setConfirmando(false);
@@ -136,10 +142,50 @@ export default function MuroCatalogo({
     setPilaAbierta((actual) => actual === saga ? null : saga);
   }, []);
   const cerrarFicha = useCallback(() => {
+    sesionFicha.current += 1;
+    setFuncionRegistrada(null);
     setTituloAbiertoId(null);
     setConfirmando(false);
     setError("");
   }, []);
+
+  const cerrarCatalogo = useCallback(() => {
+    cerrarFicha();
+    onCerrar();
+  }, [cerrarFicha, onCerrar]);
+
+  async function registrarFuncion() {
+    if (!tituloAbierto || ocupado) return;
+    const sesion = sesionFicha.current;
+    setOcupado(true);
+    setError("");
+    try {
+      const funcion = await registrarDesdeCatalogo({ salaId, tituloId: tituloAbierto._id as Id<"titulos"> });
+      if (sesionFicha.current === sesion) {
+        setFuncionRegistrada(funcion);
+        setConfirmando(false);
+      }
+    } catch {
+      if (sesionFicha.current === sesion) setError("No pudimos guardar la función.");
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  async function deshacerFuncion() {
+    if (!funcionRegistrada || ocupado) return;
+    const sesion = sesionFicha.current;
+    setOcupado(true);
+    setError("");
+    try {
+      await deshacer({ salaId, funcionId: funcionRegistrada.funcionId });
+      if (sesionFicha.current === sesion) setFuncionRegistrada(null);
+    } catch {
+      if (sesionFicha.current === sesion) setError("No pudimos deshacer la función.");
+    } finally {
+      setOcupado(false);
+    }
+  }
 
   async function cambiarVisto() {
     if (!tituloAbierto || ocupado) return;
@@ -151,6 +197,7 @@ export default function MuroCatalogo({
         tituloId: tituloAbierto._id as Id<"titulos">,
         visto: !tituloAbierto.visto,
       });
+      setFuncionRegistrada(null);
     } catch {
       setError("No pudimos guardar este cambio.");
     } finally {
@@ -180,11 +227,11 @@ export default function MuroCatalogo({
   useEffect(() => {
     if (!abierta) return;
     function cerrarConEscape(evento: KeyboardEvent) {
-      if (evento.key === "Escape" && !document.querySelector('.hoja.abierta')) onCerrar();
+      if (evento.key === "Escape" && !document.querySelector('.hoja.abierta')) cerrarCatalogo();
     }
     document.addEventListener("keydown", cerrarConEscape);
     return () => document.removeEventListener("keydown", cerrarConEscape);
-  }, [abierta, onCerrar]);
+  }, [abierta, cerrarCatalogo]);
 
   if (!abierta) return null;
 
@@ -192,7 +239,7 @@ export default function MuroCatalogo({
     <aside className="catalogo" aria-label="El catálogo">
       <div className="encabezado">
         <h2>EL CATÁLOGO</h2>
-        <button className="btn-cerrar" type="button" aria-label="Cerrar el catálogo" onClick={onCerrar}>✕</button>
+        <button className="btn-cerrar" type="button" aria-label="Cerrar el catálogo" onClick={cerrarCatalogo}>✕</button>
       </div>
       <label className="campo">
         <span className="lupa" aria-hidden="true">⌕</span>
@@ -277,11 +324,21 @@ export default function MuroCatalogo({
               {tituloAbierto.agregadoPor && <p className="autoria-catalogo">Agregó {tituloAbierto.agregadoPor}</p>}
             </div>
             {tituloAbierto.visto && <CalificacionesTitulo key={tituloAbierto._id} salaId={salaId} titulo={tituloAbierto} butacas={butacas} />}
-            <div className="acciones">
-              <button className="btn-ver" type="button" disabled={ocupado} onClick={() => void cambiarVisto()}>
-                {tituloAbierto.visto ? "Volver a la cartelera" : "Ya la vimos"}
+            {funcionRegistrada ? (
+              <div className="confirmacion" role="status">
+                <span>Vista el <b>{new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(funcionRegistrada.fecha)}</b></span>
+                <button className="deshacer" type="button" disabled={ocupado} onClick={() => void deshacerFuncion()}>Deshacer</button>
+              </div>
+            ) : (
+              <div className="acciones">
+                <button className="btn-ver" type="button" disabled={ocupado} onClick={() => void registrarFuncion()}>Esta vemos</button>
+              </div>
+            )}
+            <div className="acciones-quietas">
+              <button type="button" disabled={ocupado} onClick={() => void cambiarVisto()}>
+                {tituloAbierto.visto ? "Volver a la cartelera" : "Ya la habíamos visto"}
               </button>
-              <button className={`btn-veto${confirmando ? " confirma" : ""}`} type="button" disabled={ocupado} onClick={() => void confirmarQuitar()}>
+              <button className={`quitar${confirmando ? " confirma" : ""}`} type="button" disabled={ocupado} onClick={() => void confirmarQuitar()}>
                 {confirmando ? "¿Seguro? Quitar" : "Quitar"}
               </button>
             </div>

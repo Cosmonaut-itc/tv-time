@@ -83,6 +83,7 @@ export default defineSchema({
     salaId: v.id("salas"),
     tituloId: v.id("titulos"),
     fecha: v.number(),
+    vistoAntes: v.optional(v.boolean()),
   })
     .index("por_sala", ["salaId", "fecha"])
     .index("por_titulo", ["tituloId"]),

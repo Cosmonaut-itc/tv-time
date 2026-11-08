@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { derivarCartelera } from "../convex/cartelera.ts";
 import {
+  cambioAlDeshacerFuncion,
+  validarTituloDelCatalogo,
   esPrimeraFuncion,
   idsYaVistosSinFuncion,
   siguienteDeSaga,
@@ -128,4 +130,27 @@ test("el historial separa las funciones de los vistos sin fecha", () => {
     ),
     ["ya-vista"],
   );
+});
+
+test("desde el catálogo acepta títulos vistos, sin ver, bloqueados o vetados", () => {
+  for (const visto of [false, true]) {
+    const titulo = { salaId: "propia", visto, saga: "Duna", orden: 2, vetado: true };
+    assert.doesNotThrow(() => validarTituloDelCatalogo(titulo, "propia"));
+  }
+});
+
+test("desde el catálogo rechaza títulos inexistentes o de otra sala", () => {
+  assert.throws(() => validarTituloDelCatalogo(null, "propia"), /no pertenece/);
+  assert.throws(() => validarTituloDelCatalogo({ salaId: "ajena", visto: true }, "propia"), /no pertenece/);
+});
+
+test("deshacer devuelve a sin ver sólo cuando la función lo encontró sin ver", () => {
+  assert.deepEqual(cambioAlDeshacerFuncion({ salaId: "propia", vistoAntes: false }, "propia"), { visto: false });
+  assert.equal(cambioAlDeshacerFuncion({ salaId: "propia", vistoAntes: true }, "propia"), null);
+  assert.equal(cambioAlDeshacerFuncion({ salaId: "propia" }, "propia"), null);
+});
+
+test("deshacer es idempotente y no permite borrar funciones ajenas", () => {
+  assert.equal(cambioAlDeshacerFuncion(null, "propia"), null);
+  assert.throws(() => cambioAlDeshacerFuncion({ salaId: "ajena", vistoAntes: false }, "propia"), /La función no pertenece/);
 });

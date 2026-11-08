@@ -13,20 +13,39 @@ type TituloDeSaga = LugarEnSaga & {
   visto: boolean;
 };
 
-export function validarTituloParaFuncion<SalaId extends string>(
+export function validarTituloDelCatalogo<SalaId extends string>(
   titulo: TituloValidable<SalaId> | null,
   salaId: SalaId,
 ): asserts titulo is TituloValidable<SalaId> {
   if (!titulo || titulo.salaId !== salaId) {
     throw new Error("El título no pertenece a esta sala.");
   }
+}
+
+export function cambioAlDeshacerFuncion<SalaId extends string>(
+  funcion: { salaId: SalaId; vistoAntes?: boolean } | null,
+  salaId: SalaId,
+): { visto: false } | null {
+  if (!funcion) return null;
+  if (funcion.salaId !== salaId) {
+    throw new Error("La función no pertenece a esta sala.");
+  }
+  // Las funciones antiguas no recuerdan el estado previo: no lo adivinamos.
+  return funcion.vistoAntes === false ? { visto: false } : null;
+}
+
+export function validarTituloParaFuncion<SalaId extends string>(
+  titulo: TituloValidable<SalaId> | null,
+  salaId: SalaId,
+): asserts titulo is TituloValidable<SalaId> {
+  validarTituloDelCatalogo(titulo, salaId);
   if (titulo.visto) {
     throw new Error("Ese título ya salió de la cartelera.");
   }
 }
 
 /**
- * «Esta vemos» sólo puede cerrarse sobre algo que la cartelera de esta noche
+ * El ganador de la ruleta sólo puede cerrarse sobre algo que la cartelera de esta noche
  * ofrecía. La pantalla nunca propone otra cosa, pero la mutación es pública:
  * sin esta comprobación un cliente manipulado podría encender `visto` en una
  * saga bloqueada —rompiendo el candado— o en algo vetado hace un rato.

@@ -26,6 +26,8 @@ test("la siembra es interna y la superficie pública usa ids, nunca códigos", a
     "funciones.ts:vaciarFunciones:mutation",
     "funciones.ts:vaciarYaVisto:mutation",
     "funciones.ts:cerrar:mutation",
+    "funciones.ts:registrarDesdeCatalogo:mutation",
+    "funciones.ts:deshacer:mutation",
     "noches.ts:vigente:query",
     "noches.ts:vetar:mutation",
     "salas.ts:ajustesDeSala:query",

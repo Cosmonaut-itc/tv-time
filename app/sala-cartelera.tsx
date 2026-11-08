@@ -830,7 +830,7 @@ export default function SalaCartelera({
         ocupado={ocupado}
         finalistas={finalistas}
         tirasDelGiro={tirasDelGiro}
-        candidatos={cartelera.candidatos}
+        candidatos={candidatasMarcadas ?? cartelera.candidatos}
         elegido={elegido}
         ganador={ganador}
         numeroConteo={numeroConteo}

@@ -4,6 +4,7 @@ import type { TituloDeSala } from "../app/cartelera.ts";
 import { derivarCartelera } from "../app/cartelera.ts";
 import { prepararGiro } from "../app/giro.ts";
 import { finalistasDeRuleta, podarRuleta, razonSinRuleta } from "../app/ruleta-logica.ts";
+import { tiras3D } from "../app/tres/logica.ts";
 
 const titulo = (_id: string, campos: Partial<TituloDeSala> = {}): TituloDeSala => ({
   _id, nombre: _id, tipo: "pelicula", visto: false, ...campos,
@@ -52,4 +53,10 @@ test("una marca inválida no llena la ruleta ni bloquea una serie con saga", () 
   assert.equal(razonSinRuleta(d, [a, b, c, d], new Set(["a"]), ["a", "b", "c"]), null);
   const serie = { ...b, saga: "Mixta", orden: 2 };
   assert.equal(razonSinRuleta(serie, [titulo("previa", { saga: "Mixta", orden: 1 }), serie], vacio, []), null);
+});
+
+test("las cintas de un giro con marcadas sólo muestran las marcadas", () => {
+  const marcadas = finalistasDeRuleta(["a", "b", "c"], [a, b, c, d], new Set());
+  const celdas = tiras3D(marcadas, marcadas, true, () => 0).flatMap((tira) => tira.celdas.map(({ _id }) => _id));
+  assert.deepEqual([...new Set(celdas)].sort(), ["a", "b", "c"]);
 });

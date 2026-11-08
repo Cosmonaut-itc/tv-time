@@ -78,7 +78,7 @@ const CeldaDeTitulo = memo(function CeldaDeTitulo({
   const estado = titulo.visto ? "✓ vista" : bloqueada ? "🔒 falta la anterior" : null;
   return (
     <button
-      className={`celda${titulo.visto ? " esta-vista" : ""}${bloqueada ? " bloqueada" : ""}${enRuleta ? " en-ruleta" : ""}`} 
+      className={`celda${titulo.visto ? " esta-vista" : ""}${bloqueada ? " bloqueada" : ""}${enRuleta ? " en-ruleta" : ""}`}
       type="button"
       aria-label={`${titulo.nombre}${estado ? `, ${estado}` : ""}`}
       onClick={(evento) => onAbrir(titulo, evento.currentTarget)}
@@ -350,7 +350,7 @@ export default function MuroCatalogo({
               {[0, 1, 2].map((indice) => {
                 const titulo = titulos.find(({ _id }) => _id === marcadas[indice]);
                 return titulo ? (
-                  <button className={`ranura${recienMarcada === titulo._id ? " recien" : ""}`} key={titulo._id} type="button" aria-label={`Ver ${titulo.nombre}`} onClick={(evento) => abrirFicha(titulo, evento.currentTarget)}>
+                  <button className={`ranura${recienMarcada === titulo._id ? " recien" : ""}`} key={titulo._id} type="button" onAnimationEnd={() => setRecienMarcada(null)} aria-label={`Ver ${titulo.nombre}`} onClick={(evento) => abrirFicha(titulo, evento.currentTarget)}>
                     <PosterDelMuro titulo={titulo} />
                   </button>
                 ) : <span className="ranura vacia" key={`vacia-${indice}`} aria-hidden="true" />;

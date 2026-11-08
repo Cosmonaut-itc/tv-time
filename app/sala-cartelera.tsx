@@ -334,9 +334,9 @@ export default function SalaCartelera({
     () => derivarCartelera(titulos ?? [], { filtro, vetados }),
     [filtro, titulos, vetados],
   );
-  const marcadasVigentes = podarRuleta(marcadas, titulos ?? [], vetados);
+  const marcadasVigentes = useMemo(() => podarRuleta(marcadas, titulos ?? [], vetados), [marcadas, titulos, vetados]);
   if (marcadasVigentes.length !== marcadas.length) setMarcadas(marcadasVigentes);
-  const candidatasMarcadas = giroMarcado === null ? null : finalistasDeRuleta(giroMarcado, titulos ?? [], vetados);
+  const candidatasMarcadas = useMemo(() => giroMarcado === null ? null : finalistasDeRuleta(giroMarcado, titulos ?? [], vetados), [giroMarcado, titulos, vetados]);
   const cuentaDeSala = useMemo(
     () => titulos === undefined ? null : {
       titulos: titulos.length,
@@ -511,6 +511,7 @@ export default function SalaCartelera({
   ) {
     const nocheActual = nocheRef.current;
     if (!nocheActual || !montado.current) return;
+    setMarcadas([]);
     giroMarcadoRef.current = idsMarcados;
     setGiroMarcado(idsMarcados);
     const id = secuenciaGiro.current + 1;
@@ -697,7 +698,6 @@ export default function SalaCartelera({
     if (!titulos || !noche || ocupado) return;
     const candidatas = finalistasDeRuleta(marcadas, titulos, vetados);
     if (candidatas.length !== 3) return;
-    setMarcadas([]);
     setCatalogoAbierto(false);
     escenario.current?.focus();
     void ejecutarGiro(candidatas, true, "", candidatas.map(({ _id }) => _id));

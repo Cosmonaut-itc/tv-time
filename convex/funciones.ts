@@ -3,9 +3,9 @@ import type { Id } from "./_generated/dataModel";
 import { derivarCartelera } from "./cartelera";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import {
-  cambioAlDeshacerFuncion,
   esPrimeraFuncion,
   idsYaVistosSinFuncion,
+  planParaDeshacer,
   siguienteDeSaga,
   validarEnCartelera,
   validarTituloDelCatalogo,
@@ -188,13 +188,14 @@ export const deshacer = mutation({
       .withIndex("por_titulo", (q) =>
         q.eq("tituloId", funcion.tituloId).gt("_creationTime", funcion._creationTime))
       .first();
-    const cambio = cambioAlDeshacerFuncion(funcion, salaId, posterior !== null);
-    if (cambio) {
+    const plan = planParaDeshacer(funcion, salaId, posterior);
+    if (plan?.posterior && posterior) await ctx.db.patch(posterior._id, plan.posterior);
+    if (plan?.titulo) {
       const titulo = await ctx.db.get(funcion.tituloId);
       // Quitar un título borra sus funciones; si ya no está, deshacer sigue siendo inocuo.
       if (titulo) {
         validarTituloDelCatalogo(titulo, salaId);
-        await ctx.db.patch(titulo._id, cambio);
+        await ctx.db.patch(titulo._id, plan.titulo);
       }
     }
     await ctx.db.delete(funcionId);

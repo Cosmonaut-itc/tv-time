@@ -145,12 +145,16 @@ test("desde el catálogo rechaza títulos inexistentes o de otra sala", () => {
 });
 
 test("deshacer devuelve a sin ver sólo cuando la función lo encontró sin ver", () => {
-  assert.deepEqual(cambioAlDeshacerFuncion({ salaId: "propia", vistoAntes: false }, "propia"), { visto: false });
-  assert.equal(cambioAlDeshacerFuncion({ salaId: "propia", vistoAntes: true }, "propia"), null);
-  assert.equal(cambioAlDeshacerFuncion({ salaId: "propia" }, "propia"), null);
+  assert.deepEqual(cambioAlDeshacerFuncion({ salaId: "propia", vistoAntes: false }, "propia", false), { visto: false });
+  assert.equal(cambioAlDeshacerFuncion({ salaId: "propia", vistoAntes: true }, "propia", false), null);
+  assert.equal(cambioAlDeshacerFuncion({ salaId: "propia" }, "propia", false), null);
+});
+
+test("deshacer deja visto el título si otra función suya sigue en el historial", () => {
+  assert.equal(cambioAlDeshacerFuncion({ salaId: "propia", vistoAntes: false }, "propia", true), null);
 });
 
 test("deshacer es idempotente y no permite borrar funciones ajenas", () => {
-  assert.equal(cambioAlDeshacerFuncion(null, "propia"), null);
-  assert.throws(() => cambioAlDeshacerFuncion({ salaId: "ajena", vistoAntes: false }, "propia"), /La función no pertenece/);
+  assert.equal(cambioAlDeshacerFuncion(null, "propia", false), null);
+  assert.throws(() => cambioAlDeshacerFuncion({ salaId: "ajena", vistoAntes: false }, "propia", false), /La función no pertenece/);
 });

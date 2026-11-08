@@ -18,6 +18,7 @@ import {
   RITMOS,
   type FaseDelGiro,
 } from "./giro";
+import { finalistasDeRuleta, podarRuleta, razonSinRuleta } from "./ruleta-logica";
 import AltaTitulos from "./alta-titulos";
 import Cabina from "./cabina";
 import type { SalaDelLlavero } from "./llavero-logica";
@@ -276,6 +277,9 @@ export default function SalaCartelera({
   const sala3D = useRef<MandoDeLaSala3D | null>(null);
   const [fase, setFase] = useState<FaseDelGiro>("reposo");
   const [giros, setGiros] = useState(0);
+  const [marcadas, setMarcadas] = useState<string[]>([]);
+  const [giroMarcado, setGiroMarcado] = useState<readonly string[] | null>(null);
+  const giroMarcadoRef = useRef<readonly string[] | null>(null);
   const [finalistas, setFinalistas] = useState<TituloDeSala[]>([]);
   const [tirasDelGiro, setTirasDelGiro] = useState<TituloDeSala[][]>([]);
   const [elegido, setElegido] = useState<number | null>(null);
@@ -330,6 +334,9 @@ export default function SalaCartelera({
     () => derivarCartelera(titulos ?? [], { filtro, vetados }),
     [filtro, titulos, vetados],
   );
+  const marcadasVigentes = podarRuleta(marcadas, titulos ?? [], vetados);
+  if (marcadasVigentes.length !== marcadas.length) setMarcadas(marcadasVigentes);
+  const candidatasMarcadas = giroMarcado === null ? null : finalistasDeRuleta(giroMarcado, titulos ?? [], vetados);
   const cuentaDeSala = useMemo(
     () => titulos === undefined ? null : {
       titulos: titulos.length,
@@ -482,6 +489,8 @@ export default function SalaCartelera({
   function cambiarFiltro(nuevo: FiltroCartelera) {
     if (ocupado) return;
     setFiltro(nuevo);
+    setGiroMarcado(null);
+    giroMarcadoRef.current = null;
     setFase("reposo");
     setFinalistas([]);
     setTirasDelGiro([]);
@@ -498,9 +507,12 @@ export default function SalaCartelera({
     candidatos: readonly TituloDeSala[],
     saltaPrimerActo: boolean,
     mensajeSiVacio: string,
+    idsMarcados: readonly string[] | null = null,
   ) {
     const nocheActual = nocheRef.current;
     if (!nocheActual || !montado.current) return;
+    giroMarcadoRef.current = idsMarcados;
+    setGiroMarcado(idsMarcados);
     const id = secuenciaGiro.current + 1;
     secuenciaGiro.current = id;
     const preparacion = prepararGiro(candidatos, saltaPrimerActo);
@@ -620,6 +632,12 @@ export default function SalaCartelera({
       if (montado.current) setOcupado(false);
       return;
     }
+    if (giroMarcadoRef.current !== null) {
+      const ids = giroMarcadoRef.current;
+      const restantes = finalistasDeRuleta(ids, titulosActuales, vetadosRef.current);
+      void ejecutarGiro(restantes, true, "Ya no quedan títulos de esta ruleta.", ids);
+      return;
+    }
     const filtroActual = filtroRef.current;
     const vetadosActuales = vetadosRef.current;
     const carteleraActual = derivarCartelera(titulosActuales, {
@@ -644,7 +662,9 @@ export default function SalaCartelera({
       return false;
     }
     if (
-      decidirCambioDelGiro(giro, idsQueSiguenCompitiendoRef.current) ===
+      decidirCambioDelGiro(giro, giroMarcadoRef.current === null
+        ? idsQueSiguenCompitiendoRef.current
+        : new Set(finalistasDeRuleta(giroMarcadoRef.current, titulosRef.current ?? [], vetadosRef.current).map(({ _id }) => _id))) ===
       "reiniciar"
     ) {
       secuenciaGiro.current += 1;
@@ -664,7 +684,26 @@ export default function SalaCartelera({
     );
   }
 
-  const vetoDesactivadoPorUnico = cartelera.candidatos.length <= 1;
+  function alternarRuleta(titulo: TituloDeSala) {
+    setMarcadas((actuales) => {
+      const vigentes = podarRuleta(actuales, titulos ?? [], vetados);
+      if (vigentes.includes(titulo._id)) return vigentes.filter((id) => id !== titulo._id);
+      if (razonSinRuleta(titulo, titulos ?? [], vetados, vigentes)) return vigentes;
+      return [...vigentes, titulo._id];
+    });
+  }
+
+  function girarMarcadas() {
+    if (!titulos || !noche || ocupado) return;
+    const candidatas = finalistasDeRuleta(marcadas, titulos, vetados);
+    if (candidatas.length !== 3) return;
+    setMarcadas([]);
+    setCatalogoAbierto(false);
+    escenario.current?.focus();
+    void ejecutarGiro(candidatas, true, "", candidatas.map(({ _id }) => _id));
+  }
+
+  const vetoDesactivadoPorUnico = (candidatasMarcadas ?? cartelera.candidatos).length <= 1;
   const razonVeto = vetoDesactivadoPorUnico
     ? "Con un solo título en la cartelera, el veto se apaga."
     : vetosDisponibles === 0
@@ -692,7 +731,7 @@ export default function SalaCartelera({
       const resultado = await vetarTitulo({
         salaId,
         tituloId: ganador._id as Id<"titulos">,
-        filtro,
+        filtro: giroMarcado === null ? filtro : "loQueSea",
       });
       if (!montado.current) return;
       setNocheLocal(resultado);
@@ -710,6 +749,11 @@ export default function SalaCartelera({
         vetados: nuevosVetados,
       });
       setOcupado(false);
+      if (giroMarcado !== null) {
+        const restantes = finalistasDeRuleta(giroMarcado, titulosRef.current ?? [], nuevosVetados);
+        await ejecutarGiro(restantes, true, "Ya no quedan títulos de esta ruleta.", giroMarcado);
+        return;
+      }
       await ejecutarGiro(
         nuevaCartelera.candidatos,
         nuevaCartelera.saltaPrimerActo,
@@ -1065,6 +1109,11 @@ export default function SalaCartelera({
       </aside>
 
       <MuroCatalogo
+        marcadas={marcadasVigentes}
+        vetados={vetados}
+        onAlternarRuleta={alternarRuleta}
+        onGirarRuleta={girarMarcadas}
+        puedeGirar={!ocupado && Boolean(noche)}
         butacas={butacas}
         abierta={catalogoAbierto}
         onCerrar={() => {

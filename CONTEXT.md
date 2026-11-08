@@ -32,11 +32,13 @@ El vocabulario quedó cerrado en [El idioma de la sala](.wayfinder/tickets/004-e
 
 **Giro** — El acto de dejar que el azar elija. Ocurre en dos actos: el primero reduce la cartelera a los finalistas, el segundo elige entre ellos. Cuando la cartelera trae dos o menos no hay nada que reducir y **el primer acto se salta**. Un giro no deja rastro: girar no es decidir.
 
+**Marcadas** — Los tres títulos que eligen a mano desde el catálogo para un giro: son sus finalistas y se salta el primer acto. Respetan lo visto, el orden de saga y los vetos de la noche; el filtro no les aplica. Se vacían al girar y no son una lista guardada ni compartida entre dispositivos.
+
 **Finalista** — Cada uno de los títulos que llegan al segundo acto de un giro. Son **tres cuando la cartelera alcanza**; con dos es un duelo y con uno el azar no tiene nada que elegir, pero se gira igual.
 
 **Duelo** — El giro de una cartelera de dos. No es una variante del ritual ni un modo aparte: es el mismo giro sin primer acto, anunciado antes de jalar la palanca.
 
-**Veto** — El derecho a rechazar lo que el azar eligió. Son **dos por noche, de la sala**, no de una butaca: nadie los reclama y nadie los defiende. Vetar tira la terna entera y arranca un giro nuevo desde cero, y **lo vetado queda fuera el resto de la noche** — de otro modo el azar podría devolverlo en el siguiente giro y el veto no serviría de nada. **Con un solo título en la cartelera el veto se apaga**: existe para salvar la noche, no para dejarla sin función.
+**Veto** — El derecho a rechazar lo que el azar eligió. Son **dos por noche, de la sala**, no de una butaca: nadie los reclama y nadie los defiende. Vetar tira la terna entera y arranca un giro nuevo desde cero; si eligieron las finalistas con las marcadas, conserva las restantes y gira un duelo. En ambos casos, **lo vetado queda fuera el resto de la noche** — de otro modo el azar podría devolverlo en el siguiente giro y el veto no serviría de nada. **Con un solo título en la cartelera —o entre las marcadas restantes— el veto se apaga**: existe para salvar la noche, no para dejarla sin función.
 
 **Función** — Una noche en que sí vieron algo. Nace del botón *«Esta vemos»*, nunca del giro: si giraron tres veces y se durmieron, no hubo función y la mañana los encuentra con todo como estaba. Un mismo título puede tener varias funciones si lo ven más de una vez.
 

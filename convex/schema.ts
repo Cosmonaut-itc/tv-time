@@ -108,7 +108,9 @@ export default defineSchema({
     sinopsis: v.optional(v.string()),
     calificacion: v.optional(v.number()),
     actualizada: v.number(),
-  }).index("por_tmdb", ["tipo", "tmdbId"]),
+  })
+    .index("por_tmdb", ["tipo", "tmdbId"])
+    .index("por_actualizada", ["actualizada"]),
 
   disponibilidad: defineTable({
     tmdbId: v.number(),

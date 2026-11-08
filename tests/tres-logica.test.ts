@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { TituloDeSala } from "../app/cartelera.ts";
-import { repartirRelleno, tiras3D } from "../app/tres/logica.ts";
+import { repartirRelleno, tiras3D, CELDAS, desfaseDeCinta, brilloDeCinta } from "../app/tres/logica.ts";
 
 const titulo = (_id: string): TituloDeSala => ({
   _id, nombre: _id, tipo: "pelicula", visto: false,
@@ -136,4 +136,34 @@ test("Fisher–Yates consume el azar inyectado sin alterar la entrada", async ()
   assert.deepEqual(barajar(original, () => { llamadas += 1; return 0; }), [2, 3, 1]);
   assert.equal(llamadas, 2);
   assert.deepEqual(original, [1, 2, 3]);
+});
+
+
+test("la cinta centra cualquiera de las ocho finalistas después de cada vuelta", () => {
+  for (let destino = 0; destino < CELDAS; destino++) {
+    for (const vueltas of [0, 4, 5, 6]) {
+      const u = desfaseDeCinta(vueltas * CELDAS + destino) % 1;
+      assert.ok(Math.abs(u * CELDAS - (destino + 0.5)) < 1e-12);
+    }
+  }
+  assert.equal(desfaseDeCinta(0), 0.5 / CELDAS);
+  assert.equal(desfaseDeCinta(1.5) - desfaseDeCinta(1), 0.5 / CELDAS);
+});
+
+test("la fila central conserva brillo y las vecinas quedan a la mitad sin saltos", () => {
+  for (const u of [0, 0.25 / CELDAS, 0.5 / CELDAS, 1 - 0.5 / CELDAS, 1]) {
+    assert.equal(brilloDeCinta(u), 1);
+  }
+  for (const fila of [-1, 1]) {
+    const u = ((fila / CELDAS) + 1) % 1;
+    // El borde de la vecina termina la transición; su centro ya está al 50 %.
+    assert.equal(brilloDeCinta((u + fila * 0.5 / CELDAS + 1) % 1), 0.5);
+  }
+  for (let i = 0; i <= 100; i++) {
+    const u = i / 100;
+    assert.ok(brilloDeCinta(u) >= 0.5 && brilloDeCinta(u) <= 1);
+    assert.ok(Math.abs(brilloDeCinta(u) - brilloDeCinta(1 - u)) < 1e-12);
+  }
+  assert.ok(brilloDeCinta(0.8 / CELDAS) < 1);
+  assert.ok(brilloDeCinta(0.8 / CELDAS) > 0.5);
 });

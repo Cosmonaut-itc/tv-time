@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { OpcionesDeSala3D, Sala3D, FaseDeLaSala3D } from "./tipos.ts";
 import type { TituloDeSala } from "../cartelera.ts";
-import { ALTO_VISTA, ANCHO_MINIMO, FOV, SEPARACION, ESCALA_TAMBOR, RADIO, GANADOR_Z, TECHO_GANADOR } from "./medidas.ts";
+import { ALTO_VISTA, ANCHO_MINIMO, FOV, SEPARACION, ESCALA_TAMBOR, FRENTE_Z, ALTURA_CINTA, GANADOR_Z, TECHO_GANADOR } from "./medidas.ts";
 import { saturar, cuadrosPorSegundo, tiras3D, fraccionAMundo } from "./logica.ts";
 import { crearTelon } from "./telon.ts";
 import { crearMarquesina } from "./marquesina.ts";
@@ -427,7 +427,7 @@ export function arrancarSala3D(opciones: OpcionesDeSala3D): Sala3D {
       const n = Math.max(1, finalistasEnEscena.length);
       soltarCartel(null);
       ganador.mostrar(reloj, titulo, (i - (n - 1) / 2) * SEPARACION, {
-        escala: ESCALA_TAMBOR, z: -RADIO + RADIO * ESCALA_TAMBOR,
+        escala: ESCALA_TAMBOR, z: FRENTE_Z, y: ALTURA_CINTA,
       });
       /* La ficha y los chips pueden nacer después: medir vuelve a engancharlos
          cuando el observador o React pidan otra medición. observe es idempotente. */

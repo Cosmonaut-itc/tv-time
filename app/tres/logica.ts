@@ -25,7 +25,17 @@ export function poseDelGanador({ techo, suelo, altoMarco, margen = 0 }: {
 }
 
 // Ocho celdas por vuelta; la lógica no carga three ni DOM.
-const CELDAS = 8;
+export const CELDAS = 8;
+
+/** Centra la celda elegida sin mover la geometría de la cinta. */
+export const desfaseDeCinta = (posicion: number) => (posicion + 0.5) / CELDAS;
+
+/** El centro conserva el brillo; las filas vecinas bajan suavemente a la mitad. */
+export function brilloDeCinta(u: number): number {
+  const distancia = Math.min(u, 1 - u) * CELDAS;
+  const t = Math.max(0, Math.min(1, (distancia - 0.5) / 0.6));
+  return 1 - 0.5 * t * t * (3 - 2 * t);
+}
 
 export function barajar<T>(lista: readonly T[], azar: () => number = Math.random) {
   const b = [...lista];

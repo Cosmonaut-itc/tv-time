@@ -1,38 +1,89 @@
 import * as THREE from "three";
 import { destruirGrupo } from "./recursos.ts";
-import { CELDAS, RADIO, POSTER_ANCHO, POSTER_ALTO, SEPARACION, ESCALA_TAMBOR, LATON } from "./medidas.ts";
+import { CELDAS, LARGO_CINTA, RODILLO, POSTER_ANCHO, POSTER_ALTO, SEPARACION, ESCALA_TAMBOR, FRENTE_Z, ALTURA_CINTA, LATON } from "./medidas.ts";
 import { TEX_HALO, texturaDe, lienzoTira } from "./texturas.ts";
 import { CURVA_CARRETE } from "./curvas.ts";
-import type { tiras3D } from "./logica.ts";
+import { desfaseDeCinta, brilloDeCinta, type tiras3D } from "./logica.ts";
+
+/* La cinta en el plano YZ, por longitud de arco desde el centro del frente:
+   sube por el frente, da la vuelta al rodillo de arriba, baja por detrás y
+   vuelve por el de abajo. `u` crece hacia arriba en el frente, como el
+   ángulo del tambor, así que la tira se lee igual que en el cilindro. */
+function geometriaCinta() {
+  const L = LARGO_CINTA, r = RODILLO, total = POSTER_ALTO * CELDAS;
+  const punto = (s: number): [number, number, number, number] => {
+    if (s <= L / 2) return [s, 0, 0, 1];
+    s -= L / 2;
+    if (s <= Math.PI * r) { const a = s / r; return [L / 2 + r * Math.sin(a), -r + r * Math.cos(a), Math.sin(a), Math.cos(a)]; }
+    s -= Math.PI * r;
+    if (s <= L) return [L / 2 - s, -2 * r, 0, -1];
+    s -= L;
+    if (s <= Math.PI * r) { const a = Math.PI + s / r; return [-L / 2 + r * Math.sin(a), -r + r * Math.cos(a), Math.sin(a), Math.cos(a)]; }
+    s -= Math.PI * r;
+    return [-L / 2 + s, 0, 0, 1];
+  };
+  const pasos = 320;
+  const brillos: number[] = [];
+  const posiciones: number[] = [], normales: number[] = [], uvs: number[] = [], indices: number[] = [];
+  for (let i = 0; i <= pasos; i += 1) {
+    const [y, z, ny, nz] = punto((i / pasos) * total);
+    for (const lado of [-1, 1]) {
+      posiciones.push(lado * POSTER_ANCHO / 2, y, z);
+      normales.push(0, ny, nz);
+      uvs.push(i / pasos, lado < 0 ? 1 : 0);
+      brillos.push(brilloDeCinta(i / pasos));
+    }
+    if (i < pasos) {
+      const a = i * 2;
+      indices.push(a, a + 1, a + 3, a, a + 3, a + 2);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(posiciones, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(normales, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  g.setAttribute('brillo', new THREE.Float32BufferAttribute(brillos, 1));
+  g.setIndex(indices);
+  return g;
+}
 
 export function crearTambores(grupo: THREE.Group) {
     const haloTextura = TEX_HALO();
     const vertice = `
+      attribute float brillo;
+      varying float vBrillo;
       varying vec2 vUv;
       varying vec3 vN;
       void main() {
         vUv = uv;
+        vBrillo = brillo;
         vN = normalize(normalMatrix * normal);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }`;
 
     const fragmento = `
+      varying float vBrillo;
       uniform sampler2D uMapa;
       uniform float uCeldas;
       uniform float uElegido;
       uniform float uApagado;
+      uniform float uDesfase;
       uniform vec3 uLaton;
       varying vec2 vUv;
       varying vec3 vN;
       void main() {
-        vec3 c = texture2D(uMapa, vUv).rgb;
-        float u = fract(vUv.x * uCeldas);
+        float s = fract(vUv.x + uDesfase);
+        vec3 c = texture2D(uMapa, vec2(s, vUv.y)).rgb;
+        float u = fract(s * uCeldas);
         float bu = (1.0 - smoothstep(0.0, 0.010, min(u, 1.0 - u)));
         float bv = (1.0 - smoothstep(0.0, 0.016, min(vUv.y, 1.0 - vUv.y)));
         float marco = max(bu, bv);
         c = mix(c, uLaton, marco * (0.26 + 0.6 * uElegido));
         float cara = clamp(vN.z, 0.0, 1.0);
         c *= mix(0.035, 1.0, pow(cara, 0.8));
+        /* El frente es plano y no se curva a la sombra: las celdas vecinas se
+           apagan a mano para que la de enfrente siga siendo la que cuenta. */
+        c *= vBrillo;
         c *= 1.0 + 0.4 * uElegido * pow(cara, 2.0);
         float lum = dot(c, vec3(0.299, 0.587, 0.114));
         c = mix(c, vec3(lum), 0.7 * uApagado);
@@ -40,13 +91,12 @@ export function crearTambores(grupo: THREE.Group) {
         gl_FragColor = vec4(c, 1.0);
       }`;
 
-    const geoTambor = new THREE.CylinderGeometry(RADIO, RADIO, POSTER_ANCHO, 72, 1, true);
-    const geoTapa = new THREE.CircleGeometry(RADIO, 48);
+    const geoCinta = geometriaCinta();
     const geoLuz = new THREE.PlaneGeometry(POSTER_ANCHO * 2.1, POSTER_ALTO * 1.5);
 
     const tambores = [0, 1, 2].map((indice) => {
       const raiz = new THREE.Group();
-      raiz.position.set((indice - 1) * SEPARACION, 0, -RADIO);
+      raiz.position.set((indice - 1) * SEPARACION, ALTURA_CINTA, FRENTE_Z);
       raiz.scale.setScalar(ESCALA_TAMBOR);
       const material = new THREE.ShaderMaterial({
         uniforms: {
@@ -54,24 +104,13 @@ export function crearTambores(grupo: THREE.Group) {
           uCeldas: { value: CELDAS },
           uElegido: { value: 0 },
           uApagado: { value: 0 },
+          uDesfase: { value: 0 },
           uLaton: { value: LATON },
         },
         vertexShader: vertice,
         fragmentShader: fragmento,
       });
-      const eje = new THREE.Group();
-      eje.rotation.z = Math.PI / 2;
-      const cilindro = new THREE.Mesh(geoTambor, material);
-      eje.add(cilindro);
-      [-1, 1].forEach((lado) => {
-        const tapa = new THREE.Mesh(geoTapa, new THREE.MeshBasicMaterial({
-          color: new THREE.Color(0.05, 0.03, 0.04), side: THREE.DoubleSide,
-        }));
-        tapa.rotation.x = Math.PI / 2;
-        tapa.position.y = lado * POSTER_ANCHO / 2;
-        eje.add(tapa);
-      });
-      raiz.add(eje);
+      raiz.add(new THREE.Mesh(geoCinta, material));
 
       /* La luz del proyector que se posa en el tambor: un plano aditivo
          delante, no una luz real —no hay postproceso y no hace falta. */
@@ -79,27 +118,23 @@ export function crearTambores(grupo: THREE.Group) {
         map: haloTextura, blending: THREE.AdditiveBlending,
         transparent: true, depthWrite: false, opacity: 0,
       }));
-      luz.position.set(0, 0, RADIO + 0.3);
+      luz.position.set(0, 0, 0.3);
       raiz.add(luz);
 
       grupo.add(raiz);
       return {
-        raiz, cilindro, material, luz,
+        raiz, material, luz,
         p: 0, destino: 0, desde: 0, hasta: 0, inicio: 0, duracion: 0,
         objetivoLuz: 0, objetivoApagado: 0,
       };
     });
-
-    /* El ángulo que deja la celda `k` de frente: la textura empieza en +Z y
-       avanza con theta, así que la vuelta va en contra. */
-    const anguloDe = (p: number) => -((p + 0.5) / CELDAS) * Math.PI * 2;
 
     grupo.visible = false;
 
     return {
       grupo,
       destruir() { destruirGrupo(grupo); },
-      montar(tirasPorTambor: readonly ReturnType<typeof tiras3D>[number][]) {
+      montar(tirasPorTambor: Readonly<ReturnType<typeof tiras3D>>) {
         grupo.visible = true;
         tambores.forEach((tb, i) => {
           const tira = tirasPorTambor[i];
@@ -113,7 +148,7 @@ export function crearTambores(grupo: THREE.Group) {
           tb.material.uniforms.uElegido.value = 0;
           tb.material.uniforms.uApagado.value = 0;
           tb.objetivoLuz = 0; tb.objetivoApagado = 0;
-          tb.cilindro.rotation.y = anguloDe(0);
+          tb.material.uniforms.uDesfase.value = desfaseDeCinta(0);
         });
         /* Con dos finalistas o uno, los tambores sobrantes se van y los que
            quedan se centran, como se centran los carretes del CSS. */
@@ -139,6 +174,7 @@ export function crearTambores(grupo: THREE.Group) {
         });
       },
       esconder() { grupo.visible = false; },
+
       update(t: number, dt: number) {
         const k = Math.min(1, dt * 9);
         tambores.forEach((tb) => {
@@ -147,7 +183,7 @@ export function crearTambores(grupo: THREE.Group) {
             tb.p = tb.desde + (tb.hasta - tb.desde) * CURVA_CARRETE(avance);
             if (avance >= 1) { tb.duracion = 0; tb.p = tb.hasta; }
           }
-          tb.cilindro.rotation.y = anguloDe(tb.p);
+          tb.material.uniforms.uDesfase.value = desfaseDeCinta(tb.p);
           const u = tb.material.uniforms;
           u.uElegido.value += (tb.objetivoLuz - u.uElegido.value) * k;
           u.uApagado.value += (tb.objetivoApagado - u.uApagado.value) * k;

@@ -139,7 +139,7 @@ export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRender
     caja.visible = false;
     grupo.add(caja);
 
-    let vuelo: { t0: number; desdeX: number; escala: number; z: number; dur: number } | null = null;
+    let vuelo: { t0: number; desdeX: number; desdeY: number; escala: number; z: number; dur: number } | null = null;
     let tSello = -1;
     let meta = { y: 0.62, escala: 0.80 };
 
@@ -183,7 +183,7 @@ export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRender
         meta = poseDelGanador({ techo, suelo, margen, altoMarco: ALTO_MARCO_GANADOR });
       },
       poseMeta() { return { ...meta }; },
-      mostrar(t0: number, titulo: TituloDeSala, desdeX: number, desde = { escala: 1, z: 0 }) {
+      mostrar(t0: number, titulo: TituloDeSala, desdeX: number, desde: { escala: number; z: number; y?: number } = { escala: 1, z: 0 }) {
         caja.visible = true;
         const u = lamina.material.uniforms;
         u.uMapa.value?.dispose();
@@ -193,8 +193,8 @@ export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRender
         sello.material.opacity = 0;
         tSello = -1;
         metaSuave = { ...meta };
-        vuelo = { t0, desdeX, escala: escalaDeVuelo(desde.escala), z: desde.z, dur: 0.78 };
-        caja.position.set(desdeX, 0, vuelo.z);
+        vuelo = { t0, desdeX, desdeY: desde.y ?? 0, escala: escalaDeVuelo(desde.escala), z: desde.z, dur: 0.78 };
+        caja.position.set(desdeX, vuelo.desdeY, vuelo.z);
         caja.scale.setScalar(vuelo.escala);
       },
       sellar(t0: number, visible: boolean) {
@@ -232,7 +232,7 @@ export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRender
           metaSuave.escala += (meta.escala - metaSuave.escala) * k;
           const a = Math.min(1, (t - vuelo.t0) / vuelo.dur);
           const e = 1 - Math.pow(1 - a, 3);
-          caja.position.set(vuelo.desdeX * (1 - e), metaSuave.y * e, vuelo.z + (GANADOR_Z - vuelo.z) * e);
+          caja.position.set(vuelo.desdeX * (1 - e), vuelo.desdeY * (1 - e) + metaSuave.y * e, vuelo.z + (GANADOR_Z - vuelo.z) * e);
           const s = vuelo.escala + (metaSuave.escala - vuelo.escala) * e;
           caja.scale.setScalar(s);
           marco.visible = a > 0.45;

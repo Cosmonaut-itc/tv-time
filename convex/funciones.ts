@@ -183,12 +183,12 @@ export const deshacer = mutation({
     await asegurarSala(ctx, salaId);
     const funcion = await ctx.db.get(funcionId);
     if (!funcion) return null;
-    const delTitulo = await ctx.db
+    const posterior = await ctx.db
       .query("funciones")
-      .withIndex("por_titulo", (q) => q.eq("tituloId", funcion.tituloId))
-      .take(2);
-    const quedanOtras = delTitulo.some(({ _id }) => _id !== funcionId);
-    const cambio = cambioAlDeshacerFuncion(funcion, salaId, quedanOtras);
+      .withIndex("por_titulo", (q) =>
+        q.eq("tituloId", funcion.tituloId).gt("_creationTime", funcion._creationTime))
+      .first();
+    const cambio = cambioAlDeshacerFuncion(funcion, salaId, posterior !== null);
     if (cambio) {
       const titulo = await ctx.db.get(funcion.tituloId);
       // Quitar un título borra sus funciones; si ya no está, deshacer sigue siendo inocuo.

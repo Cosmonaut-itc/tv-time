@@ -150,7 +150,7 @@ test("deshacer devuelve a sin ver sólo cuando la función lo encontró sin ver"
   assert.equal(cambioAlDeshacerFuncion({ salaId: "propia" }, "propia", false), null);
 });
 
-test("deshacer deja visto el título si otra función suya sigue en el historial", () => {
+test("deshacer deja visto el título si se registró otra función después", () => {
   assert.equal(cambioAlDeshacerFuncion({ salaId: "propia", vistoAntes: false }, "propia", true), null);
 });
 

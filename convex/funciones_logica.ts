@@ -25,14 +25,14 @@ export function validarTituloDelCatalogo<SalaId extends string>(
 export function cambioAlDeshacerFuncion<SalaId extends string>(
   funcion: { salaId: SalaId; vistoAntes?: boolean } | null,
   salaId: SalaId,
-  quedanOtrasFunciones: boolean,
+  hayFuncionPosterior: boolean,
 ): { visto: false } | null {
   if (!funcion) return null;
   if (funcion.salaId !== salaId) {
     throw new Error("La función no pertenece a esta sala.");
   }
-  // Otra función del título sigue en el historial: el título sigue visto.
-  if (quedanOtrasFunciones) return null;
+  // Una función registrada después volvió a marcarlo visto; las anteriores no cuentan.
+  if (hayFuncionPosterior) return null;
   // Las funciones antiguas no recuerdan el estado previo: no lo adivinamos.
   return funcion.vistoAntes === false ? { visto: false } : null;
 }

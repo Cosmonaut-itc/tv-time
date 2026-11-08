@@ -306,3 +306,129 @@ test("la cinta conserva el frente plano y detiene cada finalista en el centro", 
     assert.ok(frente > 10, "las tres filas visibles comparten un plano");
   });
 });
+
+
+test("la ficha reutiliza lámina y ladeo, sin halo ni vuelo, y renueva su textura", (t) => {
+  instalarLienzo(t);
+  const ganador = crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer);
+  t.after(() => ganador.destruir());
+  ganador.mostrarEnFicha(titulo);
+  const caja = ganador.grupo.children[0];
+  const [halo, cartel] = caja.children;
+  const lamina = cartel.children[1] as THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
+  const textura = lamina.material.uniforms.uMapa.value as THREE.Texture;
+  let liberada = 0;
+  textura.addEventListener("dispose", () => liberada++);
+  assert.equal(ganador.laminaLista(), true, "sin foto oficial el crudo está listo");
+  assert.equal(halo.visible, false);
+  assert.deepEqual(caja.position.toArray(), [0, 0, 0]);
+  assert.equal(caja.scale.x, 1);
+  ganador.inclinar(0, 99);
+  ganador.update(0.1, 0.05);
+  assert.equal(ganador.orientacion().y, ganador.topes.y);
+  assert.equal(lamina.material.uniforms.uFuerza.value, 1);
+  assert.equal(cartel.rotation.y, ganador.topes.y);
+  ganador.soltar();
+  ganador.update(0.4, 0.05);
+  assert.ok(ganador.orientacion().y < 0, "el mismo muelle sobrepasa el aplomo");
+  ganador.update(0.71, 0.05);
+  assert.equal(cartel.rotation.y, 0);
+  assert.deepEqual(caja.position.toArray(), [0, 0, 0], "no aparece un vuelo tardío");
+  ganador.mostrarEnFicha({ ...titulo, _id: "otro", nombre: "Otra película" });
+  assert.equal(liberada, 1);
+  assert.notEqual(lamina.material.uniforms.uMapa.value, textura);
+  assert.equal(lamina.material.uniforms.uFuerza.value, 0);
+});
+
+
+test("veinte aperturas de ficha y cambios de título liberan recursos, contexto, reloj y escuchas", async (t) => {
+  instalarLienzo(t);
+  const { crearVistaDeFicha } = await import("../app/tres/ficha.ts");
+  const globals = (nombre: string, value: unknown) => {
+    const anterior = Object.getOwnPropertyDescriptor(globalThis, nombre);
+    Object.defineProperty(globalThis, nombre, { configurable: true, value });
+    t.after(() => {
+      if (anterior) Object.defineProperty(globalThis, nombre, anterior);
+      else Reflect.deleteProperty(globalThis, nombre);
+    });
+  };
+  const reloj = new Map<number, FrameRequestCallback>();
+  let numero = 0, observando = 0, vivos = 0, renders = 0;
+  const senales: AbortSignal[] = [];
+  Object.assign(document, {
+    hidden: false,
+    addEventListener(_nombre: string, _cb: unknown, opciones: { signal: AbortSignal }) { senales.push(opciones.signal); },
+  });
+  globals("window", { devicePixelRatio: 2 });
+  globals("requestAnimationFrame", (cb: FrameRequestCallback) => { reloj.set(++numero, cb); return numero; });
+  globals("cancelAnimationFrame", (id: number) => reloj.delete(id));
+  globals("ResizeObserver", class {
+    observe() { observando++; }
+    disconnect() { observando--; }
+  });
+  const destinos: THREE.WebGLRenderTarget[] = [];
+  t.mock.method(THREE.PMREMGenerator.prototype, "fromEquirectangular", () => {
+    const destino = new THREE.WebGLRenderTarget(16, 16);
+    destinos.push(destino);
+    return destino;
+  });
+  const host = {
+    getBoundingClientRect: () => ({ width: 342, height: 292 }),
+    append() {},
+  } as unknown as HTMLElement;
+  for (let i = 0; i < 20; i++) {
+    const recursos = new Map<THREE.BufferGeometry | THREE.Material | THREE.Texture | THREE.WebGLRenderTarget, number>();
+    const guardar = (recurso: THREE.BufferGeometry | THREE.Material | THREE.Texture | THREE.WebGLRenderTarget) => {
+      if (recursos.has(recurso)) return;
+      recursos.set(recurso, 0);
+      recurso.addEventListener("dispose", () => recursos.set(recurso, recursos.get(recurso)! + 1));
+    };
+    let eliminado = 0, liberado = 0;
+    vivos++;
+    const renderizador = {
+      domElement: {
+        setAttribute() {},
+        remove() { eliminado++; },
+        addEventListener(_nombre: string, _cb: unknown, opciones: { signal: AbortSignal }) { senales.push(opciones.signal); },
+      },
+      setPixelRatio() {}, setClearColor() {}, setSize() {},
+      render(escena: THREE.Scene) {
+        renders++;
+        escena.traverse((objeto) => {
+          if (!(objeto instanceof THREE.Mesh)) return;
+          guardar(objeto.geometry);
+          for (const material of Array.isArray(objeto.material) ? objeto.material : [objeto.material]) {
+            guardar(material);
+            if (material.map) guardar(material.map);
+            if (material.uniforms?.uMapa?.value) guardar(material.uniforms.uMapa.value);
+          }
+        });
+      },
+      dispose() { liberado++; },
+      forceContextLoss() { vivos--; },
+    } as unknown as THREE.WebGLRenderer;
+    const vista = crearVistaDeFicha(renderizador, host, titulo, () => {});
+    guardar(destinos.at(-1)!);
+    const avanzar = () => {
+      const cuadros = [...reloj.values()];
+      reloj.clear();
+      cuadros.forEach((cb) => cb(performance.now()));
+    };
+    avanzar();
+    vista.inclinar(0, vista.topes.y);
+    avanzar();
+    vista.poner({ ...titulo, _id: "dos" });
+    avanzar();
+    vista.destruir();
+    vista.destruir();
+    assert.equal(vivos, 0);
+    assert.equal(observando, 0);
+    assert.equal(reloj.size, 0);
+    assert.equal(eliminado, 1);
+    assert.equal(liberado, 1);
+    assert.ok(senales.every((senal) => senal.aborted));
+    assert.ok(recursos.size > 10);
+    recursos.forEach((veces, recurso) => assert.equal(veces, 1, recurso.constructor.name));
+  }
+  assert.equal(renders, 60);
+});

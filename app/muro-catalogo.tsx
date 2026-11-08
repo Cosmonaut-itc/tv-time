@@ -5,6 +5,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DatosFicha from "./datos-ficha";
+import CartelDeFicha from "./cartel-de-ficha";
 import CalificacionesTitulo from "./calificaciones-titulo";
 import ChipsDisponibilidad from "./chips-disponibilidad";
 import type { TituloDeSala } from "./cartelera";
@@ -287,11 +288,13 @@ export default function MuroCatalogo({
       >
         {tituloAbierto && (
           <div className="catalogo-ficha">
-            <div className={`marco-laton${tituloAbierto.posterPath ? "" : " punteado"}`}>
-              {tituloAbierto.posterPath ? (
-                <PosterDeFicha key={tituloAbierto.posterPath} posterPath={tituloAbierto.posterPath} />
-              ) : <PosterCrudo titulo={tituloAbierto} />}
-            </div>
+            <CartelDeFicha titulo={tituloAbierto}>
+              <div className={`marco-laton${tituloAbierto.posterPath ? "" : " punteado"}`}>
+                {tituloAbierto.posterPath ? (
+                  <PosterDeFicha key={tituloAbierto.posterPath} posterPath={tituloAbierto.posterPath} />
+                ) : <PosterCrudo titulo={tituloAbierto} />}
+              </div>
+            </CartelDeFicha>
             {!tituloAbierto.posterPath && <p className="fuente sin-poster">sin póster oficial</p>}
             <div className="ficha">
               <h2>{tituloAbierto.nombre}</h2>

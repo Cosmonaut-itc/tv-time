@@ -7,7 +7,7 @@ import { escalaDeVuelo, poseDelGanador } from "./logica.ts";
 import { CURVA_SELLO } from "./curvas.ts";
 import type { TituloDeSala } from "../cartelera.ts";
 
-export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRenderer) {
+export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRenderer, alLlegarFoto: () => void = () => {}) {
     const haloTextura = TEX_HALO();
     const ANCHO = GANADOR_ANCHO, ALTO = GANADOR_ALTO;
 
@@ -173,9 +173,32 @@ export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRender
       lamina.material.uniforms.uFuerza.value = 0;
     }
 
+    let poster: ReturnType<typeof lienzoPoster> | null = null;
+    let quitarAviso: (() => void) | undefined;
+    function ponerLamina(titulo: TituloDeSala) {
+      quitarAviso?.();
+      lamina.material.uniforms.uMapa.value?.dispose();
+      poster = lienzoPoster(titulo);
+      lamina.material.uniforms.uMapa.value = texturaDe(poster);
+      quitarAviso = poster.alLlegar(alLlegarFoto);
+    }
+
     return {
       grupo,
-      destruir() { moldura.destruir(); destruirGrupo(grupo); },
+      destruir() { quitarAviso?.(); moldura.destruir(); destruirGrupo(grupo); },
+      laminaLista() { return poster?.lista() ?? false; },
+      mostrarEnFicha(titulo: TituloDeSala) {
+        ponerLamina(titulo);
+        aplomar();
+        vuelo = null; tSello = -1;
+        meta = { y: 0, escala: 1 };
+        metaSuave = { ...meta };
+        caja.visible = marco.visible = true;
+        caja.position.set(0, 0, 0);
+        caja.scale.setScalar(1);
+        luz.visible = sello.visible = false;
+        lamina.material.uniforms.uOpacidad.value = 1;
+      },
       topes: { x: TOPE_X, y: TOPE_Y },
       enEscena() { return caja.visible; },
       orientacion() { return { x: ladeoX, y: ladeoY }; },
@@ -185,9 +208,8 @@ export function crearGanador(grupo: THREE.Group, renderizador: THREE.WebGLRender
       poseMeta() { return { ...meta }; },
       mostrar(t0: number, titulo: TituloDeSala, desdeX: number, desde: { escala: number; z: number; y?: number } = { escala: 1, z: 0 }) {
         caja.visible = true;
-        const u = lamina.material.uniforms;
-        u.uMapa.value?.dispose();
-        u.uMapa.value = texturaDe(lienzoPoster(titulo));
+        ponerLamina(titulo);
+        luz.visible = true;
         aplomar();
         sello.visible = false;
         sello.material.opacity = 0;

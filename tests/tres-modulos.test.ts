@@ -5,6 +5,8 @@ import { crearTelon } from "../app/tres/telon.ts";
 import { crearMarquesina } from "../app/tres/marquesina.ts";
 import { crearTambores } from "../app/tres/tambores.ts";
 import { crearConteo } from "../app/tres/conteo.ts";
+import { crearMarco } from "../app/tres/marco.ts";
+import { ALTO_MARCO_GANADOR, GANADOR_ANCHO, GANADOR_ALTO } from "../app/tres/medidas.ts";
 import { crearGanador } from "../app/tres/ganador.ts";
 import { tira3D } from "../app/tres/logica.ts";
 import type { TituloDeSala } from "../app/cartelera.ts";
@@ -21,6 +23,7 @@ function instalarLienzo(t: TestContext) {
           fillRect(...argumentos: number[]) { trazos.push({ metodo: "fillRect", argumentos, fillStyle: this.fillStyle }); },
           strokeRect(...argumentos: number[]) { trazos.push({ metodo: "strokeRect", argumentos, fillStyle: this.fillStyle }); },
           beginPath() {}, arc() {}, stroke() {}, moveTo() {}, lineTo() {}, fillText() {},
+          createLinearGradient() { return { addColorStop() {} }; },
           createRadialGradient() { return { addColorStop() {} }; },
           measureText() { return { width: 12, actualBoundingBoxAscent: 110, actualBoundingBoxDescent: 3 }; },
         };
@@ -31,6 +34,7 @@ function instalarLienzo(t: TestContext) {
     if (anterior) Object.defineProperty(globalThis, "document", anterior);
     else Reflect.deleteProperty(globalThis, "document");
   });
+  t.mock.method(THREE.PMREMGenerator.prototype, "fromEquirectangular", () => new THREE.WebGLRenderTarget(16, 16));
   return trazos;
 }
 
@@ -71,7 +75,7 @@ test("encuadrar reutiliza las cuerdas salvo cambios de radios mayores a la toler
 
 test("el vuelo sigue la meta vigente y una ficha tardía se acomoda sin salto", (t) => {
   instalarLienzo(t);
-  const ganador = crearGanador(new THREE.Group());
+  const ganador = crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer);
   t.after(() => ganador.destruir());
   ganador.mostrar(0, titulo, 1);
   ganador.update(0.3, 0.05);
@@ -111,7 +115,7 @@ test("telón reversible y vuelo conservan los tiempos del prototipo", (t) => {
   assert.ok(telon.grupo.children.slice(0, 2).every((pano) => pano.visible), "los paños nunca se esconden");
   telon.destruir();
 
-  const ganador = crearGanador(new THREE.Group());
+  const ganador = crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer);
   ganador.mostrar(0, titulo, 1.3248, { escala: 0.94, z: -0.1466771955534908 });
   const caja = ganador.grupo.children[0];
   assert.ok(Math.abs(caja.scale.x - 0.6468817204301075) < 1e-12);
@@ -130,7 +134,7 @@ test("telón reversible y vuelo conservan los tiempos del prototipo", (t) => {
 test("destruir libera geometrías, materiales y texturas, incluidos números fuera de pantalla", (t) => {
   instalarLienzo(t);
   const modulos = [crearTelon(new THREE.Group()), crearMarquesina(new THREE.Group()),
-    crearTambores(new THREE.Group()), crearConteo(new THREE.Group()), crearGanador(new THREE.Group())] as const;
+    crearTambores(new THREE.Group()), crearConteo(new THREE.Group()), crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer)] as const;
   const [, marquesina, tambores, conteo, ganador] = modulos;
   marquesina.colocar([{ x: 10, y: -10 }, { x: 20, y: -10 }]);
   tambores.montar([tira3D(titulo, [titulo], true)]);
@@ -143,7 +147,7 @@ test("destruir libera geometrías, materiales y texturas, incluidos números fue
     const materiales: THREE.Material[] = Array.isArray(objeto.material) ? objeto.material : [objeto.material];
     materiales.forEach((material) => {
       recursos.add(material);
-      Object.values(material).forEach((valor: unknown) => { if (valor instanceof THREE.Texture) recursos.add(valor); });
+      Object.values(material).forEach((valor: unknown) => { if (valor instanceof THREE.Texture && valor !== (material as THREE.MeshPhysicalMaterial).envMap) recursos.add(valor); });
       if (material instanceof THREE.ShaderMaterial) {
         Object.values(material.uniforms).forEach((u: THREE.IUniform<unknown>) => {
           if (u.value instanceof THREE.Texture) recursos.add(u.value);
@@ -165,7 +169,7 @@ test("destruir libera geometrías, materiales y texturas, incluidos números fue
 
  test("la meta tardía a e cercano a 0.95 no salta y converge", (t) => {
   instalarLienzo(t);
-  const ganador = crearGanador(new THREE.Group());
+  const ganador = crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer);
   t.after(() => ganador.destruir());
   ganador.mostrar(0, titulo, 1);
   const caja = ganador.grupo.children[0];
@@ -181,7 +185,7 @@ test("destruir libera geometrías, materiales y texturas, incluidos números fue
 
 test("el sello se estampa en mezcla normal sobre una placa oscura", (t) => {
   const trazos = instalarLienzo(t);
-  const ganador = crearGanador(new THREE.Group());
+  const ganador = crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer);
   t.after(() => ganador.destruir());
   const sello = ganador.grupo.children[0].children[1].children[2] as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   assert.equal(sello.material.blending, THREE.NormalBlending);
@@ -200,7 +204,7 @@ test("el sello se estampa en mezcla normal sobre una placa oscura", (t) => {
 
 test("apagar el sello lo oculta inmediatamente y no vuelve a animarse", (t) => {
   instalarLienzo(t);
-  const ganador = crearGanador(new THREE.Group());
+  const ganador = crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer);
   t.after(() => ganador.destruir());
   ganador.mostrar(0, titulo, 0);
   ganador.sellar(0, true);
@@ -213,4 +217,57 @@ test("apagar el sello lo oculta inmediatamente y no vuelve a animarse", (t) => {
   assert.equal(sello.material.opacity, 0);
   ganador.update(1.6, 1 / 60);
   assert.equal(sello.material.opacity, 0);
+});
+
+
+test("la moldura conserva la lámina y libera recursos compartidos y su destino PMREM una vez", (t) => {
+  instalarLienzo(t);
+  const destino = new THREE.WebGLRenderTarget(16, 16);
+  const generar = t.mock.method(THREE.PMREMGenerator.prototype, "fromEquirectangular", (textura: THREE.Texture) => {
+    assert.equal(textura.colorSpace, THREE.SRGBColorSpace);
+    assert.equal(textura.mapping, THREE.EquirectangularReflectionMapping);
+    return destino;
+  });
+  const marco = crearMarco({} as THREE.WebGLRenderer);
+  assert.equal(generar.mock.callCount(), 1);
+  assert.equal(marco.grupo.children.length, 5, "moldura y cuatro rombos");
+  const caja = new THREE.Box3().setFromObject(marco.grupo);
+  assert.ok(Math.abs(caja.max.y - ALTO_MARCO_GANADOR / 2) < 1e-6);
+  assert.ok(Math.abs(caja.min.y + ALTO_MARCO_GANADOR / 2) < 1e-6);
+  assert.ok(Math.abs(caja.max.x * 2 - (GANADOR_ANCHO + 0.106 * 1.2 * 2)) < 1e-6);
+  assert.equal(GANADOR_ALTO, 2.79);
+  const recursos = new Set<THREE.BufferGeometry | THREE.Material | THREE.WebGLRenderTarget>([destino]);
+  marco.grupo.traverse((objeto) => {
+    if (!(objeto instanceof THREE.Mesh)) return;
+    recursos.add(objeto.geometry);
+    for (const material of Array.isArray(objeto.material) ? objeto.material : [objeto.material]) recursos.add(material);
+  });
+  assert.equal(recursos.size, 6, "dos geometrías, tres materiales y un destino");
+  const liberados = new Map<unknown, number>();
+  recursos.forEach((recurso) => recurso.addEventListener("dispose", () => liberados.set(recurso, (liberados.get(recurso) ?? 0) + 1)));
+  marco.destruir();
+  marco.destruir();
+  recursos.forEach((recurso) => assert.equal(liberados.get(recurso), 1));
+  assert.equal(marco.grupo.children.length, 0);
+});
+
+
+test("el marco participa en el gesto aunque el rayo caiga fuera de la lámina", (t) => {
+  instalarLienzo(t);
+  const ganador = crearGanador(new THREE.Group(), {} as THREE.WebGLRenderer);
+  t.after(() => ganador.destruir());
+  ganador.mostrar(0, titulo, 0);
+  ganador.update(1, 1);
+  ganador.grupo.updateMatrixWorld(true);
+  const caja = ganador.grupo.children[0];
+  const cartel = caja.children[1];
+  const lamina = cartel.children[1] as THREE.Mesh<THREE.PlaneGeometry>;
+  assert.equal(lamina.geometry.parameters.width, GANADOR_ANCHO);
+  assert.equal(lamina.geometry.parameters.height, GANADOR_ALTO);
+  const punto = cartel.localToWorld(new THREE.Vector3(GANADOR_ANCHO / 2 + 0.08, 0, 0));
+  const rayo = new THREE.Raycaster(new THREE.Vector3(punto.x, punto.y, 10), new THREE.Vector3(0, 0, -1));
+  assert.equal(rayo.intersectObject(lamina).length, 0);
+  assert.equal(ganador.impacta(rayo), true);
+  ganador.esconder();
+  assert.equal(ganador.impacta(rayo), false);
 });

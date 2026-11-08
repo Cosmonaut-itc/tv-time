@@ -10,4 +10,11 @@ crons.daily(
   {},
 );
 
+crons.daily(
+  "purgar disponibilidad TMDB vencida",
+  { hourUTC: 9, minuteUTC: 30 },
+  internal.disponibilidad.purgarVencidas,
+  {},
+);
+
 export default crons;

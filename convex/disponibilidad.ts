@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { action, internalMutation, internalQuery } from "./_generated/server";
 import {
+  CADUCIDAD_CACHE_EN_MS,
   mapearDisponibilidadDeMexico,
   politicaDeCache,
   type DisponibilidadMapeada,
@@ -24,6 +25,8 @@ const respuesta = v.union(
   v.object({ estado: v.literal("sin datos") }),
   v.object({ estado: v.literal("datos"), ...listas }),
 );
+
+const TAMANO_LOTE_PURGA = 200;
 
 type RespuestaDisponibilidad =
   | { estado: "sin tmdb" }
@@ -77,6 +80,27 @@ export const borrarCache = internalMutation({
   returns: v.null(),
   handler: async (ctx, { cacheId }) => {
     if (await ctx.db.get(cacheId)) await ctx.db.delete(cacheId);
+    return null;
+  },
+});
+
+export const purgarVencidas = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const limite = Date.now() - CADUCIDAD_CACHE_EN_MS;
+    const vencidas = await ctx.db
+      .query("disponibilidad")
+      .withIndex("por_actualizada", (q) => q.lte("actualizada", limite))
+      .take(TAMANO_LOTE_PURGA);
+
+    for (const disponibilidad of vencidas) {
+      await ctx.db.delete(disponibilidad._id);
+    }
+
+    if (vencidas.length === TAMANO_LOTE_PURGA) {
+      await ctx.scheduler.runAfter(0, internal.disponibilidad.purgarVencidas, {});
+    }
     return null;
   },
 });

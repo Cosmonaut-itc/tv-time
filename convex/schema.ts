@@ -120,5 +120,7 @@ export default defineSchema({
     renta: v.array(v.object({ nombre: v.string(), logoPath: v.string() })),
     compra: v.array(v.object({ nombre: v.string(), logoPath: v.string() })),
     actualizada: v.number(),
-  }).index("por_tmdb", ["tipo", "tmdbId"]),
+  })
+    .index("por_tmdb", ["tipo", "tmdbId"])
+    .index("por_actualizada", ["actualizada"]),
 });

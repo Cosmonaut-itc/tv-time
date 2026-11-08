@@ -3,7 +3,7 @@ import test from "node:test";
 import type { TituloDeSala } from "../app/cartelera.ts";
 import { derivarCartelera } from "../app/cartelera.ts";
 import { prepararGiro } from "../app/giro.ts";
-import { finalistasDeRuleta, podarRuleta, razonSinRuleta } from "../app/ruleta-logica.ts";
+import { anuncioDeRuleta, finalistasDeRuleta, podarRuleta, razonSinRuleta, textoBotonRuleta } from "../app/ruleta-logica.ts";
 import { tiras3D } from "../app/tres/logica.ts";
 
 const titulo = (_id: string, campos: Partial<TituloDeSala> = {}): TituloDeSala => ({
@@ -59,4 +59,18 @@ test("las cintas de un giro con marcadas sólo muestran las marcadas", () => {
   const marcadas = finalistasDeRuleta(["a", "b", "c"], [a, b, c, d], new Set());
   const celdas = tiras3D(marcadas, marcadas, true, () => 0).flatMap((tira) => tira.celdas.map(({ _id }) => _id));
   assert.deepEqual([...new Set(celdas)].sort(), ["a", "b", "c"]);
+});
+
+
+test("la barra dice cuántas faltan y ofrece girar sólo con tres", () => {
+  assert.equal(textoBotonRuleta(1), "Faltan dos");
+  assert.equal(textoBotonRuleta(2), "Falta una");
+  assert.equal(textoBotonRuleta(3), "Girar con estas");
+});
+
+test("los anuncios cuentan las marcadas al poner, quitar, completar y vaciar", () => {
+  assert.equal(anuncioDeRuleta("Alien", true, 1), "«Alien» en la ruleta. Faltan dos.");
+  assert.equal(anuncioDeRuleta("Alien", false, 2), "«Alien» fuera de la ruleta. Falta una.");
+  assert.equal(anuncioDeRuleta("Alien", true, 3), "«Alien» en la ruleta. Lista para girar.");
+  assert.equal(anuncioDeRuleta("Alien", false, 0), "La ruleta quedó vacía.");
 });

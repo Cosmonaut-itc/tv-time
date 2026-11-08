@@ -1,5 +1,15 @@
 import { derivarCartelera, tieneAnteriorSinVer, type TituloDeSala } from "./cartelera.ts";
 
+export function textoBotonRuleta(cantidad: number): string {
+  return cantidad >= 3 ? "Girar con estas" : cantidad === 2 ? "Falta una" : "Faltan dos";
+}
+
+export function anuncioDeRuleta(nombre: string, marcada: boolean, cantidad: number): string {
+  if (cantidad === 0) return "La ruleta quedó vacía.";
+  const cuenta = cantidad >= 3 ? "Lista para girar" : textoBotonRuleta(cantidad);
+  return `«${nombre}» ${marcada ? "en la ruleta" : "fuera de la ruleta"}. ${cuenta}.`;
+}
+
 /** La elección manual conserva las reglas de la cartelera salvo su filtro. */
 export function finalistasDeRuleta(
   ids: readonly string[],

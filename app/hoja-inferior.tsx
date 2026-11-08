@@ -116,8 +116,9 @@ export default function HojaInferior({
     }
     if (!tieneContenido) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setContenido(null);
-      return;
+      let cancelada = false;
+      queueMicrotask(() => { if (!cancelada) setContenido(null); });
+      return () => { cancelada = true; };
     }
     const estilo = getComputedStyle(elemento);
     const duraciones = estilo.transitionDuration.split(",").map((valor) => parseFloat(valor) * (valor.trim().endsWith("ms") ? 1 : 1000));

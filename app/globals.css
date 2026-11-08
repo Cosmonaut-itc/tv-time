@@ -1281,23 +1281,25 @@ button:disabled {
 }
 
 .catalogo .encabezado {
-  display: flex; align-items: baseline; gap: 10px;
-  padding: 14px 14px 6px;
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px 8px 14px;
+  background: linear-gradient(180deg, #1E1014 70%, rgba(30,16,20,0));
 }
 .catalogo .encabezado h2 {
   margin: 0; flex: 1;
   font-family: var(--display); font-weight: 400;
   font-size: 13px; letter-spacing: .24em; color: var(--laton);
 }
-.catalogo .catalogo-cerrar {
-  background: none;
-  border: none;
-  color: var(--crema-tenue);
-  font-family: var(--datos);
-  font-size: 9px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
+.btn-cerrar {
+  flex: none; display: grid; place-items: center;
+  width: 44px; height: 44px; padding: 0;
+  border: 1px solid rgba(201,162,39,.45); background: rgba(3,1,2,.45);
+  color: var(--crema); font-family: var(--cuerpo); font-size: 17px;
+  letter-spacing: 0; line-height: 1;
 }
+.btn-cerrar:active { background: rgba(201,162,39,.14); }
+
 .catalogo .campo {
   display: flex; align-items: center; gap: 9px;
   border: 1px solid rgba(201,162,39,.3);
@@ -1450,8 +1452,7 @@ button:disabled {
 
 .hoja.cabina-ajustes,
 .hoja.historial {
-  max-height: 88dvh;
-  overflow-y: auto;
+  max-height: calc(88dvh + 48px);
 }
 
 .cabina-contenido,
@@ -1626,8 +1627,7 @@ button:disabled {
 .llavero-taquilla > .etiqueta-entrada { margin: 0; }
 
 .hoja.sala-nueva {
-  max-height: 88dvh;
-  overflow-y: auto;
+  max-height: calc(88dvh + 48px);
 }
 .sala-nueva section {
   padding: 12px;
@@ -1751,18 +1751,32 @@ button:disabled {
 .velo.on { opacity: 1; pointer-events: auto; }
 
 .hoja {
-  position: fixed; left: 0; right: 0; bottom: 0;
+  position: fixed; left: 0; right: 0; bottom: -48px;
   max-width: 460px; margin: 0 auto;
+  max-height: calc(90dvh + 48px);
+  display: flex; flex-direction: column;
   background: linear-gradient(180deg, #1A0D12 0%, var(--terciopelo) 60%, var(--foso) 100%);
   border: 1px solid var(--laton-tenue); border-bottom: none; border-top-width: 3px;
   transform: translateY(102%);
-  transition: transform .38s var(--curva-telon);
+  visibility: hidden;
+  transition: transform .38s var(--curva-telon), visibility 0s .38s;
   z-index: 50;
   box-shadow: 0 -14px 40px rgba(0,0,0,.7);
-  padding: 12px 14px 74px;
+  padding: 0;
 }
-.hoja.abierta { transform: none; }
-.hoja .asa { width: 54px; height: 3px; background: var(--laton-tenue); margin: 0 auto 12px; }
+.hoja.abierta { transform: none; visibility: visible; transition-delay: 0s; }
+.cabecera-hoja {
+  position: relative; flex: none; height: 52px; touch-action: none; cursor: grab;
+}
+.cabecera-hoja .asa {
+  width: 54px; height: 3px; background: var(--laton-tenue);
+  margin: 11px auto 0; border-radius: 2px;
+}
+.cabecera-hoja .btn-cerrar { position: absolute; top: 4px; right: 6px; }
+.cuerpo-hoja {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 14px calc(74px + env(safe-area-inset-bottom, 0px));
+}
 
 /* ── El alta: CSS trasladado de prototypes/alta-de-titulos.html ── */
 
@@ -1799,26 +1813,21 @@ button:disabled {
 }
 
 .hoja.alta.cajon {
-  position: fixed; left: 0; right: 0; bottom: 0;
+  position: fixed; left: 0; right: 0; bottom: -48px;
   max-width: 460px; margin: 0 auto;
-  max-height: 90dvh;
+  max-height: calc(90dvh + 48px);
   border-bottom: none;
   border-top-width: 3px;
-  transition: transform .42s var(--curva-telon);
   box-shadow: 0 -14px 40px rgba(0,0,0,.7);
 }
-.hoja.alta.cajon .asa {
-  width: 54px; height: 3px; background: var(--laton-tenue);
-  margin: 9px auto 0; flex: none;
-}
-
-.alta .cabecera {
-  display: flex; align-items: center; gap: 10px;
-  padding: 13px 14px 11px;
+.alta .cabecera-hoja {
+  height: auto; display: flex; align-items: center; gap: 10px;
+  padding: 18px 8px 10px 14px;
   border-bottom: 1px solid rgba(201,162,39,.2);
-  flex: none;
 }
-.alta .cabecera h2 {
+.alta .cabecera-hoja .asa { position: absolute; top: 0; left: 50%; margin: 9px 0 0 -27px; }
+.alta .cabecera-hoja .btn-cerrar { position: static; }
+.alta .cabecera-hoja h2 {
   margin: 0; flex: 1;
   font-family: var(--display);
   font-weight: 400; font-size: 13px;
@@ -1834,12 +1843,8 @@ button:disabled {
   display: flex; align-items: center; gap: 6px;
 }
 .alta .butaca-alta b { color: var(--laton); font-weight: 400; }
-.alta .cerrar {
-  background: none; border: none; color: var(--crema-tenue);
-  font-size: 20px; line-height: 1; padding: 2px 4px;
-}
-
-.alta .cuerpo { padding: 13px 14px 22px; overflow-y: auto; }
+.alta .cuerpo-hoja { padding-top: 13px; }
+.alta .cuerpo { padding: 0; }
 .alta .panel-alta[hidden] { display: none; }
 
 .alta .campo {
@@ -2132,7 +2137,7 @@ button:disabled {
 
   .velo,
   .hoja {
-    transition-duration: 0.01ms;
+    transition-duration: 0.01ms !important;
   }
 
   .carrete .tira {

@@ -571,15 +571,13 @@ export default function AltaTitulos({
       enfocarAlAbrir={buscador}
       className="alta cajon"
       onCerrar={cerrar}
-    >
-      <div className="cabecera">
+      cabecera={<>
         <h2>{vista === "saga" ? "UNA SAGA" : vista === "manual" ? "A MANO" : "AGREGAR"}</h2>
         <button className="butaca butaca-alta" type="button" onClick={alternarButaca}>
           Agrega <b>{butaca.toLocaleUpperCase()}</b> ⇄
         </button>
-        <button className="cerrar" type="button" aria-label="Cerrar" onClick={cerrar}>✕</button>
-      </div>
-
+      </>}
+    >
       <div className="cuerpo">
         <section className="panel-alta" hidden={vista !== "buscar"}>
           <label className="campo">

@@ -1100,13 +1100,6 @@ export default function SalaCartelera({
             Compartir <span aria-hidden="true">→</span> Añadir a pantalla de
             inicio
           </p>
-          <button
-            className="btn-palanca"
-            type="button"
-            onClick={() => setInstalacionAbierta(false)}
-          >
-            Cerrar
-          </button>
         </div>
       </HojaInferior>
         </>

@@ -3,7 +3,7 @@
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DatosFicha from "./datos-ficha";
 import CalificacionesTitulo from "./calificaciones-titulo";
 import ChipsDisponibilidad from "./chips-disponibilidad";
@@ -177,13 +177,22 @@ export default function MuroCatalogo({
     }
   }
 
+  useEffect(() => {
+    if (!abierta) return;
+    function cerrarConEscape(evento: KeyboardEvent) {
+      if (evento.key === "Escape" && !document.querySelector('.hoja.abierta')) onCerrar();
+    }
+    document.addEventListener("keydown", cerrarConEscape);
+    return () => document.removeEventListener("keydown", cerrarConEscape);
+  }, [abierta, onCerrar]);
+
   if (!abierta) return null;
 
   return (
     <aside className="catalogo" aria-label="El catálogo">
       <div className="encabezado">
         <h2>EL CATÁLOGO</h2>
-        <button className="catalogo-cerrar" type="button" onClick={onCerrar}>Cerrar</button>
+        <button className="btn-cerrar" type="button" aria-label="Cerrar el catálogo" onClick={onCerrar}>✕</button>
       </div>
       <label className="campo">
         <span className="lupa" aria-hidden="true">⌕</span>

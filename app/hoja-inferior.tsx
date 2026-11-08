@@ -1,10 +1,23 @@
 "use client";
 
-import { type ReactNode, type RefObject, useEffect, useRef } from "react";
+import { createContext, type ReactNode, type RefObject, useContext, useEffect, useMemo, useRef } from "react";
+import { debeCerrarHoja, resistirArrastre } from "./hoja-inferior-logica";
 
-// El muro de pósters (017) la sube para tocar un título; el cajón del alta
-// (018) baja su gemela para meterlos. Esta pieza no implementa esos usos aún.
-//
+export type ArrastreDeHoja = {
+  inicio: (clientY: number, timeStamp: number) => void;
+  mover: (clientY: number, timeStamp: number) => void;
+  fin: (clientY: number, timeStamp: number) => void;
+  cancelar: () => void;
+  activo: () => boolean;
+};
+const ContextoArrastre = createContext<ArrastreDeHoja | null>(null);
+
+// Un hijo que decide su propio eje usa este contrato y marca su región con
+// data-arrastre-hoja para que el cuerpo no reclame el mismo toque.
+export function useArrastreDeHoja() {
+  return useContext(ContextoArrastre);
+}
+
 // A quién vuelve el foco al cerrar se declara, no se adivina: en iOS Safari un
 // botón no queda enfocado al tocarlo, así que `document.activeElement` no sirve
 // de rastro y espiar el documento entero para averiguarlo cuesta un listener
@@ -17,6 +30,7 @@ export default function HojaInferior({
   className,
   onCerrar,
   children,
+  cabecera,
 }: {
   abierta: boolean;
   etiqueta: string;
@@ -25,9 +39,114 @@ export default function HojaInferior({
   className?: string;
   onCerrar: () => void;
   children: ReactNode;
+  cabecera?: ReactNode;
 }) {
   const hoja = useRef<HTMLElement>(null);
   const estabaAbierta = useRef(false);
+  const velo = useRef<HTMLDivElement>(null);
+  const cuerpo = useRef<HTMLDivElement>(null);
+  const gesto = useRef<{ y0: number; dy: number; muestras: [number, number][] } | null>(null);
+  const alto = useRef(1);
+  const arrastre = useMemo<ArrastreDeHoja>(() => {
+    const pintar = (y: number) => {
+      if (hoja.current) hoja.current.style.transform = `translateY(${y}px)`;
+      if (velo.current) velo.current.style.opacity = String(Math.max(0, 1 - Math.max(0, y) / alto.current));
+    };
+    const volver = () => {
+      gesto.current = null;
+      if (hoja.current) hoja.current.style.transition = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "none" : "transform 480ms cubic-bezier(.2,1.5,.4,1)";
+      if (velo.current) velo.current.style.transition = "opacity 300ms ease";
+      pintar(0);
+    };
+    const mover = (y: number, t: number) => {
+      if (!gesto.current) return;
+      gesto.current.dy = resistirArrastre(y - gesto.current.y0);
+      gesto.current.muestras.push([t, y]);
+      while (gesto.current.muestras.length > 2 && t - gesto.current.muestras[0][0] > 90) gesto.current.muestras.shift();
+      pintar(gesto.current.dy);
+    };
+    return {
+      inicio(y, t) {
+        if (!abierta || gesto.current) return;
+        alto.current = Math.max(1, (hoja.current?.getBoundingClientRect().height ?? 48) - 48);
+        gesto.current = { y0: y, dy: 0, muestras: [[t, y]] };
+        if (hoja.current) hoja.current.style.transition = "none";
+        if (velo.current) velo.current.style.transition = "none";
+      },
+      mover,
+      fin(y, t) {
+        if (!gesto.current) return;
+        mover(y, t);
+        const [t0, y0] = gesto.current.muestras[0];
+        const velocidad = t > t0 ? (y - y0) / (t - t0) : 0;
+        if (debeCerrarHoja(gesto.current.dy, alto.current, velocidad)) {
+          gesto.current = null;
+          hoja.current?.style.removeProperty("transition");
+          hoja.current?.style.removeProperty("transform");
+          velo.current?.style.removeProperty("transition");
+          velo.current?.style.removeProperty("opacity");
+          onCerrar();
+        } else volver();
+      },
+      cancelar: volver,
+      activo: () => gesto.current !== null,
+    };
+  }, [abierta, onCerrar]);
+
+  useEffect(() => {
+    gesto.current = null;
+    hoja.current?.style.removeProperty("transform");
+    hoja.current?.style.removeProperty("transition");
+    velo.current?.style.removeProperty("opacity");
+    velo.current?.style.removeProperty("transition");
+    if (abierta && cuerpo.current) cuerpo.current.scrollTop = 0;
+  }, [abierta]);
+
+  useEffect(() => {
+    const elemento = cuerpo.current;
+    if (!abierta || !elemento) return;
+    let toque: { x: number; y: number; t: number; arriba: boolean; modo: "hoja" | "nativo" | null } | null = null;
+    function empezar(e: TouchEvent) {
+      if (e.touches.length !== 1 || (e.target as Element).closest("[data-arrastre-hoja]")) {
+        if (toque?.modo === "hoja") arrastre.cancelar();
+        toque = null;
+        return;
+      }
+      const p = e.touches[0];
+      toque = { x: p.clientX, y: p.clientY, t: e.timeStamp, arriba: elemento!.scrollTop <= 0, modo: null };
+    }
+    function mover(e: TouchEvent) {
+      if (!toque || e.touches.length !== 1) return;
+      const p = e.touches[0], dx = p.clientX - toque.x, dy = p.clientY - toque.y;
+      if (!toque.modo && Math.hypot(dx, dy) > 6) {
+        toque.modo = toque.arriba && dy > 0 && Math.abs(dy) > Math.abs(dx) ? "hoja" : "nativo";
+        if (toque.modo === "hoja") arrastre.inicio(toque.y, toque.t);
+      }
+      if (toque.modo === "hoja") {
+        e.preventDefault();
+        arrastre.mover(p.clientY, e.timeStamp);
+      }
+    }
+    function terminar(e: TouchEvent) {
+      if (toque?.modo === "hoja") arrastre.fin(e.changedTouches[0].clientY, e.timeStamp);
+      toque = null;
+    }
+    function cancelar() {
+      if (toque?.modo === "hoja") arrastre.cancelar();
+      toque = null;
+    }
+    elemento.addEventListener("touchstart", empezar, { passive: true });
+    elemento.addEventListener("touchmove", mover, { passive: false });
+    elemento.addEventListener("touchend", terminar);
+    elemento.addEventListener("touchcancel", cancelar);
+    return () => {
+      elemento.removeEventListener("touchstart", empezar);
+      elemento.removeEventListener("touchmove", mover);
+      elemento.removeEventListener("touchend", terminar);
+      elemento.removeEventListener("touchcancel", cancelar);
+    };
+  }, [abierta, arrastre]);
 
   useEffect(() => {
     if (abierta && !estabaAbierta.current) {
@@ -41,6 +160,8 @@ export default function HojaInferior({
     if (!abierta) return;
     function controlarTeclado(evento: KeyboardEvent) {
       if (evento.key === "Escape") {
+        evento.preventDefault();
+        evento.stopImmediatePropagation();
         onCerrar();
         return;
       }
@@ -77,6 +198,7 @@ export default function HojaInferior({
   return (
     <>
       <div
+        ref={velo}
         className={`velo${abierta ? " on" : ""}`}
         aria-hidden="true"
         onClick={onCerrar}
@@ -91,8 +213,24 @@ export default function HojaInferior({
         inert={!abierta}
         tabIndex={-1}
       >
-        <div className="asa" aria-hidden="true" />
-        {children}
+        <ContextoArrastre.Provider value={arrastre}>
+          <div className="cabecera-hoja"
+            onPointerDown={(e) => {
+              if (!e.isPrimary || e.button !== 0 || (e.target as Element).closest("button, input, a, select, textarea")) return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              arrastre.inicio(e.clientY, e.timeStamp);
+            }}
+            onPointerMove={(e) => arrastre.mover(e.clientY, e.timeStamp)}
+            onPointerUp={(e) => arrastre.fin(e.clientY, e.timeStamp)}
+            onPointerCancel={() => arrastre.cancelar()}
+            onLostPointerCapture={() => { if (arrastre.activo()) arrastre.cancelar(); }}
+          >
+            <div className="asa" aria-hidden="true" />
+            {cabecera}
+            <button className="btn-cerrar" type="button" aria-label={`Cerrar: ${etiqueta}`} onClick={onCerrar}>✕</button>
+          </div>
+          <div className="cuerpo-hoja" ref={cuerpo}>{children}</div>
+        </ContextoArrastre.Provider>
       </section>
     </>
   );
